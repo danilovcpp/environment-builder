@@ -8,4 +8,7 @@ public interface IEnvironmentStore
     Task SaveNewAsync(IsolatedEnvironment environment, CancellationToken cancellationToken);
     Task<IReadOnlyList<EnvironmentListItem>> ListAsync(CancellationToken cancellationToken);
 }
-public sealed record EnvironmentListItem(Guid Id, string Name, long Revision, IsolatedEnvironment? Document, string? ErrorCode, bool HasUnresolvedOperation);
+public sealed record EnvironmentListItem(Guid Id, string Name, long Revision, IsolatedEnvironment? Document, string? ErrorCode, bool HasUnresolvedOperation)
+{
+    public DateTimeOffset? SavedAt { get; init; }
+}

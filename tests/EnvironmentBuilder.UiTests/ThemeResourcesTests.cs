@@ -133,11 +133,66 @@ public sealed class ThemeResourcesTests
             Assert.Empty(diagnostics.Errors);
             window.Close();
             VerifyShell(diagnostics);
+            VerifyAuthoring(diagnostics);
         }
         finally
         {
             app.Shutdown();
         }
+    }
+
+    private static void VerifyAuthoring(BindingDiagnostics diagnostics)
+    {
+        var fixture = new AuthoringUiFixture();
+        var navigation = new App.Shell.NavigationService();
+        var themes = new App.Shell.ThemeService();
+        var session = fixture.Session(navigation);
+        var shell = new App.Shell.ShellViewModel(navigation, themes) { Authoring = session, IsLoading = false };
+        shell.Status = "Хранилище доступно · Docker не проверен";
+        var window = new App.Shell.MainWindow(shell) { Width = 1280, Height = 720, Left = -10000, Top = 0, ShowActivated = false, ShowInTaskbar = false };
+        window.Show();
+        Assert.True(session.List.CreateNewCommand.ExecuteAsync(null).IsCompletedSuccessfully);
+        var editor = Assert.IsType<App.Features.Environments.EnvironmentEditorViewModel>(session.Current);
+        editor.Name = "Offline authoring · сохранение без Docker";
+        editor.SelectedDefinition = editor.Library.First(i => i.Definition.ComponentType == "target");
+        editor.AddComponentCommand.Execute(null);
+        Assert.Equal(2, editor.Components.Count);
+        // Error summary must activate the parameter tab and focus its grid, even while another tab is selected.
+        editor.Components[0].Parameters[0].Text = "invalid-integer";
+        window.UpdateLayout(); window.Dispatcher.Invoke(() => { }, DispatcherPriority.ContextIdle);
+        editor.FocusErrorCommand.Execute(Assert.Single(editor.Errors));
+        window.UpdateLayout(); window.Dispatcher.Invoke(() => { }, DispatcherPriority.ContextIdle);
+        Assert.Contains(Descendants(window).OfType<TabItem>(), item => item.Header as string == "Параметры" && item.IsSelected);
+        Assert.Contains(Descendants(window).OfType<DataGrid>(), grid => grid.Tag as string == "parameters" && grid.IsKeyboardFocusWithin);
+        editor.Components[0].Parameters[0].Text = "1000";
+        foreach (bool dark in new[] { false, true })
+        {
+            themes.Apply(dark);
+            window.UpdateLayout();
+            window.Dispatcher.Invoke(() => { }, DispatcherPriority.ContextIdle);
+            Assert.Same(editor, session.Current);
+            var page = Descendants(window).OfType<App.Features.Environments.EnvironmentEditorPage>().Single();
+            foreach (var tabs in Descendants(page).OfType<TabControl>().ToArray())
+            {
+                for (int i = 0; i < tabs.Items.Count; i++)
+                {
+                    tabs.SelectedIndex = i; window.UpdateLayout(); window.Dispatcher.Invoke(() => { }, DispatcherPriority.ContextIdle);
+                }
+                tabs.SelectedIndex = 0;
+            }
+            window.UpdateLayout();
+            SavePreview((FrameworkElement)window.Content, dark ? "authoring-dark" : "authoring-light");
+        }
+        Assert.True(editor.ShowPreviewCommand.ExecuteAsync(null).IsCompletedSuccessfully);
+        window.UpdateLayout(); window.Dispatcher.Invoke(() => { }, DispatcherPriority.ContextIdle);
+        var preview = Assert.IsType<App.Features.Environments.ComposePreviewViewModel>(session.Current);
+        Assert.Contains("127.0.0.1", preview.Content);
+        SavePreview((FrameworkElement)window.Content, "authoring-preview");
+        Assert.True(preview.GoBackCommand.ExecuteAsync(null).IsCompletedSuccessfully);
+        window.UpdateLayout(); window.Dispatcher.Invoke(() => { }, DispatcherPriority.ContextIdle);
+        Assert.Same(editor, session.Current);
+        Assert.Empty(diagnostics.Errors);
+        window.Close();
     }
 
     private static void VerifyShell(BindingDiagnostics diagnostics)
@@ -147,7 +202,6 @@ public sealed class ThemeResourcesTests
         var model = new App.Shell.ShellViewModel(navigation, themes);
         model.IsLoading = false;
         model.Status = "Хранилище доступно · Docker не проверен";
-        model.Environments.Add(new App.Shell.ShellEnvironmentRow(Guid.NewGuid(), "Контрактный пример", 1, "Состояние runtime неизвестно"));
         var window = new App.Shell.MainWindow(model) { Left = -10000, Top = 0, ShowActivated = false, ShowInTaskbar = false };
         window.Show();
         foreach (bool dark in new[] { false, true, false })
@@ -161,7 +215,6 @@ public sealed class ThemeResourcesTests
                 window.Dispatcher.Invoke(() => { }, DispatcherPriority.ContextIdle);
             }
             Assert.Same(model, window.DataContext);
-            Assert.Single(model.Environments);
             var context = Descendants(window).OfType<App.Components.ContextPanel>().Single();
             context.IsExpanded = false;
             window.UpdateLayout();
@@ -169,7 +222,6 @@ public sealed class ThemeResourcesTests
             context.IsExpanded = true;
             window.UpdateLayout();
             Assert.Equal(240, context.ActualWidth);
-            Assert.Contains(Descendants(window).OfType<TextBlock>(), text => text.Text == "Контрактный пример");
             SavePreview((FrameworkElement)window.Content, dark ? "shell-dark" : "shell-light");
         }
         Assert.Empty(diagnostics.Errors);

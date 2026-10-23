@@ -41,7 +41,7 @@ public sealed class EnvironmentStore(SqliteWorker worker, StrictDocumentReader r
     public Task<IReadOnlyList<EnvironmentListItem>> ListAsync(CancellationToken cancellationToken) => worker.ReadAsync<IReadOnlyList<EnvironmentListItem>>(connection =>
     {
         using SqliteCommand command = Sql.Command(connection, null,
-            "SELECT id,name,revision,json,EXISTS(SELECT 1 FROM Operations o WHERE o.environmentId=e.id AND (o.state NOT IN ('Succeeded','Failed','Cancelled') OR EXISTS(SELECT 1 FROM OperationSteps s WHERE s.operationId=o.id AND s.state IN ('Started','Unknown')) OR EXISTS(SELECT 1 FROM ResourceLedger r WHERE r.operationId=o.id AND r.unresolved=1))),hash FROM Environments e ORDER BY savedAt DESC,id");
+            "SELECT id,name,revision,json,EXISTS(SELECT 1 FROM Operations o WHERE o.environmentId=e.id AND (o.state NOT IN ('Succeeded','Failed','Cancelled') OR EXISTS(SELECT 1 FROM OperationSteps s WHERE s.operationId=o.id AND s.state IN ('Started','Unknown')) OR EXISTS(SELECT 1 FROM ResourceLedger r WHERE r.operationId=o.id AND r.unresolved=1))),hash,savedAt FROM Environments e ORDER BY savedAt DESC,id");
         using SqliteDataReader rows = command.ExecuteReader();
         var items = new List<EnvironmentListItem>();
         while (rows.Read())
@@ -57,7 +57,8 @@ public sealed class EnvironmentStore(SqliteWorker worker, StrictDocumentReader r
                 { document = null; error = "row-hash-or-summary-mismatch"; }
             }
             catch (DocumentException failure) { error = failure.Code; }
-            items.Add(new EnvironmentListItem(Guid.Parse(rows.GetString(0)), rows.GetString(1), rows.GetInt64(2), document, error, rows.GetBoolean(4)));
+            items.Add(new EnvironmentListItem(Guid.Parse(rows.GetString(0)), rows.GetString(1), rows.GetInt64(2), document, error, rows.GetBoolean(4))
+            { SavedAt = DateTimeOffset.Parse(rows.GetString(6), System.Globalization.CultureInfo.InvariantCulture) });
         }
         return items;
     }, cancellationToken);

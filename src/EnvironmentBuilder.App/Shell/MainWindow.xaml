@@ -3,9 +3,14 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:icons="http://metro.mahapps.com/winfx/xaml/iconpacks"
         xmlns:components="clr-namespace:EnvironmentBuilder.App.Components"
+        xmlns:authoring="clr-namespace:EnvironmentBuilder.App.Features.Environments"
         Title="Environment Builder" Width="1280" Height="800" MinWidth="960" MinHeight="600"
         Background="{DynamicResource Brush.Window}" Foreground="{DynamicResource Brush.TextPrimary}">
-    <Window.Resources><BooleanToVisibilityConverter x:Key="VisibleIfTrue" /></Window.Resources>
+    <Window.Resources><BooleanToVisibilityConverter x:Key="VisibleIfTrue" />
+        <DataTemplate DataType="{x:Type authoring:EnvironmentListViewModel}"><authoring:EnvironmentListPage/></DataTemplate>
+        <DataTemplate DataType="{x:Type authoring:EnvironmentEditorViewModel}"><authoring:EnvironmentEditorPage/></DataTemplate>
+        <DataTemplate DataType="{x:Type authoring:ComposePreviewViewModel}"><authoring:ComposePreviewPage/></DataTemplate>
+    </Window.Resources>
     <Grid>
         <Grid.RowDefinitions><RowDefinition Height="*" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
         <Grid.ColumnDefinitions><ColumnDefinition Width="208" /><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
@@ -28,17 +33,7 @@
             <Grid Grid.Row="2" Margin="24,8,24,24">
                 <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="*" /></Grid.RowDefinitions>
                 <StackPanel Visibility="{Binding IsLoading, Converter={StaticResource VisibleIfTrue}}"><TextBlock Text="Чтение локального хранилища…" /></StackPanel>
-                <Grid Grid.Row="1" Visibility="{Binding ShowEnvironments, Converter={StaticResource VisibleIfTrue}}">
-                    <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="*" /></Grid.RowDefinitions>
-                    <TextBlock Text="{Binding EmptyMessage}" Foreground="{DynamicResource Brush.TextSecondary}" Margin="0,0,0,12" />
-                    <DataGrid Grid.Row="1" ItemsSource="{Binding Environments}" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" EnableRowVirtualization="True" VirtualizingPanel.VirtualizationMode="Recycling" AutomationProperties.Name="Сохранённые окружения">
-                        <DataGrid.Columns>
-                            <DataGridTextColumn Header="Имя" Binding="{Binding Name}" Width="*" />
-                            <DataGridTextColumn Header="Ревизия" Binding="{Binding Revision}" Width="75" />
-                            <DataGridTextColumn Header="Состояние" Binding="{Binding State}" Width="220" />
-                        </DataGrid.Columns>
-                    </DataGrid>
-                </Grid>
+                <ContentControl Grid.Row="1" Content="{Binding Authoring.Current}" Visibility="{Binding ShowEnvironments, Converter={StaticResource VisibleIfTrue}}" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"/>
                 <TextBlock Grid.Row="1" Visibility="{Binding ShowSeedPacks, Converter={StaticResource VisibleIfTrue}}" Text="Пакеты начальных данных" Foreground="{DynamicResource Brush.TextSecondary}" />
                 <StackPanel Grid.Row="1" Visibility="{Binding ShowSettings, Converter={StaticResource VisibleIfTrue}}"><TextBlock Text="Каталог данных" FontWeight="SemiBold" /><TextBlock Text="{Binding DataDirectory}" TextWrapping="Wrap" Margin="0,8,0,16" /><Button Command="{Binding ToggleThemeCommand}" Content="Сменить тему" HorizontalAlignment="Left" /></StackPanel>
                 <StackPanel Grid.Row="1" Visibility="{Binding ShowDiagnostics, Converter={StaticResource VisibleIfTrue}}"><TextBlock Text="{Binding Status}" TextWrapping="Wrap" /><TextBlock Text="{Binding RecoveryStatus}" TextWrapping="Wrap" Margin="0,12,0,0" /></StackPanel>

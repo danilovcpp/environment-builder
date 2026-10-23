@@ -1,0 +1,151 @@
+[
+  {
+    "kind": "component",
+    "schemaVersion": 1,
+    "id": "a1000000-0000-4000-8000-000000000001",
+    "version": "1.0.0",
+    "name": "Atlas Worker",
+    "description": "Внешнее описание неизвестного приложению сервиса",
+    "componentType": "target",
+    "contract": {
+      "id": "fixture.atlas",
+      "version": "1.0.0"
+    },
+    "defaultSource": {
+      "kind": "build",
+      "pathRef": "local-path://authoring-source",
+      "contextSubdirectory": ".",
+      "dockerfile": "Dockerfile",
+      "buildArguments": {},
+      "buildSecrets": {}
+    },
+    "parameterDefinitions": [
+      {
+        "name": "MaxItems",
+        "environmentVariable": "MAX_ITEMS",
+        "type": "integer",
+        "required": true,
+        "secret": false,
+        "defaultValue": {
+          "literal": "1000"
+        }
+      }
+    ],
+    "defaultEnvironment": {
+      "API_CREDENTIAL": {
+        "secretRef": "secret://a9000000-0000-4000-8000-000000000001"
+      }
+    },
+    "defaultPorts": [
+      {
+        "id": "api",
+        "containerPort": 8080,
+        "protocol": "tcp",
+        "hostPort": null,
+        "access": "loopback",
+        "purpose": "application"
+      }
+    ],
+    "defaultStorage": [
+      {
+        "id": "data",
+        "kind": "managed",
+        "targetPath": "/data"
+      }
+    ],
+    "endpoints": [
+      {
+        "id": "api",
+        "containerPort": 8080,
+        "scheme": "http",
+        "basePath": "/"
+      }
+    ],
+    "readiness": {
+      "kind": "http",
+      "endpointId": "api",
+      "path": "/health/ready",
+      "timeoutSeconds": 60
+    },
+    "dependencyRequirements": [
+      {
+        "id": "queue",
+        "definitionId": "a1000000-0000-4000-8000-000000000002",
+        "definitionVersion": "1.0.0",
+        "condition": "running",
+        "reason": "Worker использует очередь Copper Queue"
+      }
+    ],
+    "initialization": {
+      "kind": "initialization",
+      "schemaVersion": 1,
+      "id": "40000000-0000-4000-8000-000000000001",
+      "version": "1.0.0",
+      "targetContract": {
+        "contractId": "fixture.atlas",
+        "versions": [
+          "1.0.0"
+        ]
+      },
+      "steps": [
+        {
+          "id": "bootstrap",
+          "title": "Создать обязательную структуру",
+          "endpointId": "api",
+          "method": "PUT",
+          "path": "/admin/bootstrap",
+          "headers": {},
+          "body": {
+            "kind": "none"
+          },
+          "expect": {
+            "statuses": [
+              204
+            ],
+            "assertions": []
+          },
+          "timeoutSeconds": 30,
+          "retry": {
+            "mode": "idempotent",
+            "maxAttempts": 3,
+            "safetyEvidence": "API contract: повтор PUT создаёт ту же структуру без дублирования данных."
+          }
+        }
+      ]
+    }
+  },
+  {
+    "kind": "component",
+    "schemaVersion": 1,
+    "id": "a1000000-0000-4000-8000-000000000002",
+    "version": "1.0.0",
+    "name": "Copper Queue",
+    "description": "Внешнее описание неизвестного приложению сервиса",
+    "componentType": "infrastructure",
+    "contract": {
+      "id": "fixture.queue",
+      "version": "1.0.0"
+    },
+    "defaultSource": {
+      "kind": "image",
+      "reference": "fixture/queue:1.0.0"
+    },
+    "parameterDefinitions": [],
+    "defaultEnvironment": {},
+    "defaultPorts": [],
+    "defaultStorage": [
+      {
+        "id": "queue-data",
+        "kind": "managed",
+        "targetPath": "/var/lib/queue"
+      }
+    ],
+    "endpoints": [],
+    "readiness": {
+      "kind": "running",
+      "timeoutSeconds": 30
+    },
+    "dependencyRequirements": [],
+    "initialization": null
+  }
+]

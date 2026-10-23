@@ -9,7 +9,7 @@ public sealed class NavigationService : ObservableObject
     public NavigationAddress Current { get => current; private set => SetProperty(ref current, value); }
     public void Navigate(NavigationAddress address)
     {
-        if (address.Route is not ("environments" or "seedpacks" or "settings" or "diagnostics")) { throw new ArgumentException("Unknown route.", nameof(address)); }
+        if (address.Route is not ("environments" or "editor" or "preview" or "seedpacks" or "settings" or "diagnostics")) { throw new ArgumentException("Unknown route.", nameof(address)); }
         Current = address;
     }
 }

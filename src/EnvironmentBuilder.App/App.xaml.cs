@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.Windows;
 using EnvironmentBuilder.App.Composition;
+using EnvironmentBuilder.App.Features.Environments;
 using EnvironmentBuilder.App.Shell;
 using EnvironmentBuilder.Core.Abstractions;
 using EnvironmentBuilder.Core.Operations;
@@ -37,8 +38,9 @@ public partial class App : Application
         try
         {
             services = await AppServices.CreateAsync(shell, navigation, themes);
+            shell.Authoring = services.Provider.GetRequiredService<AuthoringSession>();
             IReadOnlyList<Operation> unresolved = await services.Provider.GetRequiredService<IOperationStore>().ReadUnresolvedAsync(CancellationToken.None);
-            await shell.LoadAsync(services.Provider.GetRequiredService<IEnvironmentStore>(), services.Provider.GetRequiredService<UiDispatcher>(),
+            await shell.LoadAsync(services.Provider.GetRequiredService<UiDispatcher>(),
                 services.Provider.GetRequiredService<AppDataDirectory>().Root, unresolved.Count, CancellationToken.None);
         }
         catch (Exception error) when (error is not OutOfMemoryException)
@@ -60,6 +62,8 @@ public partial class App : Application
         try
         {
             if (startup is not null) { await startup; }
+            if (MainWindow?.DataContext is ShellViewModel active && active.Authoring is not null && !await active.Authoring.CanLeaveAsync(CancellationToken.None))
+            { closing = false; return; }
             if (services is not null) { await services.DisposeAsync(); }
             if (sender is Window window) { window.Closing -= OnWindowClosing; window.Close(); }
             Shutdown();

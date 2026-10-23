@@ -6,8 +6,9 @@ using EnvironmentBuilder.Core.SeedPacks;
 
 namespace EnvironmentBuilder.Infrastructure.Imports;
 
-public sealed class StrictDocumentReader
+public sealed class StrictDocumentReader : EnvironmentBuilder.Core.Abstractions.IInitializationDocumentReader
 {
+    public InitializationDefinition ReadInitialization(string json) => Read<InitializationDefinition>(Encoding.UTF8.GetBytes(json), "initialization");
     public object Read(ReadOnlyMemory<byte> utf8, string? expectedKind = null)
     {
         if (utf8.Length > 4 * 1024 * 1024) { throw new DocumentException("", "document-too-large"); }

@@ -14,8 +14,12 @@ public static class EnvironmentValidator
         var bindings = new HashSet<(string Protocol, int Port)>();
         foreach (EnvironmentComponent component in environment.Components)
         {
-            ValidateDefinition(component.DefinitionSnapshot);
-            ValidateValues(component.DefinitionSnapshot, component.Source, component.Parameters, component.Environment, component.Ports, component.Storage);
+            try
+            {
+                ValidateDefinition(component.DefinitionSnapshot);
+                ValidateValues(component.DefinitionSnapshot, component.Source, component.Parameters, component.Environment, component.Ports, component.Storage);
+            }
+            catch (DocumentException error) { throw new DocumentException("/components/" + component.Id + error.FieldPath, error.Code); }
             foreach (Port port in component.Ports.Where(p => p.HostPort.HasValue))
             {
                 if (!bindings.Add((port.Protocol, port.HostPort!.Value)))

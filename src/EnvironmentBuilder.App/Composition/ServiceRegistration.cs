@@ -1,6 +1,9 @@
+using EnvironmentBuilder.App.Features.Environments;
 using EnvironmentBuilder.App.Shell;
 using EnvironmentBuilder.Core.Abstractions;
+using EnvironmentBuilder.Core.Environments;
 using EnvironmentBuilder.Core.Operations;
+using EnvironmentBuilder.Infrastructure.Docker;
 using EnvironmentBuilder.Infrastructure.Imports;
 using EnvironmentBuilder.Infrastructure.Persistence;
 using EnvironmentBuilder.Infrastructure.Security;
@@ -31,6 +34,14 @@ public sealed class AppServices : IAsyncDisposable
             services.AddSingleton<StrictDocumentReader>();
             services.AddSingleton<IEnvironmentStore, EnvironmentStore>();
             services.AddSingleton<ComponentLibraryStore>();
+            services.AddSingleton<IComponentLibrary, AuthoringLibrary>();
+            services.AddSingleton<ILocalPathMappings, LocalPathMappings>();
+            services.AddSingleton<IInitializationDocumentReader>(p => p.GetRequiredService<StrictDocumentReader>());
+            services.AddSingleton<IPreviewInputCapture, PreviewInputCapture>();
+            services.AddSingleton<CreateEnvironmentService>();
+            services.AddSingleton<IAuthoringInteractions, AuthoringInteractions>();
+            services.AddSingleton<EnvironmentListViewModel>();
+            services.AddSingleton<AuthoringSession>();
             services.AddSingleton<IOperationStore, OperationStore>();
             services.AddSingleton<ResourceLedgerStore>();
             services.AddSingleton<DataApplicationStore>();

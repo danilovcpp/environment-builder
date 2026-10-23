@@ -1,11 +1,9 @@
-using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using EnvironmentBuilder.App.Features.Environments;
 using EnvironmentBuilder.Core.Abstractions;
 
 namespace EnvironmentBuilder.App.Shell;
-
-public sealed record ShellEnvironmentRow(Guid Id, string Name, long Revision, string State);
 
 public sealed partial class ShellViewModel : ObservableObject
 {
@@ -15,8 +13,15 @@ public sealed partial class ShellViewModel : ObservableObject
     {
         this.navigation = navigation;
         this.themes = themes;
+        navigation.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName != nameof(NavigationService.Current)) { return; }
+            if (navigation.Current.Route == "editor") { Title = "Описание окружения"; Description = "Состав, настройки и начальные данные без запуска"; }
+            else if (navigation.Current.Route == "preview") { Title = "Compose preview"; Description = "Будущая конфигурация с замаскированными секретами"; }
+            else if (navigation.Current.Route == "environments") { Title = "Окружения"; Description = "Сохранённые описания локальных окружений"; }
+        };
     }
-    public ObservableCollection<ShellEnvironmentRow> Environments { get; } = [];
+    [ObservableProperty] private AuthoringSession? authoring;
     [ObservableProperty] private string title = "Окружения";
     [ObservableProperty] private string description = "Сохранённые описания локальных окружений";
     [ObservableProperty] private string status = "Открытие хранилища…";
@@ -28,20 +33,15 @@ public sealed partial class ShellViewModel : ObservableObject
     [ObservableProperty] private bool showDiagnostics;
     [ObservableProperty] private bool showSeedPacks;
     [ObservableProperty] private string recoveryStatus = "Состояние runtime не проверено";
-    [ObservableProperty] private string emptyMessage = "";
 
-    public async Task LoadAsync(IEnvironmentStore store, UiDispatcher dispatcher, string directory, int unresolved, CancellationToken cancellationToken)
+    public async Task LoadAsync(UiDispatcher dispatcher, string directory, int unresolved, CancellationToken cancellationToken)
     {
-        IReadOnlyList<EnvironmentListItem> items = await store.ListAsync(cancellationToken).ConfigureAwait(false);
+        if (Authoring is not null) { await Authoring.List.LoadAsync(cancellationToken); }
         await dispatcher.ApplyAsync(() =>
         {
-            Environments.Clear();
-            foreach (EnvironmentListItem item in items)
-            { Environments.Add(new ShellEnvironmentRow(item.Id, item.Name, item.Revision, item.ErrorCode is not null ? "Ошибка документа: " + item.ErrorCode : item.HasUnresolvedOperation ? "Требует сверки операции" : "Состояние runtime неизвестно")); }
             DataDirectory = directory;
             RecoveryStatus = unresolved == 0 ? "Состояние Docker не проверено" : $"Незавершённых операций: {unresolved}. Требуется сверка.";
             IsLoading = false;
-            EmptyMessage = items.Count == 0 ? "Окружения ещё не созданы" : "";
             Status = "Хранилище доступно · Docker не проверен";
         }, cancellationToken).ConfigureAwait(false);
     }
@@ -51,12 +51,12 @@ public sealed partial class ShellViewModel : ObservableObject
         IsLoading = false;
         StorageError = code;
         Status = "Хранилище недоступно";
-        EmptyMessage = "";
     }
 
     [RelayCommand]
-    private void Navigate(string route)
+    private async Task NavigateAsync(string route)
     {
+        if (Authoring is not null && !await Authoring.LeaveAsync(CancellationToken.None)) { return; }
         navigation.Navigate(new NavigationAddress(route));
         ShowEnvironments = route == "environments";
         ShowSettings = route == "settings";
