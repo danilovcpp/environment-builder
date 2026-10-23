@@ -1,0 +1,14 @@
+.git/
+.agents/
+.specify/
+.tools/
+**/bin/
+**/obj/
+artifacts/
+TestResults/
+node_modules/
+coverage/
+Dockerfile*
+.dockerignore
+*.log*
+.env*

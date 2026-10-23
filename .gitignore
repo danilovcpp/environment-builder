@@ -427,5 +427,12 @@ FodyWeavers.xsd
 # Local Spec Kit CLI environment
 /.tools/
 
+# Local editor, OS and environment files
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
+.env*
+
 # Official VS Code C# Dev Kit Extension exclusion
 #*.lscache

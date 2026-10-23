@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <UseWPF>true</UseWPF>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/EnvironmentBuilder.App/EnvironmentBuilder.App.csproj" />
+    <PackageReference Include="FlaUI.UIA3" />
+  </ItemGroup>
+</Project>

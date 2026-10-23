@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <UseWPF>true</UseWPF>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/EnvironmentBuilder.Core/EnvironmentBuilder.Core.csproj" />
+    <ProjectReference Include="../../src/EnvironmentBuilder.App/EnvironmentBuilder.App.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="../../src/EnvironmentBuilder.App/Themes/Light.xaml" Link="Themes/Light.xaml" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../../src/EnvironmentBuilder.App/Themes/Dark.xaml" Link="Themes/Dark.xaml" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

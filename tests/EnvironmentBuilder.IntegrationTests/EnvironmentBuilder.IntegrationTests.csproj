@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="../../src/EnvironmentBuilder.Core/EnvironmentBuilder.Core.csproj" />
+    <ProjectReference Include="../../src/EnvironmentBuilder.Infrastructure/EnvironmentBuilder.Infrastructure.csproj" />
+  </ItemGroup>
+</Project>

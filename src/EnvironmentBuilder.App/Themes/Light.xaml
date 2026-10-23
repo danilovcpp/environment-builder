@@ -1,0 +1,137 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="clr-namespace:System;assembly=System.Runtime">
+    <Color x:Key="Color.Canvas">#F4F7FB</Color>
+    <SolidColorBrush x:Key="Brush.Canvas" Color="{StaticResource Color.Canvas}" />
+    <Color x:Key="Color.Window">#F7F9FC</Color>
+    <SolidColorBrush x:Key="Brush.Window" Color="{StaticResource Color.Window}" />
+    <Color x:Key="Color.Sidebar">#F0F4F9</Color>
+    <SolidColorBrush x:Key="Brush.Sidebar" Color="{StaticResource Color.Sidebar}" />
+    <Color x:Key="Color.Topbar">#F9FBFD</Color>
+    <SolidColorBrush x:Key="Brush.Topbar" Color="{StaticResource Color.Topbar}" />
+    <Color x:Key="Color.ContextPanel">#F8FAFD</Color>
+    <SolidColorBrush x:Key="Brush.ContextPanel" Color="{StaticResource Color.ContextPanel}" />
+    <Color x:Key="Color.Panel">#FFFFFF</Color>
+    <SolidColorBrush x:Key="Brush.Panel" Color="{StaticResource Color.Panel}" />
+    <Color x:Key="Color.PanelRaised">#FFFFFF</Color>
+    <SolidColorBrush x:Key="Brush.PanelRaised" Color="{StaticResource Color.PanelRaised}" />
+    <Color x:Key="Color.PanelMuted">#F8FAFD</Color>
+    <SolidColorBrush x:Key="Brush.PanelMuted" Color="{StaticResource Color.PanelMuted}" />
+    <Color x:Key="Color.Input">#FFFFFF</Color>
+    <SolidColorBrush x:Key="Brush.Input" Color="{StaticResource Color.Input}" />
+    <Color x:Key="Color.Hover">#F1F7FF</Color>
+    <SolidColorBrush x:Key="Brush.Hover" Color="{StaticResource Color.Hover}" />
+    <Color x:Key="Color.Selected">#E7F1FF</Color>
+    <SolidColorBrush x:Key="Brush.Selected" Color="{StaticResource Color.Selected}" />
+    <Color x:Key="Color.Pressed">#D8E9FF</Color>
+    <SolidColorBrush x:Key="Brush.Pressed" Color="{StaticResource Color.Pressed}" />
+    <Color x:Key="Color.Border">#DEE7F0</Color>
+    <SolidColorBrush x:Key="Brush.Border" Color="{StaticResource Color.Border}" />
+    <Color x:Key="Color.BorderStrong">#C5D3E3</Color>
+    <SolidColorBrush x:Key="Brush.BorderStrong" Color="{StaticResource Color.BorderStrong}" />
+    <Color x:Key="Color.Divider">#E7EDF4</Color>
+    <SolidColorBrush x:Key="Brush.Divider" Color="{StaticResource Color.Divider}" />
+    <Color x:Key="Color.TextPrimary">#15243A</Color>
+    <SolidColorBrush x:Key="Brush.TextPrimary" Color="{StaticResource Color.TextPrimary}" />
+    <Color x:Key="Color.TextSecondary">#4E627C</Color>
+    <SolidColorBrush x:Key="Brush.TextSecondary" Color="{StaticResource Color.TextSecondary}" />
+    <Color x:Key="Color.TextTertiary">#63758C</Color>
+    <SolidColorBrush x:Key="Brush.TextTertiary" Color="{StaticResource Color.TextTertiary}" />
+    <Color x:Key="Color.TextDisabled">#8F9CAF</Color>
+    <SolidColorBrush x:Key="Brush.TextDisabled" Color="{StaticResource Color.TextDisabled}" />
+    <Color x:Key="Color.IconPrimary">#344A66</Color>
+    <SolidColorBrush x:Key="Brush.IconPrimary" Color="{StaticResource Color.IconPrimary}" />
+    <Color x:Key="Color.IconMuted">#7387A0</Color>
+    <SolidColorBrush x:Key="Brush.IconMuted" Color="{StaticResource Color.IconMuted}" />
+    <Color x:Key="Color.Accent">#0869EF</Color>
+    <SolidColorBrush x:Key="Brush.Accent" Color="{StaticResource Color.Accent}" />
+    <Color x:Key="Color.AccentHover">#075DD7</Color>
+    <SolidColorBrush x:Key="Brush.AccentHover" Color="{StaticResource Color.AccentHover}" />
+    <Color x:Key="Color.AccentPressed">#064CB0</Color>
+    <SolidColorBrush x:Key="Brush.AccentPressed" Color="{StaticResource Color.AccentPressed}" />
+    <Color x:Key="Color.AccentDisabled">#ACC8EE</Color>
+    <SolidColorBrush x:Key="Brush.AccentDisabled" Color="{StaticResource Color.AccentDisabled}" />
+    <Color x:Key="Color.OnAccent">#FFFFFF</Color>
+    <SolidColorBrush x:Key="Brush.OnAccent" Color="{StaticResource Color.OnAccent}" />
+    <Color x:Key="Color.AccentText">#075DD7</Color>
+    <SolidColorBrush x:Key="Brush.AccentText" Color="{StaticResource Color.AccentText}" />
+    <Color x:Key="Color.AccentSoft">#E4F0FF</Color>
+    <SolidColorBrush x:Key="Brush.AccentSoft" Color="{StaticResource Color.AccentSoft}" />
+    <Color x:Key="Color.FocusRing">#2C87FF</Color>
+    <SolidColorBrush x:Key="Brush.FocusRing" Color="{StaticResource Color.FocusRing}" />
+    <Color x:Key="Color.DropzoneBackground">#F0F7FF</Color>
+    <SolidColorBrush x:Key="Brush.DropzoneBackground" Color="{StaticResource Color.DropzoneBackground}" />
+    <Color x:Key="Color.DropzoneBorder">#6CACFF</Color>
+    <SolidColorBrush x:Key="Brush.DropzoneBorder" Color="{StaticResource Color.DropzoneBorder}" />
+    <Color x:Key="Color.SelectedHover">#DBEBFF</Color>
+    <SolidColorBrush x:Key="Brush.SelectedHover" Color="{StaticResource Color.SelectedHover}" />
+    <Color x:Key="Color.StatusBar">#F3F6FA</Color>
+    <SolidColorBrush x:Key="Brush.StatusBar" Color="{StaticResource Color.StatusBar}" />
+    <Color x:Key="Color.ScrollbarTrack">#EDF2F8</Color>
+    <SolidColorBrush x:Key="Brush.ScrollbarTrack" Color="{StaticResource Color.ScrollbarTrack}" />
+    <Color x:Key="Color.ScrollbarThumb">#B9C9D9</Color>
+    <SolidColorBrush x:Key="Brush.ScrollbarThumb" Color="{StaticResource Color.ScrollbarThumb}" />
+    <Color x:Key="Color.SuccessForeground">#076B43</Color>
+    <SolidColorBrush x:Key="Brush.SuccessForeground" Color="{StaticResource Color.SuccessForeground}" />
+    <Color x:Key="Color.SuccessBackground">#E2F5EA</Color>
+    <SolidColorBrush x:Key="Brush.SuccessBackground" Color="{StaticResource Color.SuccessBackground}" />
+    <Color x:Key="Color.InfoForeground">#115FDB</Color>
+    <SolidColorBrush x:Key="Brush.InfoForeground" Color="{StaticResource Color.InfoForeground}" />
+    <Color x:Key="Color.InfoBackground">#E5F0FF</Color>
+    <SolidColorBrush x:Key="Brush.InfoBackground" Color="{StaticResource Color.InfoBackground}" />
+    <Color x:Key="Color.WarningForeground">#965400</Color>
+    <SolidColorBrush x:Key="Brush.WarningForeground" Color="{StaticResource Color.WarningForeground}" />
+    <Color x:Key="Color.WarningBackground">#FFF0D1</Color>
+    <SolidColorBrush x:Key="Brush.WarningBackground" Color="{StaticResource Color.WarningBackground}" />
+    <Color x:Key="Color.ErrorForeground">#B72C43</Color>
+    <SolidColorBrush x:Key="Brush.ErrorForeground" Color="{StaticResource Color.ErrorForeground}" />
+    <Color x:Key="Color.ErrorBackground">#FDE8EC</Color>
+    <SolidColorBrush x:Key="Brush.ErrorBackground" Color="{StaticResource Color.ErrorBackground}" />
+    <Color x:Key="Color.NeutralForeground">#54657A</Color>
+    <SolidColorBrush x:Key="Brush.NeutralForeground" Color="{StaticResource Color.NeutralForeground}" />
+    <Color x:Key="Color.NeutralBackground">#EEF2F6</Color>
+    <SolidColorBrush x:Key="Brush.NeutralBackground" Color="{StaticResource Color.NeutralBackground}" />
+    <Color x:Key="Color.PurpleForeground">#7545C8</Color>
+    <SolidColorBrush x:Key="Brush.PurpleForeground" Color="{StaticResource Color.PurpleForeground}" />
+    <Color x:Key="Color.PurpleBackground">#EFE6FF</Color>
+    <SolidColorBrush x:Key="Brush.PurpleBackground" Color="{StaticResource Color.PurpleBackground}" />
+    <Color x:Key="Color.Transparent">#00000000</Color>
+    <SolidColorBrush x:Key="Brush.Transparent" Color="{StaticResource Color.Transparent}" />
+    <!-- Meaningful supporting text on Canvas must use TextSecondary in Light. -->
+    <SolidColorBrush x:Key="Brush.CanvasSupportingText" Color="{StaticResource Color.TextSecondary}" />
+
+    <sys:Double x:Key="Spacing.2">2</sys:Double>
+    <sys:Double x:Key="Spacing.4">4</sys:Double>
+    <sys:Double x:Key="Spacing.6">6</sys:Double>
+    <sys:Double x:Key="Spacing.8">8</sys:Double>
+    <sys:Double x:Key="Spacing.12">12</sys:Double>
+    <sys:Double x:Key="Spacing.16">16</sys:Double>
+    <sys:Double x:Key="Spacing.24">24</sys:Double>
+    <sys:Double x:Key="Spacing.32">32</sys:Double>
+    <Thickness x:Key="Padding.Button">12,6</Thickness>
+    <Thickness x:Key="Padding.Input">8,6</Thickness>
+    <Thickness x:Key="Padding.Panel">16</Thickness>
+    <Thickness x:Key="Padding.Badge">8,2</Thickness>
+    <Thickness x:Key="Padding.Tab">12,8</Thickness>
+    <Thickness x:Key="Margin.Related">0,0,8,0</Thickness>
+    <Thickness x:Key="Thickness.Border">1</Thickness>
+    <Thickness x:Key="Thickness.Focus">2</Thickness>
+    <CornerRadius x:Key="Radius.Small">4</CornerRadius>
+    <CornerRadius x:Key="Radius.Button">8</CornerRadius>
+    <CornerRadius x:Key="Radius.Input">8</CornerRadius>
+    <CornerRadius x:Key="Radius.Panel">9</CornerRadius>
+    <CornerRadius x:Key="Radius.Badge">999</CornerRadius>
+    <sys:Double x:Key="Icon.Small">16</sys:Double>
+    <sys:Double x:Key="Icon.Standard">18</sys:Double>
+    <sys:Double x:Key="Icon.Large">20</sys:Double>
+    <sys:Double x:Key="Icon.Stroke">1.75</sys:Double>
+    <sys:Double x:Key="Size.Control">32</sys:Double>
+    <sys:Double x:Key="Size.Row">38</sys:Double>
+    <sys:Double x:Key="Size.TableHeader">34</sys:Double>
+    <sys:Double x:Key="Size.Scrollbar">12</sys:Double>
+    <sys:Double x:Key="Size.Checkbox">18</sys:Double>
+    <sys:Double x:Key="Size.Sidebar">240</sys:Double>
+    <sys:Double x:Key="Size.ContextPanel">384</sys:Double>
+    <sys:Double x:Key="Size.Topbar">72</sys:Double>
+    <sys:Double x:Key="Size.StatusBar">30</sys:Double>
+</ResourceDictionary>
