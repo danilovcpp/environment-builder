@@ -132,11 +132,48 @@ public sealed class ThemeResourcesTests
 
             Assert.Empty(diagnostics.Errors);
             window.Close();
+            VerifyShell(diagnostics);
         }
         finally
         {
             app.Shutdown();
         }
+    }
+
+    private static void VerifyShell(BindingDiagnostics diagnostics)
+    {
+        var navigation = new App.Shell.NavigationService();
+        var themes = new App.Shell.ThemeService();
+        var model = new App.Shell.ShellViewModel(navigation, themes);
+        model.IsLoading = false;
+        model.Status = "Хранилище доступно · Docker не проверен";
+        model.Environments.Add(new App.Shell.ShellEnvironmentRow(Guid.NewGuid(), "Контрактный пример", 1, "Состояние runtime неизвестно"));
+        var window = new App.Shell.MainWindow(model) { Left = -10000, Top = 0, ShowActivated = false, ShowInTaskbar = false };
+        window.Show();
+        foreach (bool dark in new[] { false, true, false })
+        {
+            themes.Apply(dark);
+            foreach (string route in new[] { "settings", "seedpacks", "diagnostics", "environments" })
+            {
+                model.NavigateCommand.Execute(route);
+                Assert.Equal(route, navigation.Current.Route);
+                window.UpdateLayout();
+                window.Dispatcher.Invoke(() => { }, DispatcherPriority.ContextIdle);
+            }
+            Assert.Same(model, window.DataContext);
+            Assert.Single(model.Environments);
+            var context = Descendants(window).OfType<App.Components.ContextPanel>().Single();
+            context.IsExpanded = false;
+            window.UpdateLayout();
+            Assert.Equal(48, context.ActualWidth);
+            context.IsExpanded = true;
+            window.UpdateLayout();
+            Assert.Equal(240, context.ActualWidth);
+            Assert.Contains(Descendants(window).OfType<TextBlock>(), text => text.Text == "Контрактный пример");
+            SavePreview((FrameworkElement)window.Content, dark ? "shell-dark" : "shell-light");
+        }
+        Assert.Empty(diagnostics.Errors);
+        window.Close();
     }
 
     private static IEnumerable<DependencyObject> Descendants(DependencyObject parent)

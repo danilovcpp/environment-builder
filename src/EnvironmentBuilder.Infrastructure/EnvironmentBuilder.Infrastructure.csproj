@@ -4,6 +4,7 @@
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
   </PropertyGroup>
   <ItemGroup>
+    <EmbeddedResource Include="Persistence/Migrations/*.sql" />
     <ProjectReference Include="../EnvironmentBuilder.Core/EnvironmentBuilder.Core.csproj" />
     <PackageReference Include="Microsoft.Data.Sqlite" />
     <PackageReference Include="System.Security.Cryptography.ProtectedData" />

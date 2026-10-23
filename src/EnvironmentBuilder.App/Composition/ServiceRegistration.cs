@@ -1,0 +1,61 @@
+using EnvironmentBuilder.App.Shell;
+using EnvironmentBuilder.Core.Abstractions;
+using EnvironmentBuilder.Core.Operations;
+using EnvironmentBuilder.Infrastructure.Imports;
+using EnvironmentBuilder.Infrastructure.Persistence;
+using EnvironmentBuilder.Infrastructure.Security;
+using Microsoft.Extensions.DependencyInjection;
+
+namespace EnvironmentBuilder.App.Composition;
+
+public sealed class AppServices : IAsyncDisposable
+{
+    private AppServices(ServiceProvider provider, SqliteWorker worker, SingleWriterLease lease)
+    { Provider = provider; Worker = worker; Lease = lease; }
+    public ServiceProvider Provider { get; }
+    public SqliteWorker Worker { get; }
+    public SingleWriterLease Lease { get; }
+
+    public static async Task<AppServices> CreateAsync(ShellViewModel shell, NavigationService navigation, ThemeService themes, string? dataDirectory = null)
+    {
+        // ACL and directory APIs are synchronous OS work, deliberately kept off the Dispatcher.
+        AppDataDirectory directory = await Task.Run(() => new AppDataDirectory(dataDirectory)).ConfigureAwait(false);
+        SingleWriterLease lease = await SingleWriterLease.AcquireAsync(directory).ConfigureAwait(false);
+        var worker = new SqliteWorker(directory, lease);
+        try
+        {
+            await worker.Ready.ConfigureAwait(false);
+            var services = new ServiceCollection();
+            services.AddSingleton(directory).AddSingleton(lease).AddSingleton(worker);
+            services.AddSingleton<IClock, SystemClock>();
+            services.AddSingleton<StrictDocumentReader>();
+            services.AddSingleton<IEnvironmentStore, EnvironmentStore>();
+            services.AddSingleton<ComponentLibraryStore>();
+            services.AddSingleton<IOperationStore, OperationStore>();
+            services.AddSingleton<ResourceLedgerStore>();
+            services.AddSingleton<DataApplicationStore>();
+            services.AddSingleton<ContentBlobStore>();
+            services.AddSingleton<SeedPackStore>();
+            services.AddSingleton<ISeedPackStore>(p => p.GetRequiredService<SeedPackStore>());
+            services.AddSingleton<SeedPackImporter>();
+            services.AddSingleton<ISecretVault, DpapiSecretVault>();
+            services.AddSingleton<LocalPathResolver>();
+            services.AddSingleton<IInputResolver, InputResolver>();
+            services.AddSingleton<SanitizedDiagnostics>();
+            services.AddSingleton(p => new OperationCoordinator(p.GetRequiredService<IOperationStore>(), p.GetRequiredService<IClock>(), () => lease.CanWrite));
+            services.AddSingleton(shell).AddSingleton(navigation).AddSingleton(themes);
+            services.AddSingleton<UiDispatcher>().AddSingleton<DialogService>();
+            ServiceProvider provider = services.BuildServiceProvider(new ServiceProviderOptions { ValidateOnBuild = true, ValidateScopes = true });
+            await provider.GetRequiredService<OperationCoordinator>().InitializeAsync(CancellationToken.None).ConfigureAwait(false);
+            return new AppServices(provider, worker, lease);
+        }
+        catch { await worker.DisposeAsync().ConfigureAwait(false); await lease.DisposeAsync().ConfigureAwait(false); throw; }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        await Provider.DisposeAsync().ConfigureAwait(false);
+        await Worker.DisposeAsync().ConfigureAwait(false);
+        await Lease.DisposeAsync().ConfigureAwait(false);
+    }
+}

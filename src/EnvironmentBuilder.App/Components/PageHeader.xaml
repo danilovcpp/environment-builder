@@ -1,0 +1,10 @@
+<UserControl x:Class="EnvironmentBuilder.App.Components.PageHeader"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Name="Root">
+    <Border Background="{DynamicResource Brush.Topbar}" Padding="24,16">
+        <StackPanel>
+            <TextBlock Text="{Binding Title, ElementName=Root}" Style="{DynamicResource Text.PageTitle}" />
+            <TextBlock Text="{Binding Description, ElementName=Root}" Foreground="{DynamicResource Brush.TextSecondary}" Margin="0,4,0,0" TextWrapping="Wrap" />
+        </StackPanel>
+    </Border>
+</UserControl>

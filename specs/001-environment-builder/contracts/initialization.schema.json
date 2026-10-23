@@ -49,7 +49,7 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 2048,
-            "pattern": "^/(?!/)[^#\\\\\\u0000-\\u001f]*$"
+            "pattern": "^/(?!/)[^#\\\\\\u0000-\\u001f]*(?![\\s\\S])"
           },
           "headers": {
             "type": "object",
@@ -57,7 +57,7 @@
               "$ref": "common.schema.json#/$defs/value"
             },
             "propertyNames": {
-              "pattern": "^[A-Za-z_][A-Za-z0-9_.-]{0,127}$"
+              "pattern": "^[A-Za-z_][A-Za-z0-9_.-]{0,127}(?![\\s\\S])"
             }
           },
           "body": {
@@ -126,7 +126,7 @@
                   "properties": {
                     "pointer": {
                       "type": "string",
-                      "pattern": "^(|/.*)$",
+                      "pattern": "^(|/.*)(?![\\s\\S])",
                       "maxLength": 1024
                     },
                     "equals": {}
@@ -205,7 +205,7 @@
                   },
                   "idempotencyHeader": {
                     "type": "string",
-                    "pattern": "^[A-Za-z0-9-]{1,128}$"
+                    "pattern": "^[A-Za-z0-9-]{1,128}(?![\\s\\S])"
                   },
                   "safetyEvidence": {
                     "type": "string",

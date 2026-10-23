@@ -333,6 +333,18 @@
         </Setter>
     </Style>
 
+    <Style x:Key="Button.Navigation" TargetType="Button" BasedOn="{StaticResource Button.Ghost}">
+        <Setter Property="HorizontalContentAlignment" Value="Left" />
+        <Setter Property="Margin" Value="0,0,0,8" />
+        <Style.Triggers>
+            <Trigger Property="Selector.IsSelected" Value="True">
+                <Setter Property="Background" Value="{DynamicResource Brush.Selected}" />
+                <Setter Property="Foreground" Value="{DynamicResource Brush.AccentText}" />
+                <Setter Property="AutomationProperties.ItemStatus" Value="Выбрано" />
+            </Trigger>
+            <MultiTrigger><MultiTrigger.Conditions><Condition Property="Selector.IsSelected" Value="True" /><Condition Property="IsMouseOver" Value="True" /></MultiTrigger.Conditions><Setter Property="Background" Value="{DynamicResource Brush.SelectedHover}" /></MultiTrigger>
+        </Style.Triggers>
+    </Style>
     <!-- Retain DataGrid's standard scrolling, resizing and editing mechanics. -->
     <Style TargetType="DataGrid" BasedOn="{StaticResource Control.Base}">
         <Setter Property="Background" Value="{DynamicResource Brush.Panel}" />

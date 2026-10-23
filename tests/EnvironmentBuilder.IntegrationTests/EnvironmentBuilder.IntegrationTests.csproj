@@ -1,6 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><UseWPF>true</UseWPF></PropertyGroup>
   <ItemGroup>
+    <Using Include="System.IO" />
+    <Using Include="System.Net.Http" />
+    <None Update="Fixtures/*.json" CopyToOutputDirectory="PreserveNewest" />
     <ProjectReference Include="../../src/EnvironmentBuilder.Core/EnvironmentBuilder.Core.csproj" />
+    <ProjectReference Include="../../src/EnvironmentBuilder.App/EnvironmentBuilder.App.csproj" />
     <ProjectReference Include="../../src/EnvironmentBuilder.Infrastructure/EnvironmentBuilder.Infrastructure.csproj" />
   </ItemGroup>
 </Project>

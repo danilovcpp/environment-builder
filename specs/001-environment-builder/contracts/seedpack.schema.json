@@ -53,7 +53,7 @@
           },
           "path": {
             "type": "string",
-            "pattern": "^sections/[a-zA-Z0-9._-]+\\.ndjson$"
+            "pattern": "^sections/[a-zA-Z0-9._-]+\\.ndjson(?![\\s\\S])"
           },
           "recordCount": {
             "type": "integer",
@@ -89,7 +89,7 @@
         "properties": {
           "path": {
             "type": "string",
-            "pattern": "^initializers/[a-zA-Z0-9._-]+\\.json$"
+            "pattern": "^initializers/[a-zA-Z0-9._-]+\\.json(?![\\s\\S])"
           },
           "bytes": {
             "type": "integer",
