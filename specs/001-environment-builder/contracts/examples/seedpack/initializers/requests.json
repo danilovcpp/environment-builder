@@ -1,0 +1,44 @@
+{
+  "kind": "initialization",
+  "schemaVersion": 1,
+  "id": "40000000-0000-4000-8000-000000000002",
+  "version": "1.0.0",
+  "targetContract": {
+    "contractId": "demo.requests",
+    "versions": [
+      "1.0.0"
+    ]
+  },
+  "steps": [
+    {
+      "id": "requests",
+      "title": "Применить секцию requests",
+      "endpointId": "api",
+      "method": "POST",
+      "path": "/admin/seed/requests",
+      "headers": {},
+      "body": {
+        "kind": "seedSection",
+        "sectionId": "requests"
+      },
+      "expect": {
+        "statuses": [
+          200
+        ],
+        "assertions": [
+          {
+            "pointer": "/accepted",
+            "equals": 2
+          }
+        ]
+      },
+      "timeoutSeconds": 30,
+      "retry": {
+        "mode": "key",
+        "maxAttempts": 3,
+        "idempotencyHeader": "Idempotency-Key",
+        "safetyEvidence": "Demo API durably stores key and completed response; same key never appends twice."
+      }
+    }
+  ]
+}

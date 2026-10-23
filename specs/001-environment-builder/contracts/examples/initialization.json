@@ -1,0 +1,37 @@
+{
+  "kind": "initialization",
+  "schemaVersion": 1,
+  "id": "40000000-0000-4000-8000-000000000001",
+  "version": "1.0.0",
+  "targetContract": {
+    "contractId": "demo.requests",
+    "versions": [
+      "1.0.0"
+    ]
+  },
+  "steps": [
+    {
+      "id": "bootstrap",
+      "title": "Создать обязательную структуру",
+      "endpointId": "api",
+      "method": "PUT",
+      "path": "/admin/bootstrap",
+      "headers": {},
+      "body": {
+        "kind": "none"
+      },
+      "expect": {
+        "statuses": [
+          204
+        ],
+        "assertions": []
+      },
+      "timeoutSeconds": 30,
+      "retry": {
+        "mode": "idempotent",
+        "maxAttempts": 3,
+        "safetyEvidence": "API contract: повтор PUT создаёт ту же структуру без дублирования данных."
+      }
+    }
+  ]
+}

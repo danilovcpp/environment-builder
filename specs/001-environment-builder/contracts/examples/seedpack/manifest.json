@@ -1,0 +1,35 @@
+{
+  "kind": "seedpack",
+  "schemaVersion": 1,
+  "id": "50000000-0000-4000-8000-000000000001",
+  "version": "1.0.0",
+  "title": "Два запроса",
+  "theme": "Generic",
+  "purpose": "Пример контракта, не нагрузочный набор",
+  "compatibility": [
+    {
+      "contractId": "demo.requests",
+      "versions": [
+        "1.0.0"
+      ]
+    }
+  ],
+  "sections": [
+    {
+      "path": "sections/requests.ndjson",
+      "bytes": 100,
+      "sha256": "cf4c1fe322b8e800a95041023d70656b86296ba05f1cb5fbe7cb652261e5393a",
+      "id": "requests",
+      "title": "Requests",
+      "recordCount": 2
+    }
+  ],
+  "initializers": [
+    {
+      "path": "initializers/requests.json",
+      "bytes": 986,
+      "sha256": "a460530ff83c0c017a9f319ac330c416ca41339cf89bd7e9b9f0643a3d610efc"
+    }
+  ],
+  "contentHash": "de83bce7f681dccb0e376af9ce4bfec855fb306d5fea9f64ecbb74f6e16cceaa"
+}

@@ -1,0 +1,423 @@
+{
+  "kind": "environment",
+  "schemaVersion": 1,
+  "id": "30000000-0000-4000-8000-000000000001",
+  "revision": 1,
+  "name": "Два экземпляра с точной привязкой",
+  "description": "Форма документа, не готовое демонстрационное окружение.",
+  "components": [
+    {
+      "id": "20000000-0000-4000-8000-000000000001",
+      "definitionSnapshot": {
+        "kind": "component",
+        "schemaVersion": 1,
+        "id": "10000000-0000-4000-8000-000000000001",
+        "version": "1.0.0",
+        "name": "Requests",
+        "description": "Контрактный пример; demo domain не встроен в приложение.",
+        "componentType": "target",
+        "contract": {
+          "id": "demo.requests",
+          "version": "1.0.0"
+        },
+        "defaultSource": {
+          "kind": "image",
+          "reference": "environmentbuilder-demo/requests:1.0.0"
+        },
+        "parameterDefinitions": [
+          {
+            "name": "MaxItems",
+            "environmentVariable": "MAX_ITEMS",
+            "type": "integer",
+            "required": true,
+            "secret": false,
+            "defaultValue": {
+              "literal": "1000"
+            }
+          }
+        ],
+        "defaultEnvironment": {},
+        "defaultPorts": [
+          {
+            "id": "api",
+            "containerPort": 8080,
+            "protocol": "tcp",
+            "hostPort": 18080,
+            "access": "loopback",
+            "purpose": "application"
+          }
+        ],
+        "defaultStorage": [
+          {
+            "id": "data",
+            "kind": "managed",
+            "targetPath": "/data"
+          }
+        ],
+        "endpoints": [
+          {
+            "id": "api",
+            "containerPort": 8080,
+            "scheme": "http",
+            "basePath": "/"
+          }
+        ],
+        "readiness": {
+          "kind": "http",
+          "endpointId": "api",
+          "path": "/health/ready",
+          "timeoutSeconds": 60
+        },
+        "dependencyRequirements": [],
+        "initialization": {
+          "kind": "initialization",
+          "schemaVersion": 1,
+          "id": "40000000-0000-4000-8000-000000000001",
+          "version": "1.0.0",
+          "targetContract": {
+            "contractId": "demo.requests",
+            "versions": [
+              "1.0.0"
+            ]
+          },
+          "steps": [
+            {
+              "id": "bootstrap",
+              "title": "Создать обязательную структуру",
+              "endpointId": "api",
+              "method": "PUT",
+              "path": "/admin/bootstrap",
+              "headers": {},
+              "body": {
+                "kind": "none"
+              },
+              "expect": {
+                "statuses": [
+                  204
+                ],
+                "assertions": []
+              },
+              "timeoutSeconds": 30,
+              "retry": {
+                "mode": "idempotent",
+                "maxAttempts": 3,
+                "safetyEvidence": "API contract: повтор PUT создаёт ту же структуру без дублирования данных."
+              }
+            }
+          ]
+        }
+      },
+      "source": {
+        "kind": "image",
+        "reference": "environmentbuilder-demo/requests:1.0.0"
+      },
+      "parameters": {
+        "MaxItems": {
+          "literal": "1000"
+        }
+      },
+      "environment": {
+        "API_TOKEN": {
+          "secretRef": "secret://60000000-0000-4000-8000-000000000001"
+        }
+      },
+      "ports": [
+        {
+          "id": "api",
+          "containerPort": 8080,
+          "protocol": "tcp",
+          "hostPort": 18080,
+          "access": "loopback",
+          "purpose": "application"
+        }
+      ],
+      "storage": [
+        {
+          "id": "data",
+          "kind": "managed",
+          "targetPath": "/data"
+        }
+      ]
+    },
+    {
+      "id": "20000000-0000-4000-8000-000000000002",
+      "definitionSnapshot": {
+        "kind": "component",
+        "schemaVersion": 1,
+        "id": "10000000-0000-4000-8000-000000000001",
+        "version": "1.0.0",
+        "name": "Requests",
+        "description": "Контрактный пример; demo domain не встроен в приложение.",
+        "componentType": "target",
+        "contract": {
+          "id": "demo.requests",
+          "version": "1.0.0"
+        },
+        "defaultSource": {
+          "kind": "image",
+          "reference": "environmentbuilder-demo/requests:1.0.0"
+        },
+        "parameterDefinitions": [
+          {
+            "name": "MaxItems",
+            "environmentVariable": "MAX_ITEMS",
+            "type": "integer",
+            "required": true,
+            "secret": false,
+            "defaultValue": {
+              "literal": "1000"
+            }
+          }
+        ],
+        "defaultEnvironment": {},
+        "defaultPorts": [
+          {
+            "id": "api",
+            "containerPort": 8080,
+            "protocol": "tcp",
+            "hostPort": 18080,
+            "access": "loopback",
+            "purpose": "application"
+          }
+        ],
+        "defaultStorage": [
+          {
+            "id": "data",
+            "kind": "managed",
+            "targetPath": "/data"
+          }
+        ],
+        "endpoints": [
+          {
+            "id": "api",
+            "containerPort": 8080,
+            "scheme": "http",
+            "basePath": "/"
+          }
+        ],
+        "readiness": {
+          "kind": "http",
+          "endpointId": "api",
+          "path": "/health/ready",
+          "timeoutSeconds": 60
+        },
+        "dependencyRequirements": [],
+        "initialization": {
+          "kind": "initialization",
+          "schemaVersion": 1,
+          "id": "40000000-0000-4000-8000-000000000001",
+          "version": "1.0.0",
+          "targetContract": {
+            "contractId": "demo.requests",
+            "versions": [
+              "1.0.0"
+            ]
+          },
+          "steps": [
+            {
+              "id": "bootstrap",
+              "title": "Создать обязательную структуру",
+              "endpointId": "api",
+              "method": "PUT",
+              "path": "/admin/bootstrap",
+              "headers": {},
+              "body": {
+                "kind": "none"
+              },
+              "expect": {
+                "statuses": [
+                  204
+                ],
+                "assertions": []
+              },
+              "timeoutSeconds": 30,
+              "retry": {
+                "mode": "idempotent",
+                "maxAttempts": 3,
+                "safetyEvidence": "API contract: повтор PUT создаёт ту же структуру без дублирования данных."
+              }
+            }
+          ]
+        }
+      },
+      "source": {
+        "kind": "image",
+        "reference": "environmentbuilder-demo/requests:1.0.0"
+      },
+      "parameters": {
+        "MaxItems": {
+          "literal": "2000"
+        }
+      },
+      "environment": {
+        "API_TOKEN": {
+          "secretRef": "secret://60000000-0000-4000-8000-000000000001"
+        }
+      },
+      "ports": [
+        {
+          "id": "api",
+          "containerPort": 8080,
+          "protocol": "tcp",
+          "hostPort": 18081,
+          "access": "loopback",
+          "purpose": "application"
+        }
+      ],
+      "storage": [
+        {
+          "id": "data",
+          "kind": "managed",
+          "targetPath": "/data"
+        }
+      ]
+    }
+  ],
+  "dependencies": [
+    {
+      "dependentId": "20000000-0000-4000-8000-000000000002",
+      "requiredId": "20000000-0000-4000-8000-000000000001",
+      "requirementId": null,
+      "condition": "ready",
+      "reason": "Явно выбран первый экземпляр"
+    }
+  ],
+  "baseline": {
+    "applications": [
+      {
+        "componentId": "20000000-0000-4000-8000-000000000001",
+        "initializer": {
+          "kind": "initialization",
+          "schemaVersion": 1,
+          "id": "40000000-0000-4000-8000-000000000001",
+          "version": "1.0.0",
+          "targetContract": {
+            "contractId": "demo.requests",
+            "versions": [
+              "1.0.0"
+            ]
+          },
+          "steps": [
+            {
+              "id": "bootstrap",
+              "title": "Создать обязательную структуру",
+              "endpointId": "api",
+              "method": "PUT",
+              "path": "/admin/bootstrap",
+              "headers": {},
+              "body": {
+                "kind": "none"
+              },
+              "expect": {
+                "statuses": [
+                  204
+                ],
+                "assertions": []
+              },
+              "timeoutSeconds": 30,
+              "retry": {
+                "mode": "idempotent",
+                "maxAttempts": 3,
+                "safetyEvidence": "API contract: повтор PUT создаёт ту же структуру без дублирования данных."
+              }
+            }
+          ]
+        },
+        "seedPack": null
+      },
+      {
+        "componentId": "20000000-0000-4000-8000-000000000001",
+        "initializer": {
+          "kind": "initialization",
+          "schemaVersion": 1,
+          "id": "40000000-0000-4000-8000-000000000002",
+          "version": "1.0.0",
+          "targetContract": {
+            "contractId": "demo.requests",
+            "versions": [
+              "1.0.0"
+            ]
+          },
+          "steps": [
+            {
+              "id": "requests",
+              "title": "Применить секцию requests",
+              "endpointId": "api",
+              "method": "POST",
+              "path": "/admin/seed/requests",
+              "headers": {},
+              "body": {
+                "kind": "seedSection",
+                "sectionId": "requests"
+              },
+              "expect": {
+                "statuses": [
+                  200
+                ],
+                "assertions": [
+                  {
+                    "pointer": "/accepted",
+                    "equals": 2
+                  }
+                ]
+              },
+              "timeoutSeconds": 30,
+              "retry": {
+                "mode": "key",
+                "maxAttempts": 3,
+                "idempotencyHeader": "Idempotency-Key",
+                "safetyEvidence": "Demo API durably stores key and completed response; same key never appends twice."
+              }
+            }
+          ]
+        },
+        "seedPack": {
+          "id": "50000000-0000-4000-8000-000000000001",
+          "version": "1.0.0",
+          "contentHash": "de83bce7f681dccb0e376af9ce4bfec855fb306d5fea9f64ecbb74f6e16cceaa"
+        }
+      },
+      {
+        "componentId": "20000000-0000-4000-8000-000000000002",
+        "initializer": {
+          "kind": "initialization",
+          "schemaVersion": 1,
+          "id": "40000000-0000-4000-8000-000000000001",
+          "version": "1.0.0",
+          "targetContract": {
+            "contractId": "demo.requests",
+            "versions": [
+              "1.0.0"
+            ]
+          },
+          "steps": [
+            {
+              "id": "bootstrap",
+              "title": "Создать обязательную структуру",
+              "endpointId": "api",
+              "method": "PUT",
+              "path": "/admin/bootstrap",
+              "headers": {},
+              "body": {
+                "kind": "none"
+              },
+              "expect": {
+                "statuses": [
+                  204
+                ],
+                "assertions": []
+              },
+              "timeoutSeconds": 30,
+              "retry": {
+                "mode": "idempotent",
+                "maxAttempts": 3,
+                "safetyEvidence": "API contract: повтор PUT создаёт ту же структуру без дублирования данных."
+              }
+            }
+          ]
+        },
+        "seedPack": null
+      }
+    ]
+  }
+}

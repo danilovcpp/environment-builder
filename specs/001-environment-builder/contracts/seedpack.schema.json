@@ -1,0 +1,130 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.environment-builder.local/v1/seedpack.schema.json",
+  "title": "Environment Builder v1 seedpack",
+  "type": "object",
+  "properties": {
+    "kind": {
+      "const": "seedpack"
+    },
+    "schemaVersion": {
+      "const": 1
+    },
+    "id": {
+      "$ref": "common.schema.json#/$defs/uuid"
+    },
+    "version": {
+      "$ref": "common.schema.json#/$defs/version"
+    },
+    "title": {
+      "type": "string",
+      "maxLength": 256,
+      "minLength": 1
+    },
+    "theme": {
+      "type": "string",
+      "maxLength": 128,
+      "minLength": 1
+    },
+    "purpose": {
+      "type": "string",
+      "maxLength": 4096,
+      "minLength": 1
+    },
+    "compatibility": {
+      "type": "array",
+      "items": {
+        "$ref": "common.schema.json#/$defs/compatibility"
+      },
+      "minItems": 1
+    },
+    "sections": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "common.schema.json#/$defs/key"
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1
+          },
+          "path": {
+            "type": "string",
+            "pattern": "^sections/[a-zA-Z0-9._-]+\\.ndjson$"
+          },
+          "recordCount": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "bytes": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 268435456
+          },
+          "sha256": {
+            "$ref": "common.schema.json#/$defs/hash"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "path",
+          "recordCount",
+          "bytes",
+          "sha256"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 1,
+      "maxItems": 254
+    },
+    "initializers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "pattern": "^initializers/[a-zA-Z0-9._-]+\\.json$"
+          },
+          "bytes": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 1048576
+          },
+          "sha256": {
+            "$ref": "common.schema.json#/$defs/hash"
+          }
+        },
+        "required": [
+          "path",
+          "bytes",
+          "sha256"
+        ],
+        "additionalProperties": false
+      },
+      "maxItems": 254
+    },
+    "contentHash": {
+      "$ref": "common.schema.json#/$defs/hash"
+    }
+  },
+  "required": [
+    "kind",
+    "schemaVersion",
+    "id",
+    "version",
+    "title",
+    "theme",
+    "purpose",
+    "compatibility",
+    "sections",
+    "initializers",
+    "contentHash"
+  ],
+  "additionalProperties": false
+}

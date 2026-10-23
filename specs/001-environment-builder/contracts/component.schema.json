@@ -1,0 +1,217 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.environment-builder.local/v1/component.schema.json",
+  "title": "Environment Builder v1 component",
+  "type": "object",
+  "properties": {
+    "kind": {
+      "const": "component"
+    },
+    "schemaVersion": {
+      "const": 1
+    },
+    "id": {
+      "$ref": "common.schema.json#/$defs/uuid"
+    },
+    "version": {
+      "$ref": "common.schema.json#/$defs/version"
+    },
+    "name": {
+      "type": "string",
+      "maxLength": 256,
+      "minLength": 1
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 4096
+    },
+    "componentType": {
+      "enum": [
+        "target",
+        "infrastructure"
+      ]
+    },
+    "contract": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "common.schema.json#/$defs/key"
+        },
+        "version": {
+          "$ref": "common.schema.json#/$defs/version"
+        }
+      },
+      "required": [
+        "id",
+        "version"
+      ],
+      "additionalProperties": false
+    },
+    "defaultSource": {
+      "$ref": "common.schema.json#/$defs/source"
+    },
+    "parameterDefinitions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "pattern": "^[A-Za-z_][A-Za-z0-9_]{0,127}$"
+          },
+          "type": {
+            "enum": [
+              "string",
+              "integer",
+              "boolean"
+            ]
+          },
+          "required": {
+            "type": "boolean"
+          },
+          "secret": {
+            "type": "boolean"
+          },
+          "defaultValue": {
+            "anyOf": [
+              {
+                "$ref": "common.schema.json#/$defs/value"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "environmentVariable": {
+            "type": "string",
+            "pattern": "^[A-Za-z_][A-Za-z0-9_]{0,127}$"
+          }
+        },
+        "required": [
+          "name",
+          "type",
+          "required",
+          "secret",
+          "defaultValue",
+          "environmentVariable"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "defaultEnvironment": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "common.schema.json#/$defs/value"
+      },
+      "propertyNames": {
+        "pattern": "^[A-Za-z_][A-Za-z0-9_.-]{0,127}$"
+      }
+    },
+    "defaultPorts": {
+      "type": "array",
+      "items": {
+        "$ref": "common.schema.json#/$defs/port"
+      }
+    },
+    "defaultStorage": {
+      "type": "array",
+      "items": {
+        "$ref": "common.schema.json#/$defs/storage"
+      }
+    },
+    "endpoints": {
+      "type": "array",
+      "items": {
+        "$ref": "common.schema.json#/$defs/endpoint"
+      }
+    },
+    "readiness": {
+      "$ref": "common.schema.json#/$defs/readiness"
+    },
+    "dependencyRequirements": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "common.schema.json#/$defs/key"
+          },
+          "definitionId": {
+            "$ref": "common.schema.json#/$defs/uuid"
+          },
+          "definitionVersion": {
+            "$ref": "common.schema.json#/$defs/version"
+          },
+          "condition": {
+            "$ref": "common.schema.json#/$defs/condition"
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 1024,
+            "minLength": 1
+          }
+        },
+        "required": [
+          "id",
+          "definitionId",
+          "definitionVersion",
+          "condition",
+          "reason"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "initialization": {
+      "anyOf": [
+        {
+          "$ref": "initialization.schema.json"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "required": [
+    "kind",
+    "schemaVersion",
+    "id",
+    "version",
+    "name",
+    "componentType",
+    "contract",
+    "defaultSource",
+    "parameterDefinitions",
+    "defaultEnvironment",
+    "defaultPorts",
+    "defaultStorage",
+    "endpoints",
+    "readiness",
+    "dependencyRequirements",
+    "initialization"
+  ],
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "componentType": {
+            "const": "infrastructure"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "defaultSource": {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "const": "image"
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

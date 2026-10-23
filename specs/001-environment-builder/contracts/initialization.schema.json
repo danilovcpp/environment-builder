@@ -1,0 +1,253 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.environment-builder.local/v1/initialization.schema.json",
+  "title": "Environment Builder v1 initialization",
+  "type": "object",
+  "properties": {
+    "kind": {
+      "const": "initialization"
+    },
+    "schemaVersion": {
+      "const": 1
+    },
+    "id": {
+      "$ref": "common.schema.json#/$defs/uuid"
+    },
+    "version": {
+      "$ref": "common.schema.json#/$defs/version"
+    },
+    "targetContract": {
+      "$ref": "common.schema.json#/$defs/compatibility"
+    },
+    "steps": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "common.schema.json#/$defs/key"
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1
+          },
+          "endpointId": {
+            "$ref": "common.schema.json#/$defs/key"
+          },
+          "method": {
+            "enum": [
+              "GET",
+              "HEAD",
+              "POST",
+              "PUT",
+              "PATCH",
+              "DELETE"
+            ]
+          },
+          "path": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2048,
+            "pattern": "^/(?!/)[^#\\\\\\u0000-\\u001f]*$"
+          },
+          "headers": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "common.schema.json#/$defs/value"
+            },
+            "propertyNames": {
+              "pattern": "^[A-Za-z_][A-Za-z0-9_.-]{0,127}$"
+            }
+          },
+          "body": {
+            "oneOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "const": "none"
+                  }
+                },
+                "required": [
+                  "kind"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "const": "inline"
+                  },
+                  "value": {}
+                },
+                "required": [
+                  "kind",
+                  "value"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "const": "seedSection"
+                  },
+                  "sectionId": {
+                    "$ref": "common.schema.json#/$defs/key"
+                  }
+                },
+                "required": [
+                  "kind",
+                  "sectionId"
+                ],
+                "additionalProperties": false
+              }
+            ]
+          },
+          "expect": {
+            "type": "object",
+            "properties": {
+              "statuses": {
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "minimum": 100,
+                  "maximum": 599
+                },
+                "minItems": 1,
+                "uniqueItems": true
+              },
+              "assertions": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "pointer": {
+                      "type": "string",
+                      "pattern": "^(|/.*)$",
+                      "maxLength": 1024
+                    },
+                    "equals": {}
+                  },
+                  "required": [
+                    "pointer",
+                    "equals"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": [
+              "statuses",
+              "assertions"
+            ],
+            "additionalProperties": false
+          },
+          "timeoutSeconds": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 600
+          },
+          "retry": {
+            "oneOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "mode": {
+                    "const": "none"
+                  },
+                  "maxAttempts": {
+                    "const": 1
+                  }
+                },
+                "required": [
+                  "mode",
+                  "maxAttempts"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "mode": {
+                    "const": "idempotent"
+                  },
+                  "maxAttempts": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 3
+                  },
+                  "safetyEvidence": {
+                    "type": "string",
+                    "maxLength": 1024,
+                    "minLength": 1
+                  }
+                },
+                "required": [
+                  "mode",
+                  "maxAttempts",
+                  "safetyEvidence"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "mode": {
+                    "const": "key"
+                  },
+                  "maxAttempts": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 3
+                  },
+                  "idempotencyHeader": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z0-9-]{1,128}$"
+                  },
+                  "safetyEvidence": {
+                    "type": "string",
+                    "maxLength": 1024,
+                    "minLength": 1
+                  }
+                },
+                "required": [
+                  "mode",
+                  "maxAttempts",
+                  "idempotencyHeader",
+                  "safetyEvidence"
+                ],
+                "additionalProperties": false
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "endpointId",
+          "method",
+          "path",
+          "headers",
+          "body",
+          "expect",
+          "timeoutSeconds",
+          "retry"
+        ],
+        "additionalProperties": false
+      },
+      "maxItems": 1000
+    }
+  },
+  "required": [
+    "kind",
+    "schemaVersion",
+    "id",
+    "version",
+    "targetContract",
+    "steps"
+  ],
+  "additionalProperties": false
+}

@@ -1,0 +1,355 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.environment-builder.local/v1/common.schema.json",
+  "title": "Environment Builder v1 common",
+  "$defs": {
+    "uuid": {
+      "type": "string",
+      "format": "uuid",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(-[0-9A-Za-z.-]+)?$"
+    },
+    "hash": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "key": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9.-]{0,127}$"
+    },
+    "secretRef": {
+      "type": "string",
+      "pattern": "^secret://[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+    },
+    "pathRef": {
+      "type": "string",
+      "pattern": "^local-path://[a-zA-Z0-9._-]{1,128}$"
+    },
+    "relativePath": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 512,
+      "pattern": "^[^\\\\:/\\u0000-\\u001f]+(?:/[^\\\\:\\u0000-\\u001f]+)*$"
+    },
+    "value": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "literal": {
+              "type": "string",
+              "maxLength": 65536
+            }
+          },
+          "required": [
+            "literal"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "secretRef": {
+              "$ref": "common.schema.json#/$defs/secretRef"
+            }
+          },
+          "required": [
+            "secretRef"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "source": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "image"
+            },
+            "reference": {
+              "type": "string",
+              "maxLength": 512,
+              "minLength": 1
+            }
+          },
+          "required": [
+            "kind",
+            "reference"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "build"
+            },
+            "pathRef": {
+              "$ref": "common.schema.json#/$defs/pathRef"
+            },
+            "dockerfile": {
+              "$ref": "common.schema.json#/$defs/relativePath"
+            },
+            "contextSubdirectory": {
+              "type": "string",
+              "maxLength": 512,
+              "minLength": 1
+            },
+            "buildArguments": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string",
+                "maxLength": 4096
+              },
+              "propertyNames": {
+                "pattern": "^[A-Za-z_][A-Za-z0-9_.-]{0,127}$"
+              }
+            },
+            "buildSecrets": {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "common.schema.json#/$defs/secretRef"
+              },
+              "propertyNames": {
+                "pattern": "^[A-Za-z_][A-Za-z0-9_.-]{0,127}$"
+              }
+            }
+          },
+          "required": [
+            "kind",
+            "pathRef",
+            "dockerfile",
+            "contextSubdirectory",
+            "buildArguments",
+            "buildSecrets"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "port": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "common.schema.json#/$defs/key"
+        },
+        "containerPort": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535
+        },
+        "protocol": {
+          "enum": [
+            "tcp",
+            "udp"
+          ]
+        },
+        "hostPort": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 65535
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "access": {
+          "enum": [
+            "loopback",
+            "network"
+          ]
+        },
+        "purpose": {
+          "enum": [
+            "application",
+            "control"
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "containerPort",
+        "protocol",
+        "hostPort",
+        "access",
+        "purpose"
+      ],
+      "additionalProperties": false
+    },
+    "storage": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "$ref": "common.schema.json#/$defs/key"
+            },
+            "kind": {
+              "const": "managed"
+            },
+            "targetPath": {
+              "type": "string",
+              "maxLength": 512,
+              "minLength": 1
+            }
+          },
+          "required": [
+            "id",
+            "kind",
+            "targetPath"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "$ref": "common.schema.json#/$defs/key"
+            },
+            "kind": {
+              "const": "readOnlyInput"
+            },
+            "targetPath": {
+              "type": "string",
+              "maxLength": 512,
+              "minLength": 1
+            },
+            "pathRef": {
+              "$ref": "common.schema.json#/$defs/pathRef"
+            }
+          },
+          "required": [
+            "id",
+            "kind",
+            "targetPath",
+            "pathRef"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "endpoint": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "common.schema.json#/$defs/key"
+        },
+        "containerPort": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535
+        },
+        "scheme": {
+          "enum": [
+            "http",
+            "https"
+          ]
+        },
+        "basePath": {
+          "type": "string",
+          "maxLength": 1024,
+          "minLength": 1,
+          "pattern": "^/(?:[^/?#\\\\\\u0000-\\u001f]+(?:/[^/?#\\\\\\u0000-\\u001f]+)*)?$"
+        }
+      },
+      "required": [
+        "id",
+        "containerPort",
+        "scheme",
+        "basePath"
+      ],
+      "additionalProperties": false
+    },
+    "readiness": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "enum": [
+                "none",
+                "running",
+                "dockerHealth"
+              ]
+            },
+            "timeoutSeconds": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 600
+            }
+          },
+          "required": [
+            "kind",
+            "timeoutSeconds"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "http"
+            },
+            "endpointId": {
+              "$ref": "common.schema.json#/$defs/key"
+            },
+            "path": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 1024,
+              "pattern": "^/(?!/)[^#\\\\\\u0000-\\u001f]*$"
+            },
+            "timeoutSeconds": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 600
+            }
+          },
+          "required": [
+            "kind",
+            "endpointId",
+            "path",
+            "timeoutSeconds"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "condition": {
+      "enum": [
+        "running",
+        "healthy",
+        "ready"
+      ]
+    },
+    "compatibility": {
+      "type": "object",
+      "properties": {
+        "contractId": {
+          "$ref": "common.schema.json#/$defs/key"
+        },
+        "versions": {
+          "type": "array",
+          "items": {
+            "$ref": "common.schema.json#/$defs/version"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "contractId",
+        "versions"
+      ],
+      "additionalProperties": false
+    }
+  }
+}
