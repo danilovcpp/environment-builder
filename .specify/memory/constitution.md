@@ -101,6 +101,19 @@ These are decision rules, not mandatory directory or project names.
 6. **Prefer explicit trade-offs:** if simplicity, performance, testability, and compatibility conflict, explain the trade-off in the plan. Optimize only from an actual requirement or measured problem.
 7. **Respect project decisions:** framework target, MVVM library, DI container, test framework, and UI component library are selected by project context or an explicit technical decision. The constitution does not mandate replacements.
 
+## UI Technology Decisions
+
+- UI Framework: WPF UI (lepoco).
+- Primary icon library: Lucide Icons via MahApps.Metro.IconPacks.Lucide.
+- Architecture: MVVM, reusable application shell and UI components.
+- Support light and dark themes.
+- Use centralized design tokens for spacing, colors, typography, corner radius and icon sizes.
+- Implement reusable PageHeader, ContextPanel, StatusBar and application navigation.
+- Avoid duplicated XAML styles, hardcoded colors and unnecessary custom controls.
+- Prefer standard UI Kit components unless customization is required by the approved design.
+- Keep UI logic out of code-behind wherever practical.
+- Maintain consistent iconography throughout the application.
+
 ## Quality Gates and Definition of Done
 
 Every implementation plan and task completion MUST check the applicable gates below:
