@@ -424,5 +424,8 @@ FodyWeavers.xsd
 *.msm
 *.msp
 
+# Local Spec Kit CLI environment
+/.tools/
+
 # Official VS Code C# Dev Kit Extension exclusion
 #*.lscache
