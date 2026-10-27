@@ -1,9 +1,13 @@
+using System.Text.Json;
+using EnvironmentBuilder.Core.Abstractions;
+using EnvironmentBuilder.Core.Environments;
 using EnvironmentBuilder.Core.Operations;
+using EnvironmentBuilder.Core.SeedPacks;
 using Microsoft.Data.Sqlite;
 
 namespace EnvironmentBuilder.Infrastructure.Persistence;
 
-public sealed class DataApplicationStore(SqliteWorker worker)
+public sealed class DataApplicationStore(SqliteWorker worker) : IDataApplicationJournal, ISafeInitializationRetry
 {
     public Task InvalidateAsync(Guid generationId, Guid operationId, string reason, DateTimeOffset at, CancellationToken cancellationToken) =>
         worker.CommitAsync("generation-invalidation", (connection, transaction) =>
@@ -33,11 +37,13 @@ public sealed class DataApplicationStore(SqliteWorker worker)
         bool allowed = previous switch
         {
             null => record.State == StepState.Pending && record.Attempt == 0,
-            "Pending" => record.State == StepState.Started && record.Attempt == 1,
+            "Pending" => record.State == StepState.Started && record.Attempt == attempt + 1,
             "Started" => record.State is StepState.Succeeded or StepState.Failed or StepState.Unknown && record.Attempt == attempt,
             _ => false
         };
         if (!allowed) { throw new InvalidOperationException("Invalid initialization record transition; replay requires an explicit policy decision."); }
+        Sql.Execute(connection, transaction, "INSERT INTO InitializationAttempts VALUES($key,$attempt,$state,$json)",
+            ("$key", key.StableIdempotencyKey), ("$attempt", record.Attempt), ("$state", record.State.ToString()), ("$json", JsonSerializer.Serialize(record, CanonicalJson.Options)));
         Sql.Execute(connection, transaction,
             "INSERT INTO DataApplicationRecords VALUES($environment,$component,$generation,$baseline,$application,$initializer,$step,$state,$key,$attempt,$started,$completed,$status,$assertions,$error) ON CONFLICT(environmentId,componentId,generationId,baselineHash,applicationHash,initializerHash,stepId) DO UPDATE SET state=$state,attempt=$attempt,startedAt=$started,completedAt=$completed,acceptedStatus=$status,assertionsPassed=$assertions,errorCode=$error",
             [.. parameters, ("$state", record.State.ToString()), ("$key", key.StableIdempotencyKey), ("$attempt", record.Attempt),
@@ -45,6 +51,38 @@ public sealed class DataApplicationStore(SqliteWorker worker)
                 ("$status", record.AcceptedStatus), ("$assertions", record.AssertionsPassed), ("$error", record.ErrorCode)]);
         return true;
     }, cancellationToken);
+
+    public Task<DataApplicationRecord?> ReadAsync(DataApplicationKey key, CancellationToken token) => worker.ReadAsync(connection =>
+    {
+        using SqliteCommand command = Sql.Command(connection, null, "SELECT state,attempt,startedAt,completedAt,acceptedStatus,assertionsPassed,errorCode FROM DataApplicationRecords WHERE " + KeyPredicate + " AND generationId IN (SELECT id FROM DataGenerations WHERE validity='active')", KeyParameters(key));
+        using SqliteDataReader row = command.ExecuteReader();
+        if (!row.Read()) { return null; }
+        return new DataApplicationRecord(key, Enum.Parse<StepState>(row.GetString(0)), row.GetInt32(1),
+            row.IsDBNull(2) ? null : DateTimeOffset.Parse(row.GetString(2), System.Globalization.CultureInfo.InvariantCulture),
+            row.IsDBNull(3) ? null : DateTimeOffset.Parse(row.GetString(3), System.Globalization.CultureInfo.InvariantCulture),
+            row.IsDBNull(4) ? null : row.GetInt32(4), row.IsDBNull(5) ? null : row.GetBoolean(5), row.IsDBNull(6) ? null : row.GetString(6));
+    }, token);
+
+    public Task AuthorizeAsync(DataApplicationKey key, RetryPolicy policy, int nextAttempt, CancellationToken token) => worker.CommitAsync("application-retry", (connection, transaction) =>
+    {
+        if (policy.Mode is not ("key" or "idempotent") || string.IsNullOrWhiteSpace(policy.SafetyEvidence) || nextAttempt > Math.Min(3, policy.MaxAttempts))
+        { throw new InvalidOperationException("Safe retry evidence is required."); }
+        using SqliteCommand environment = Sql.Command(connection, transaction, "SELECT json FROM Environments WHERE id=$id", ("$id", key.EnvironmentId.ToString()));
+        IsolatedEnvironment saved = JsonSerializer.Deserialize<IsolatedEnvironment>((string)environment.ExecuteScalar()!, CanonicalJson.Options)!;
+        BaselineApplication application = saved.Baseline.Applications.Single(a => a.ComponentId == key.ComponentId && CanonicalJson.Hash(a) == key.ApplicationHash && CanonicalJson.Hash(a.Initializer) == key.InitializerHash);
+        if (CanonicalJson.Hash(application.Initializer.Steps.Single(s => s.Id == key.StepId).Retry) != CanonicalJson.Hash(policy)) { throw new InvalidOperationException("Retry policy differs from the saved initializer."); }
+        using SqliteCommand prior = Sql.Command(connection, transaction, "SELECT state,acceptedStatus,assertionsPassed,errorCode,attempt FROM DataApplicationRecords WHERE " + KeyPredicate, KeyParameters(key));
+        using (SqliteDataReader row = prior.ExecuteReader())
+        {
+            if (!row.Read() || !InitializationRetryPolicy.CanRetry(policy, row.GetInt32(4), new(row.IsDBNull(1) ? null : row.GetInt32(1),
+                !row.IsDBNull(2) && row.GetBoolean(2), row.GetString(0) == "Failed", row.IsDBNull(3) ? null : row.GetString(3))))
+            { throw new InvalidOperationException("The durable outcome does not authorize a transient retry."); }
+        }
+        int changed = Sql.Execute(connection, transaction, "UPDATE DataApplicationRecords SET state='Pending' WHERE " + KeyPredicate + " AND state IN ('Failed','Unknown') AND attempt=$attempt AND generationId IN (SELECT id FROM DataGenerations WHERE validity='active')",
+            [.. KeyParameters(key), ("$attempt", nextAttempt - 1)]);
+        if (changed != 1) { throw new InvalidOperationException("Retry requires a durable failed or unknown attempt in the active generation."); }
+        return true;
+    }, token);
 
     public Task<bool> HasSuccessAsync(DataApplicationKey key, CancellationToken cancellationToken) => worker.ReadAsync(connection =>
     {

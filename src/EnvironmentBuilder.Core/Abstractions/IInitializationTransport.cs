@@ -7,4 +7,7 @@ public interface IInitializationTransport
 {
     Task<InitializationResponse> SendAsync(Guid componentId, InitializationStep step, string idempotencyKey, Stream? body, CancellationToken cancellationToken);
 }
-public sealed record InitializationResponse(int? Status, bool AssertionsPassed, bool OutcomeKnown, string? ErrorCode);
+public sealed record InitializationResponse(int? Status, bool AssertionsPassed, bool OutcomeKnown, string? ErrorCode)
+{
+    public TimeSpan? RetryAfter { get; init; }
+}

@@ -1,0 +1,40 @@
+{
+  "kind": "component",
+  "schemaVersion": 1,
+  "id": "fa290c1d-92e2-5a20-8e0e-d016903e9fdf",
+  "version": "1.0.0",
+  "name": "Rabbitmq",
+  "componentType": "infrastructure",
+  "contract": {
+    "id": "demo.rabbitmq",
+    "version": "1.0.0"
+  },
+  "defaultSource": {
+    "kind": "image",
+    "reference": "rabbitmq:4-management"
+  },
+  "parameterDefinitions": [],
+  "defaultEnvironment": {
+    "RABBITMQ_DEFAULT_USER": {
+      "literal": "demo"
+    },
+    "RABBITMQ_DEFAULT_PASS": {
+      "secretRef": "secret://aee77d02-0cb1-5a19-9b49-7acbc6c87f9c"
+    }
+  },
+  "defaultPorts": [],
+  "defaultStorage": [
+    {
+      "kind": "managed",
+      "id": "data",
+      "targetPath": "/var/lib/rabbitmq"
+    }
+  ],
+  "endpoints": [],
+  "readiness": {
+    "kind": "running",
+    "timeoutSeconds": 120
+  },
+  "dependencyRequirements": [],
+  "initialization": null
+}

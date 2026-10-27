@@ -1,0 +1,11 @@
+**/bin/
+**/obj/
+.git/
+*.log*
+.env*
+coverage/
+seedpacks/
+descriptors/
+fixtures/
+Dockerfile*
+.dockerignore

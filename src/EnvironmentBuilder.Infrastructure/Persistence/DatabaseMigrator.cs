@@ -13,7 +13,7 @@ public static class DatabaseMigrator
         { throw new NotSupportedException("Native SQLite 3.51.3 or newer is required; actual: " + native); }
         command.CommandText = "PRAGMA user_version";
         long schema = (long)command.ExecuteScalar()!;
-        if (schema is not 0 and not 1) { throw new NotSupportedException("Unsupported database schema version: " + schema); }
+        if (schema is not 0 and not 1 and not 2) { throw new NotSupportedException("Unsupported database schema version: " + schema); }
         command.CommandText = "PRAGMA quick_check";
         if (!Equals(command.ExecuteScalar(), "ok")) { throw new IOException("SQLite integrity check failed."); }
         if (schema == 0)
@@ -31,6 +31,15 @@ public static class DatabaseMigrator
             command.ExecuteNonQuery();
             transaction.Commit();
             command.Transaction = null;
+        }
+        if (schema < 2)
+        {
+            using SqliteTransaction migration = connection.BeginTransaction();
+            command.Transaction = migration;
+            using Stream stream = typeof(DatabaseMigrator).Assembly.GetManifestResourceStream("EnvironmentBuilder.Infrastructure.Persistence.Migrations.002_InitializationAttempts.sql")!;
+            using var reader = new StreamReader(stream);
+            command.CommandText = reader.ReadToEnd();
+            command.ExecuteNonQuery(); migration.Commit(); command.Transaction = null;
         }
         command.CommandText = "PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; PRAGMA foreign_keys=ON; PRAGMA busy_timeout=5000;";
         command.ExecuteNonQuery();

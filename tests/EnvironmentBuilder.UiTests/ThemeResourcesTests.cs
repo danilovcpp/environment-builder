@@ -134,11 +134,56 @@ public sealed class ThemeResourcesTests
             window.Close();
             VerifyShell(diagnostics);
             VerifyAuthoring(diagnostics);
+            VerifyInspect(diagnostics);
         }
         finally
         {
             app.Shutdown();
         }
+    }
+
+    private static void VerifyInspect(BindingDiagnostics diagnostics)
+    {
+        var fixture = new InspectVisualFixture();
+        var page = new App.Features.Environments.InspectPage { DataContext = fixture };
+        var window = new Window { Content = page, Width = 1280, Height = 720, Left = -10000, Top = 0, ShowActivated = false, ShowInTaskbar = false };
+        window.Show();
+        var themes = new App.Shell.ThemeService();
+        foreach (bool dark in new[] { false, true })
+        {
+            themes.Apply(dark); window.UpdateLayout(); window.Dispatcher.Invoke(() => { }, DispatcherPriority.ContextIdle);
+            Assert.Same(fixture, page.DataContext);
+            SavePreview(page, dark ? "inspect-dark" : "inspect-light");
+        }
+        var delta = new App.Features.Environments.InputDeltaDialog { Owner = window, DataContext = "image: unknown → sha256:pinned", ShowActivated = false };
+        delta.Show(); delta.UpdateLayout(); delta.Dispatcher.Invoke(() => { }, DispatcherPriority.ContextIdle); delta.Close();
+        var close = new App.Components.CloseOperationsDialog { Owner = window, DataContext = "Активных операций: 1", ShowActivated = false };
+        close.Show(); close.UpdateLayout(); close.Dispatcher.Invoke(() => { }, DispatcherPriority.ContextIdle); close.Close();
+        Assert.Empty(diagnostics.Errors); window.Close();
+    }
+
+    private sealed class InspectVisualFixture
+    {
+        public string Name => "Prepared runtime · partial measurements";
+        public string Status => "current · проверено 2026-10-23 · health отдельно от running";
+        public string OperationId => "28ca94f2-ae91-488c-9a68-b4187dd1e1fc";
+        public string Progress => "Running · readiness · процент неизвестен";
+        public bool IsOperationActive => true;
+        public string StartDisabledReason => "Операция уже выполняется";
+        public string Error => "";
+        public string Measurements => "CPU 125.5% ≈ · memory unavailable · покрытие 1/2";
+        public string Aggregate => "CPU ≈125.5% · покрытие 1/2; память — нет данных · покрытие 0/2";
+        public string Endpoints => "127.0.0.1:49152 → 8080/tcp";
+        public bool LogsPaused { get; set; }
+        public string LogStatus => "following · удалено строк 24 · усечено 1";
+        public string Logs => "2026-10-23T15:00:00Z event published\n2026-10-23T15:00:01Z [REDACTED]";
+        public App.Features.Environments.InspectComponentRow[] Components { get; } = [new(new(Guid.NewGuid(), new string('a', 64), "running", "notConfigured", [], System.Collections.Immutable.ImmutableDictionary<string, Core.Environments.Measurement>.Empty), "Prepared component", "none")];
+        public App.Features.Environments.InspectComponentRow? SelectedComponent { get; set; }
+        public System.Windows.Input.ICommand StartCommand { get; } = new CommunityToolkit.Mvvm.Input.RelayCommand(() => { }, () => false);
+        public System.Windows.Input.ICommand CancelCommand { get; } = new CommunityToolkit.Mvvm.Input.RelayCommand(() => { });
+        public System.Windows.Input.ICommand RefreshCommand { get; } = new CommunityToolkit.Mvvm.Input.RelayCommand(() => { });
+        public System.Windows.Input.ICommand ReturnCommand { get; } = new CommunityToolkit.Mvvm.Input.RelayCommand(() => { });
+        public System.Windows.Input.ICommand ShowComposeCommand { get; } = new CommunityToolkit.Mvvm.Input.RelayCommand(() => { });
     }
 
     private static void VerifyAuthoring(BindingDiagnostics diagnostics)

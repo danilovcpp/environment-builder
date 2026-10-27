@@ -9,6 +9,8 @@ public sealed record OperationPlan(Guid Id, Guid EnvironmentId, long Revision, s
     IsolatedEnvironment? Candidate = null)
 {
     public ImmutableArray<EnvironmentBuilder.Core.SeedPacks.SeedPackReference> Packs { get; init; } = [];
+    public string? Endpoint { get; init; }
+    public string? EngineId { get; init; }
     [System.Text.Json.Serialization.JsonIgnore] public string Hash => CanonicalJson.Hash(this);
 }
 public sealed record ConfirmationRecord(string PlanHash, DateTimeOffset ConfirmedAt);

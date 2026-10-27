@@ -5,7 +5,7 @@ using EnvironmentBuilder.Core.Environments;
 
 namespace EnvironmentBuilder.App.Features.Environments;
 
-public sealed partial class ComposePreviewViewModel(IPreviewInputCapture capture, IAuthoringInteractions interactions) : ObservableObject
+public sealed partial class ComposePreviewViewModel(IPreviewInputCapture capture, IAuthoringInteractions interactions, PreviewReviewStore? reviews = null) : ObservableObject
 {
     [ObservableProperty] private string content = "";
     [ObservableProperty] private string details = "";
@@ -21,6 +21,7 @@ public sealed partial class ComposePreviewViewModel(IPreviewInputCapture capture
             ComposeModel model = ComposeCompiler.Compile(environment);
             Content = model.RenderPreview();
             Snapshot = await capture.CaptureAsync(environment, cancellationToken);
+            reviews?.Remember(Snapshot);
             Details = $"Ревизия {environment.Revision} · {environment.Id}\nToken: {Snapshot.Token}\n" +
                 string.Join('\n', Snapshot.Inputs.Select(i => i.Reference + " · " + i.State)) +
                 "\nBuild и read-only mounts используют placeholders будущего приватного staging. Docker не вызывается.";

@@ -47,6 +47,9 @@ public sealed partial class EnvironmentListViewModel(IEnvironmentStore store) : 
     public string SelectionNotice => SelectedId is not null && VisibleItems.All(i => i.Id != SelectedId) ? "Сохранённое окружение выбрано, но скрыто текущими фильтрами." : "";
     public Func<EnvironmentRowViewModel, Task>? Open { get; set; }
     public Func<Task>? Create { get; set; }
+    public Func<EnvironmentRowViewModel, Task>? Inspect { get; set; }
+    public Func<EnvironmentRowViewModel, Task>? Start { get; set; }
+    public Func<EnvironmentRowViewModel, Task>? Compose { get; set; }
 
     public async Task LoadAsync(CancellationToken cancellationToken)
     {
@@ -86,4 +89,7 @@ public sealed partial class EnvironmentListViewModel(IEnvironmentStore store) : 
     [RelayCommand] private Task ReloadAsync(CancellationToken token) => LoadAsync(token);
     [RelayCommand] private Task CreateNewAsync() => Create?.Invoke() ?? Task.CompletedTask;
     [RelayCommand] private Task OpenItemAsync(EnvironmentRowViewModel row) => row.CanOpen ? Open?.Invoke(row) ?? Task.CompletedTask : Task.CompletedTask;
+    [RelayCommand] private Task InspectItemAsync(EnvironmentRowViewModel row) => row.CanOpen ? Inspect?.Invoke(row) ?? Task.CompletedTask : Task.CompletedTask;
+    [RelayCommand] private Task StartItemAsync(EnvironmentRowViewModel row) => row.CanOpen ? Start?.Invoke(row) ?? Task.CompletedTask : Task.CompletedTask;
+    [RelayCommand] private Task ComposeItemAsync(EnvironmentRowViewModel row) => row.CanOpen ? Compose?.Invoke(row) ?? Task.CompletedTask : Task.CompletedTask;
 }

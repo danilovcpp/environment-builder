@@ -17,6 +17,7 @@ public sealed partial class ShellViewModel : ObservableObject
         {
             if (e.PropertyName != nameof(NavigationService.Current)) { return; }
             if (navigation.Current.Route == "editor") { Title = "Описание окружения"; Description = "Состав, настройки и начальные данные без запуска"; }
+            else if (navigation.Current.Route == "inspect") { Title = "Inspect"; Description = "Фактическое состояние, операции, логи и измерения"; }
             else if (navigation.Current.Route == "preview") { Title = "Compose preview"; Description = "Будущая конфигурация с замаскированными секретами"; }
             else if (navigation.Current.Route == "environments") { Title = "Окружения"; Description = "Сохранённые описания локальных окружений"; }
         };

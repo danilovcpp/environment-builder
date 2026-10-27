@@ -1,0 +1,57 @@
+{
+  "kind": "seedpack",
+  "schemaVersion": 1,
+  "id": "7b8be660-db1c-5114-ba52-cdad660f43e9",
+  "version": "1.0.0",
+  "title": "Large demo records",
+  "theme": "Demo",
+  "purpose": "Deterministic independent service seed records",
+  "compatibility": [
+    {
+      "contractId": "demo.requests",
+      "versions": [
+        "1.0.0"
+      ]
+    },
+    {
+      "contractId": "demo.scheduler",
+      "versions": [
+        "1.0.0"
+      ]
+    },
+    {
+      "contractId": "demo.reporting",
+      "versions": [
+        "1.0.0"
+      ]
+    }
+  ],
+  "sections": [
+    {
+      "id": "records",
+      "title": "Records",
+      "path": "sections/records.ndjson",
+      "bytes": 3488890,
+      "recordCount": 100000,
+      "sha256": "bf11f8c03a4af19f85c1b1f8b5bc0573d79275cf9892832ddc85f02d4e91ee0e"
+    }
+  ],
+  "initializers": [
+    {
+      "path": "initializers/requests.json",
+      "bytes": 898,
+      "sha256": "4a3e7cdfb19b5a5096b3f0d054691e708aab9d17b9de07c9d2579cae7527e794"
+    },
+    {
+      "path": "initializers/scheduler.json",
+      "bytes": 899,
+      "sha256": "9fa1c93e6f8833f68f0d7eb4b81dba2114c2306e45ce969a082d47010306f376"
+    },
+    {
+      "path": "initializers/reporting.json",
+      "bytes": 899,
+      "sha256": "a748cd2193631da261bff8b2739a9f9a9127d0313f719a94e7d58c06746f5533"
+    }
+  ],
+  "contentHash": "15451a84f6c58687bd3911069e01b405ddce9231e75cea54ad4487b0633942a6"
+}

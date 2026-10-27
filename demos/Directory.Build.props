@@ -1,0 +1,12 @@
+<Project>
+  <Import Project="../Directory.Build.props" Condition="Exists('../Directory.Build.props')" />
+  <!-- Also applies when the demos directory is the standalone Linux Docker build context. -->
+  <PropertyGroup>
+    <LangVersion>14.0</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+  </PropertyGroup>
+</Project>

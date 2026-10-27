@@ -1,0 +1,791 @@
+{
+  "kind": "environment",
+  "schemaVersion": 1,
+  "id": "b044416b-8c91-5194-ba5f-472a9c18b02a",
+  "revision": 1,
+  "name": "Demo pipeline",
+  "components": [
+    {
+      "id": "55a577c8-07b3-5a66-99b8-0cbe92b6c2e5",
+      "definitionSnapshot": {
+        "kind": "component",
+        "schemaVersion": 1,
+        "id": "fa290c1d-92e2-5a20-8e0e-d016903e9fdf",
+        "version": "1.0.0",
+        "name": "Rabbitmq",
+        "componentType": "infrastructure",
+        "contract": {
+          "id": "demo.rabbitmq",
+          "version": "1.0.0"
+        },
+        "defaultSource": {
+          "kind": "image",
+          "reference": "rabbitmq:4-management"
+        },
+        "parameterDefinitions": [],
+        "defaultEnvironment": {
+          "RABBITMQ_DEFAULT_USER": {
+            "literal": "demo"
+          },
+          "RABBITMQ_DEFAULT_PASS": {
+            "secretRef": "secret://aee77d02-0cb1-5a19-9b49-7acbc6c87f9c"
+          }
+        },
+        "defaultPorts": [],
+        "defaultStorage": [
+          {
+            "kind": "managed",
+            "id": "data",
+            "targetPath": "/var/lib/rabbitmq"
+          }
+        ],
+        "endpoints": [],
+        "readiness": {
+          "kind": "running",
+          "timeoutSeconds": 120
+        },
+        "dependencyRequirements": [],
+        "initialization": null
+      },
+      "source": {
+        "kind": "image",
+        "reference": "rabbitmq:4-management"
+      },
+      "parameters": {},
+      "environment": {
+        "RABBITMQ_DEFAULT_USER": {
+          "literal": "demo"
+        },
+        "RABBITMQ_DEFAULT_PASS": {
+          "secretRef": "secret://aee77d02-0cb1-5a19-9b49-7acbc6c87f9c"
+        }
+      },
+      "ports": [],
+      "storage": [
+        {
+          "kind": "managed",
+          "id": "data",
+          "targetPath": "/var/lib/rabbitmq"
+        }
+      ]
+    },
+    {
+      "id": "86edccbc-42e6-529f-9f88-0e29eef7f3d2",
+      "definitionSnapshot": {
+        "kind": "component",
+        "schemaVersion": 1,
+        "id": "d958ac47-0a68-577e-8d31-7020b3fa12a1",
+        "version": "1.0.0",
+        "name": "Requests",
+        "componentType": "target",
+        "contract": {
+          "id": "demo.requests",
+          "version": "1.0.0"
+        },
+        "defaultSource": {
+          "kind": "build",
+          "pathRef": "local-path://demo",
+          "dockerfile": "Requests.Api/Dockerfile",
+          "contextSubdirectory": ".",
+          "buildArguments": {},
+          "buildSecrets": {}
+        },
+        "parameterDefinitions": [],
+        "defaultEnvironment": {
+          "BROKER_HOST": {
+            "literal": "c-55a577c807b35a6699b80cbe92b6c2e5"
+          },
+          "BROKER_USER": {
+            "literal": "demo"
+          },
+          "BROKER_PASSWORD": {
+            "secretRef": "secret://aee77d02-0cb1-5a19-9b49-7acbc6c87f9c"
+          }
+        },
+        "defaultPorts": [],
+        "defaultStorage": [
+          {
+            "kind": "managed",
+            "id": "data",
+            "targetPath": "/data"
+          }
+        ],
+        "endpoints": [
+          {
+            "id": "api",
+            "containerPort": 8080,
+            "scheme": "http",
+            "basePath": "/"
+          }
+        ],
+        "readiness": {
+          "kind": "http",
+          "endpointId": "api",
+          "path": "/health",
+          "timeoutSeconds": 120
+        },
+        "dependencyRequirements": [
+          {
+            "id": "rabbitmq",
+            "definitionId": "fa290c1d-92e2-5a20-8e0e-d016903e9fdf",
+            "definitionVersion": "1.0.0",
+            "condition": "running",
+            "reason": "Demo message pipeline prerequisite"
+          }
+        ],
+        "initialization": {
+          "kind": "initialization",
+          "schemaVersion": 1,
+          "id": "6240f82f-f1df-5d18-a9a7-bfe64dddec76",
+          "version": "1.0.0",
+          "targetContract": {
+            "contractId": "demo.requests",
+            "versions": [
+              "1.0.0"
+            ]
+          },
+          "steps": [
+            {
+              "id": "bootstrap",
+              "title": "Bootstrap",
+              "endpointId": "api",
+              "method": "POST",
+              "path": "/bootstrap",
+              "headers": {},
+              "body": {
+                "kind": "none"
+              },
+              "expect": {
+                "statuses": [
+                  204
+                ],
+                "assertions": []
+              },
+              "timeoutSeconds": 120,
+              "retry": {
+                "mode": "key",
+                "maxAttempts": 3,
+                "idempotencyHeader": "Idempotency-Key",
+                "safetyEvidence": "DemoStore commits Applied(key,action) in the same SQLite FULL transaction as the mutation; replay of the same key/action returns 204."
+              }
+            }
+          ]
+        }
+      },
+      "source": {
+        "kind": "build",
+        "pathRef": "local-path://demo",
+        "dockerfile": "Requests.Api/Dockerfile",
+        "contextSubdirectory": ".",
+        "buildArguments": {},
+        "buildSecrets": {}
+      },
+      "parameters": {},
+      "environment": {
+        "BROKER_HOST": {
+          "literal": "c-55a577c807b35a6699b80cbe92b6c2e5"
+        },
+        "BROKER_USER": {
+          "literal": "demo"
+        },
+        "BROKER_PASSWORD": {
+          "secretRef": "secret://aee77d02-0cb1-5a19-9b49-7acbc6c87f9c"
+        }
+      },
+      "ports": [],
+      "storage": [
+        {
+          "kind": "managed",
+          "id": "data",
+          "targetPath": "/data"
+        }
+      ]
+    },
+    {
+      "id": "945cffd0-032d-5c5a-9547-9c90c882c607",
+      "definitionSnapshot": {
+        "kind": "component",
+        "schemaVersion": 1,
+        "id": "94c14b0a-c421-5b47-8800-06ad55c1b598",
+        "version": "1.0.0",
+        "name": "Scheduler",
+        "componentType": "target",
+        "contract": {
+          "id": "demo.scheduler",
+          "version": "1.0.0"
+        },
+        "defaultSource": {
+          "kind": "build",
+          "pathRef": "local-path://demo",
+          "dockerfile": "Scheduler.Api/Dockerfile",
+          "contextSubdirectory": ".",
+          "buildArguments": {},
+          "buildSecrets": {}
+        },
+        "parameterDefinitions": [],
+        "defaultEnvironment": {
+          "BROKER_HOST": {
+            "literal": "c-55a577c807b35a6699b80cbe92b6c2e5"
+          },
+          "BROKER_USER": {
+            "literal": "demo"
+          },
+          "BROKER_PASSWORD": {
+            "secretRef": "secret://aee77d02-0cb1-5a19-9b49-7acbc6c87f9c"
+          }
+        },
+        "defaultPorts": [],
+        "defaultStorage": [
+          {
+            "kind": "managed",
+            "id": "data",
+            "targetPath": "/data"
+          }
+        ],
+        "endpoints": [
+          {
+            "id": "api",
+            "containerPort": 8080,
+            "scheme": "http",
+            "basePath": "/"
+          }
+        ],
+        "readiness": {
+          "kind": "http",
+          "endpointId": "api",
+          "path": "/health",
+          "timeoutSeconds": 120
+        },
+        "dependencyRequirements": [
+          {
+            "id": "rabbitmq",
+            "definitionId": "fa290c1d-92e2-5a20-8e0e-d016903e9fdf",
+            "definitionVersion": "1.0.0",
+            "condition": "running",
+            "reason": "Demo message pipeline prerequisite"
+          },
+          {
+            "id": "requests",
+            "definitionId": "d958ac47-0a68-577e-8d31-7020b3fa12a1",
+            "definitionVersion": "1.0.0",
+            "condition": "ready",
+            "reason": "Demo message pipeline prerequisite"
+          }
+        ],
+        "initialization": {
+          "kind": "initialization",
+          "schemaVersion": 1,
+          "id": "d032243e-4dd8-5697-a4fb-63cd169b43ed",
+          "version": "1.0.0",
+          "targetContract": {
+            "contractId": "demo.scheduler",
+            "versions": [
+              "1.0.0"
+            ]
+          },
+          "steps": [
+            {
+              "id": "bootstrap",
+              "title": "Bootstrap",
+              "endpointId": "api",
+              "method": "POST",
+              "path": "/bootstrap",
+              "headers": {},
+              "body": {
+                "kind": "none"
+              },
+              "expect": {
+                "statuses": [
+                  204
+                ],
+                "assertions": []
+              },
+              "timeoutSeconds": 120,
+              "retry": {
+                "mode": "key",
+                "maxAttempts": 3,
+                "idempotencyHeader": "Idempotency-Key",
+                "safetyEvidence": "DemoStore commits Applied(key,action) in the same SQLite FULL transaction as the mutation; replay of the same key/action returns 204."
+              }
+            }
+          ]
+        }
+      },
+      "source": {
+        "kind": "build",
+        "pathRef": "local-path://demo",
+        "dockerfile": "Scheduler.Api/Dockerfile",
+        "contextSubdirectory": ".",
+        "buildArguments": {},
+        "buildSecrets": {}
+      },
+      "parameters": {},
+      "environment": {
+        "BROKER_HOST": {
+          "literal": "c-55a577c807b35a6699b80cbe92b6c2e5"
+        },
+        "BROKER_USER": {
+          "literal": "demo"
+        },
+        "BROKER_PASSWORD": {
+          "secretRef": "secret://aee77d02-0cb1-5a19-9b49-7acbc6c87f9c"
+        }
+      },
+      "ports": [],
+      "storage": [
+        {
+          "kind": "managed",
+          "id": "data",
+          "targetPath": "/data"
+        }
+      ]
+    },
+    {
+      "id": "c05c011f-97ed-52cf-ac66-fde29000ee16",
+      "definitionSnapshot": {
+        "kind": "component",
+        "schemaVersion": 1,
+        "id": "d2820963-a096-5789-ba0f-8caf805bd818",
+        "version": "1.0.0",
+        "name": "Reporting",
+        "componentType": "target",
+        "contract": {
+          "id": "demo.reporting",
+          "version": "1.0.0"
+        },
+        "defaultSource": {
+          "kind": "build",
+          "pathRef": "local-path://demo",
+          "dockerfile": "Reporting.Api/Dockerfile",
+          "contextSubdirectory": ".",
+          "buildArguments": {},
+          "buildSecrets": {}
+        },
+        "parameterDefinitions": [],
+        "defaultEnvironment": {
+          "BROKER_HOST": {
+            "literal": "c-55a577c807b35a6699b80cbe92b6c2e5"
+          },
+          "BROKER_USER": {
+            "literal": "demo"
+          },
+          "BROKER_PASSWORD": {
+            "secretRef": "secret://aee77d02-0cb1-5a19-9b49-7acbc6c87f9c"
+          }
+        },
+        "defaultPorts": [],
+        "defaultStorage": [
+          {
+            "kind": "managed",
+            "id": "data",
+            "targetPath": "/data"
+          }
+        ],
+        "endpoints": [
+          {
+            "id": "api",
+            "containerPort": 8080,
+            "scheme": "http",
+            "basePath": "/"
+          }
+        ],
+        "readiness": {
+          "kind": "http",
+          "endpointId": "api",
+          "path": "/health",
+          "timeoutSeconds": 120
+        },
+        "dependencyRequirements": [
+          {
+            "id": "rabbitmq",
+            "definitionId": "fa290c1d-92e2-5a20-8e0e-d016903e9fdf",
+            "definitionVersion": "1.0.0",
+            "condition": "running",
+            "reason": "Demo message pipeline prerequisite"
+          },
+          {
+            "id": "scheduler",
+            "definitionId": "94c14b0a-c421-5b47-8800-06ad55c1b598",
+            "definitionVersion": "1.0.0",
+            "condition": "ready",
+            "reason": "Demo message pipeline prerequisite"
+          }
+        ],
+        "initialization": {
+          "kind": "initialization",
+          "schemaVersion": 1,
+          "id": "29051033-cab8-537c-91d6-6a28d735ef15",
+          "version": "1.0.0",
+          "targetContract": {
+            "contractId": "demo.reporting",
+            "versions": [
+              "1.0.0"
+            ]
+          },
+          "steps": [
+            {
+              "id": "bootstrap",
+              "title": "Bootstrap",
+              "endpointId": "api",
+              "method": "POST",
+              "path": "/bootstrap",
+              "headers": {},
+              "body": {
+                "kind": "none"
+              },
+              "expect": {
+                "statuses": [
+                  204
+                ],
+                "assertions": []
+              },
+              "timeoutSeconds": 120,
+              "retry": {
+                "mode": "key",
+                "maxAttempts": 3,
+                "idempotencyHeader": "Idempotency-Key",
+                "safetyEvidence": "DemoStore commits Applied(key,action) in the same SQLite FULL transaction as the mutation; replay of the same key/action returns 204."
+              }
+            }
+          ]
+        }
+      },
+      "source": {
+        "kind": "build",
+        "pathRef": "local-path://demo",
+        "dockerfile": "Reporting.Api/Dockerfile",
+        "contextSubdirectory": ".",
+        "buildArguments": {},
+        "buildSecrets": {}
+      },
+      "parameters": {},
+      "environment": {
+        "BROKER_HOST": {
+          "literal": "c-55a577c807b35a6699b80cbe92b6c2e5"
+        },
+        "BROKER_USER": {
+          "literal": "demo"
+        },
+        "BROKER_PASSWORD": {
+          "secretRef": "secret://aee77d02-0cb1-5a19-9b49-7acbc6c87f9c"
+        }
+      },
+      "ports": [],
+      "storage": [
+        {
+          "kind": "managed",
+          "id": "data",
+          "targetPath": "/data"
+        }
+      ]
+    }
+  ],
+  "dependencies": [
+    {
+      "dependentId": "86edccbc-42e6-529f-9f88-0e29eef7f3d2",
+      "requiredId": "55a577c8-07b3-5a66-99b8-0cbe92b6c2e5",
+      "requirementId": "rabbitmq",
+      "condition": "running",
+      "reason": "Demo message pipeline prerequisite"
+    },
+    {
+      "dependentId": "945cffd0-032d-5c5a-9547-9c90c882c607",
+      "requiredId": "55a577c8-07b3-5a66-99b8-0cbe92b6c2e5",
+      "requirementId": "rabbitmq",
+      "condition": "running",
+      "reason": "Demo message pipeline prerequisite"
+    },
+    {
+      "dependentId": "945cffd0-032d-5c5a-9547-9c90c882c607",
+      "requiredId": "86edccbc-42e6-529f-9f88-0e29eef7f3d2",
+      "requirementId": "requests",
+      "condition": "ready",
+      "reason": "Demo message pipeline prerequisite"
+    },
+    {
+      "dependentId": "c05c011f-97ed-52cf-ac66-fde29000ee16",
+      "requiredId": "55a577c8-07b3-5a66-99b8-0cbe92b6c2e5",
+      "requirementId": "rabbitmq",
+      "condition": "running",
+      "reason": "Demo message pipeline prerequisite"
+    },
+    {
+      "dependentId": "c05c011f-97ed-52cf-ac66-fde29000ee16",
+      "requiredId": "945cffd0-032d-5c5a-9547-9c90c882c607",
+      "requirementId": "scheduler",
+      "condition": "ready",
+      "reason": "Demo message pipeline prerequisite"
+    }
+  ],
+  "baseline": {
+    "applications": [
+      {
+        "componentId": "86edccbc-42e6-529f-9f88-0e29eef7f3d2",
+        "initializer": {
+          "kind": "initialization",
+          "schemaVersion": 1,
+          "id": "6240f82f-f1df-5d18-a9a7-bfe64dddec76",
+          "version": "1.0.0",
+          "targetContract": {
+            "contractId": "demo.requests",
+            "versions": [
+              "1.0.0"
+            ]
+          },
+          "steps": [
+            {
+              "id": "bootstrap",
+              "title": "Bootstrap",
+              "endpointId": "api",
+              "method": "POST",
+              "path": "/bootstrap",
+              "headers": {},
+              "body": {
+                "kind": "none"
+              },
+              "expect": {
+                "statuses": [
+                  204
+                ],
+                "assertions": []
+              },
+              "timeoutSeconds": 120,
+              "retry": {
+                "mode": "key",
+                "maxAttempts": 3,
+                "idempotencyHeader": "Idempotency-Key",
+                "safetyEvidence": "DemoStore commits Applied(key,action) in the same SQLite FULL transaction as the mutation; replay of the same key/action returns 204."
+              }
+            }
+          ]
+        },
+        "seedPack": null
+      },
+      {
+        "componentId": "86edccbc-42e6-529f-9f88-0e29eef7f3d2",
+        "initializer": {
+          "kind": "initialization",
+          "schemaVersion": 1,
+          "id": "f10d64c0-10e2-5960-82e2-7ad2e1bc510a",
+          "version": "1.0.0",
+          "targetContract": {
+            "contractId": "demo.requests",
+            "versions": [
+              "1.0.0"
+            ]
+          },
+          "steps": [
+            {
+              "id": "seed",
+              "title": "Seed records",
+              "endpointId": "api",
+              "method": "POST",
+              "path": "/seed",
+              "headers": {},
+              "body": {
+                "kind": "seedSection",
+                "sectionId": "records"
+              },
+              "expect": {
+                "statuses": [
+                  204
+                ],
+                "assertions": []
+              },
+              "timeoutSeconds": 120,
+              "retry": {
+                "mode": "key",
+                "maxAttempts": 3,
+                "idempotencyHeader": "Idempotency-Key",
+                "safetyEvidence": "DemoStore commits Applied(key,action) in the same SQLite FULL transaction as the mutation; replay of the same key/action returns 204."
+              }
+            }
+          ]
+        },
+        "seedPack": {
+          "id": "21141e33-50e2-5923-b287-08b33e02482c",
+          "version": "1.0.0",
+          "contentHash": "97110aa62ecae93b8b9b6e08e6531d7aed67c9195db5eec1c5b3784c4c9813b9"
+        }
+      },
+      {
+        "componentId": "945cffd0-032d-5c5a-9547-9c90c882c607",
+        "initializer": {
+          "kind": "initialization",
+          "schemaVersion": 1,
+          "id": "d032243e-4dd8-5697-a4fb-63cd169b43ed",
+          "version": "1.0.0",
+          "targetContract": {
+            "contractId": "demo.scheduler",
+            "versions": [
+              "1.0.0"
+            ]
+          },
+          "steps": [
+            {
+              "id": "bootstrap",
+              "title": "Bootstrap",
+              "endpointId": "api",
+              "method": "POST",
+              "path": "/bootstrap",
+              "headers": {},
+              "body": {
+                "kind": "none"
+              },
+              "expect": {
+                "statuses": [
+                  204
+                ],
+                "assertions": []
+              },
+              "timeoutSeconds": 120,
+              "retry": {
+                "mode": "key",
+                "maxAttempts": 3,
+                "idempotencyHeader": "Idempotency-Key",
+                "safetyEvidence": "DemoStore commits Applied(key,action) in the same SQLite FULL transaction as the mutation; replay of the same key/action returns 204."
+              }
+            }
+          ]
+        },
+        "seedPack": null
+      },
+      {
+        "componentId": "945cffd0-032d-5c5a-9547-9c90c882c607",
+        "initializer": {
+          "kind": "initialization",
+          "schemaVersion": 1,
+          "id": "829d1f23-29f7-5b31-86e3-6ab6a7499592",
+          "version": "1.0.0",
+          "targetContract": {
+            "contractId": "demo.scheduler",
+            "versions": [
+              "1.0.0"
+            ]
+          },
+          "steps": [
+            {
+              "id": "seed",
+              "title": "Seed records",
+              "endpointId": "api",
+              "method": "POST",
+              "path": "/seed",
+              "headers": {},
+              "body": {
+                "kind": "seedSection",
+                "sectionId": "records"
+              },
+              "expect": {
+                "statuses": [
+                  204
+                ],
+                "assertions": []
+              },
+              "timeoutSeconds": 120,
+              "retry": {
+                "mode": "key",
+                "maxAttempts": 3,
+                "idempotencyHeader": "Idempotency-Key",
+                "safetyEvidence": "DemoStore commits Applied(key,action) in the same SQLite FULL transaction as the mutation; replay of the same key/action returns 204."
+              }
+            }
+          ]
+        },
+        "seedPack": {
+          "id": "21141e33-50e2-5923-b287-08b33e02482c",
+          "version": "1.0.0",
+          "contentHash": "97110aa62ecae93b8b9b6e08e6531d7aed67c9195db5eec1c5b3784c4c9813b9"
+        }
+      },
+      {
+        "componentId": "c05c011f-97ed-52cf-ac66-fde29000ee16",
+        "initializer": {
+          "kind": "initialization",
+          "schemaVersion": 1,
+          "id": "29051033-cab8-537c-91d6-6a28d735ef15",
+          "version": "1.0.0",
+          "targetContract": {
+            "contractId": "demo.reporting",
+            "versions": [
+              "1.0.0"
+            ]
+          },
+          "steps": [
+            {
+              "id": "bootstrap",
+              "title": "Bootstrap",
+              "endpointId": "api",
+              "method": "POST",
+              "path": "/bootstrap",
+              "headers": {},
+              "body": {
+                "kind": "none"
+              },
+              "expect": {
+                "statuses": [
+                  204
+                ],
+                "assertions": []
+              },
+              "timeoutSeconds": 120,
+              "retry": {
+                "mode": "key",
+                "maxAttempts": 3,
+                "idempotencyHeader": "Idempotency-Key",
+                "safetyEvidence": "DemoStore commits Applied(key,action) in the same SQLite FULL transaction as the mutation; replay of the same key/action returns 204."
+              }
+            }
+          ]
+        },
+        "seedPack": null
+      },
+      {
+        "componentId": "c05c011f-97ed-52cf-ac66-fde29000ee16",
+        "initializer": {
+          "kind": "initialization",
+          "schemaVersion": 1,
+          "id": "702faf02-f79b-5da3-8c8b-ee90c55b8da6",
+          "version": "1.0.0",
+          "targetContract": {
+            "contractId": "demo.reporting",
+            "versions": [
+              "1.0.0"
+            ]
+          },
+          "steps": [
+            {
+              "id": "seed",
+              "title": "Seed records",
+              "endpointId": "api",
+              "method": "POST",
+              "path": "/seed",
+              "headers": {},
+              "body": {
+                "kind": "seedSection",
+                "sectionId": "records"
+              },
+              "expect": {
+                "statuses": [
+                  204
+                ],
+                "assertions": []
+              },
+              "timeoutSeconds": 120,
+              "retry": {
+                "mode": "key",
+                "maxAttempts": 3,
+                "idempotencyHeader": "Idempotency-Key",
+                "safetyEvidence": "DemoStore commits Applied(key,action) in the same SQLite FULL transaction as the mutation; replay of the same key/action returns 204."
+              }
+            }
+          ]
+        },
+        "seedPack": {
+          "id": "21141e33-50e2-5923-b287-08b33e02482c",
+          "version": "1.0.0",
+          "contentHash": "97110aa62ecae93b8b9b6e08e6531d7aed67c9195db5eec1c5b3784c4c9813b9"
+        }
+      }
+    ]
+  }
+}

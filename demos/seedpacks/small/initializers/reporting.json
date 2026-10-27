@@ -1,0 +1,39 @@
+{
+  "kind": "initialization",
+  "schemaVersion": 1,
+  "id": "702faf02-f79b-5da3-8c8b-ee90c55b8da6",
+  "version": "1.0.0",
+  "targetContract": {
+    "contractId": "demo.reporting",
+    "versions": [
+      "1.0.0"
+    ]
+  },
+  "steps": [
+    {
+      "id": "seed",
+      "title": "Seed records",
+      "endpointId": "api",
+      "method": "POST",
+      "path": "/seed",
+      "headers": {},
+      "body": {
+        "kind": "seedSection",
+        "sectionId": "records"
+      },
+      "expect": {
+        "statuses": [
+          204
+        ],
+        "assertions": []
+      },
+      "timeoutSeconds": 120,
+      "retry": {
+        "mode": "key",
+        "maxAttempts": 3,
+        "idempotencyHeader": "Idempotency-Key",
+        "safetyEvidence": "DemoStore commits Applied(key,action) in the same SQLite FULL transaction as the mutation; replay of the same key/action returns 204."
+      }
+    }
+  ]
+}

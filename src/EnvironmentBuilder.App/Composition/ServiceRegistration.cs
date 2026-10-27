@@ -3,6 +3,7 @@ using EnvironmentBuilder.App.Shell;
 using EnvironmentBuilder.Core.Abstractions;
 using EnvironmentBuilder.Core.Environments;
 using EnvironmentBuilder.Core.Operations;
+using EnvironmentBuilder.Core.SeedPacks;
 using EnvironmentBuilder.Infrastructure.Docker;
 using EnvironmentBuilder.Infrastructure.Imports;
 using EnvironmentBuilder.Infrastructure.Persistence;
@@ -18,6 +19,7 @@ public sealed class AppServices : IAsyncDisposable
     public ServiceProvider Provider { get; }
     public SqliteWorker Worker { get; }
     public SingleWriterLease Lease { get; }
+    public IReadOnlyList<string> RuntimeFileWarnings { get; private set; } = [];
 
     public static async Task<AppServices> CreateAsync(ShellViewModel shell, NavigationService navigation, ThemeService themes, string? dataDirectory = null)
     {
@@ -37,14 +39,30 @@ public sealed class AppServices : IAsyncDisposable
             services.AddSingleton<IComponentLibrary, AuthoringLibrary>();
             services.AddSingleton<ILocalPathMappings, LocalPathMappings>();
             services.AddSingleton<IInitializationDocumentReader>(p => p.GetRequiredService<StrictDocumentReader>());
-            services.AddSingleton<IPreviewInputCapture, PreviewInputCapture>();
+            services.AddSingleton<PreviewInputCapture>();
+            services.AddSingleton<IPreviewInputCapture>(p => p.GetRequiredService<PreviewInputCapture>());
             services.AddSingleton<CreateEnvironmentService>();
+            services.AddSingleton<PreviewReviewStore>();
             services.AddSingleton<IAuthoringInteractions, AuthoringInteractions>();
             services.AddSingleton<EnvironmentListViewModel>();
             services.AddSingleton<AuthoringSession>();
             services.AddSingleton<IOperationStore, OperationStore>();
             services.AddSingleton<ResourceLedgerStore>();
             services.AddSingleton<DataApplicationStore>();
+            services.AddSingleton<IDataApplicationJournal>(p => p.GetRequiredService<DataApplicationStore>());
+            services.AddSingleton<BaselineExecutor>();
+            services.AddSingleton<DockerProcessFactory>();
+            services.AddSingleton<RuntimeInputCapture>();
+            services.AddSingleton<IStartRuntime, DockerRuntimeAdapter>();
+            services.AddSingleton<StartEnvironmentService>();
+            services.AddSingleton<IEnvironmentObservationSource, DockerObservationReader>();
+            services.AddSingleton<LogMemoryBudget>();
+            services.AddSingleton<IInspectionStreamsFactory, DockerInspectionStreams>();
+            services.AddSingleton<IRuntimeInteractions, RuntimeInteractions>();
+            services.AddSingleton<EnvironmentCommands>();
+            services.AddSingleton(p => new InspectViewModel(p.GetRequiredService<IEnvironmentObservationSource>(), p.GetRequiredService<IInspectionStreamsFactory>(),
+                p.GetRequiredService<EnvironmentCommands>(), p.GetRequiredService<UiDispatcher>().ApplyAsync));
+            services.AddSingleton<ShutdownCoordinator>();
             services.AddSingleton<ContentBlobStore>();
             services.AddSingleton<SeedPackStore>();
             services.AddSingleton<ISeedPackStore>(p => p.GetRequiredService<SeedPackStore>());
@@ -58,7 +76,8 @@ public sealed class AppServices : IAsyncDisposable
             services.AddSingleton<UiDispatcher>().AddSingleton<DialogService>();
             ServiceProvider provider = services.BuildServiceProvider(new ServiceProviderOptions { ValidateOnBuild = true, ValidateScopes = true });
             await provider.GetRequiredService<OperationCoordinator>().InitializeAsync(CancellationToken.None).ConfigureAwait(false);
-            return new AppServices(provider, worker, lease);
+            return new AppServices(provider, worker, lease)
+            { RuntimeFileWarnings = await PrivateRuntimeFiles.CleanOrphansAsync(directory, provider.GetRequiredService<IOperationStore>(), CancellationToken.None).ConfigureAwait(false) };
         }
         catch { await worker.DisposeAsync().ConfigureAwait(false); await lease.DisposeAsync().ConfigureAwait(false); throw; }
     }

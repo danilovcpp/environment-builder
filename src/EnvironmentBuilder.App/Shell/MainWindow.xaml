@@ -10,6 +10,7 @@
         <DataTemplate DataType="{x:Type authoring:EnvironmentListViewModel}"><authoring:EnvironmentListPage/></DataTemplate>
         <DataTemplate DataType="{x:Type authoring:EnvironmentEditorViewModel}"><authoring:EnvironmentEditorPage/></DataTemplate>
         <DataTemplate DataType="{x:Type authoring:ComposePreviewViewModel}"><authoring:ComposePreviewPage/></DataTemplate>
+        <DataTemplate DataType="{x:Type authoring:InspectViewModel}"><authoring:InspectPage/></DataTemplate>
     </Window.Resources>
     <Grid>
         <Grid.RowDefinitions><RowDefinition Height="*" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>

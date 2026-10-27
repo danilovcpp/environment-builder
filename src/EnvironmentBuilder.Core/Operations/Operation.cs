@@ -13,6 +13,8 @@ public sealed record Operation(Guid Id, Guid EnvironmentId, string Kind, Operati
     public ImmutableArray<string> Remnants { get; init; } = [];
     public ImmutableArray<StageProgress> Progress { get; init; } = [];
     public string? ResultCode { get; init; }
+    public string? InputReviewToken { get; init; }
+    public ConfirmationRecord? Confirmation { get; init; }
 }
 public sealed record StageProgress(Guid? ComponentId, string Stage, long Completed, long? Total);
 public sealed record OperationStep(Guid OperationId, string StepId, string Action, string Target)

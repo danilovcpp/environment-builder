@@ -5,6 +5,7 @@ public sealed class IsolatedTestStore : IDisposable
     private readonly HashSet<Guid> environmentIds = [];
     private readonly string parentDirectory;
     private bool disposed;
+    private bool retained;
 
     private IsolatedTestStore(string parentDirectory)
     {
@@ -40,6 +41,11 @@ public sealed class IsolatedTestStore : IDisposable
         ObjectDisposedException.ThrowIf(disposed, this);
         return environmentIds.Contains(id);
     }
+    public void RetainForReconciliation()
+    {
+        ObjectDisposedException.ThrowIf(disposed, this);
+        retained = true;
+    }
 
     public string GetPath(params string[] parts)
     {
@@ -64,6 +70,7 @@ public sealed class IsolatedTestStore : IDisposable
         {
             return;
         }
+        if (retained) { disposed = true; return; }
 
         string resolved = Path.GetFullPath(DataDirectory);
         if (!IsWithin(resolved, parentDirectory) ||

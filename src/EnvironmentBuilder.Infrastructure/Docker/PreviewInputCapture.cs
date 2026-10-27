@@ -38,8 +38,7 @@ public sealed class PreviewInputCapture(ILocalPathMappings mappings, LocalPathRe
                 { await Capture(component.Id + ":input:" + storage.Id + ":" + storage.TargetPath, storage.PathRef, ".", false).ConfigureAwait(false); }
             }
             JsonElement json = JsonSerializer.SerializeToElement(environment, CanonicalJson.Options);
-            var secrets = new SortedSet<string>(StringComparer.Ordinal);
-            Collect(json);
+            IReadOnlyList<string> secrets = EnvironmentSecrets.References(environment);
             return new PreviewSnapshot(environment.Id, environment.Revision, CanonicalJson.Hash(environment), Encoding.UTF8.GetString(CanonicalJson.Encode(json)), "compose-v1",
                 CanonicalJson.Hash(environment.Baseline), environment.Baseline.Applications.Select(a => CanonicalJson.Hash(a.Initializer)).ToImmutableArray(),
                 environment.Baseline.Applications.Where(a => a.SeedPack is not null).Select(a => CanonicalJson.Hash(a.SeedPack)).ToImmutableArray(), secrets.ToImmutableArray(), inputs.ToImmutable());
@@ -54,22 +53,10 @@ public sealed class PreviewInputCapture(ILocalPathMappings mappings, LocalPathRe
                 catch (Exception error) when (error is IOException or UnauthorizedAccessException)
                 { inputs.Add(new PreviewInput(key, "unknown:" + (error is FileNotFoundException ? "missing" : "unavailable-or-changing"), null, null)); }
             }
-            void Collect(JsonElement element)
-            {
-                if (element.ValueKind == JsonValueKind.Object)
-                {
-                    foreach (JsonProperty property in element.EnumerateObject())
-                    {
-                        if (property.Value.ValueKind == JsonValueKind.String && property.Value.GetString()!.StartsWith("secret://", StringComparison.Ordinal)) { secrets.Add(property.Value.GetString()!); }
-                        Collect(property.Value);
-                    }
-                }
-                else if (element.ValueKind == JsonValueKind.Array) { foreach (JsonElement item in element.EnumerateArray()) { Collect(item); } }
-            }
         }, cancellationToken).ConfigureAwait(false);
     }
 
-    private static async Task<string> HashTreeAsync(string root, CancellationToken cancellationToken)
+    internal static async Task<string> HashTreeAsync(string root, CancellationToken cancellationToken)
     {
         LocalPathResolver.RejectReparsePoints(root);
         if (File.Exists(root)) { return await HashFileAsync(root, cancellationToken).ConfigureAwait(false); }

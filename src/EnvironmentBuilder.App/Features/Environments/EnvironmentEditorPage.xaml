@@ -5,6 +5,7 @@
  <DockPanel>
   <StackPanel DockPanel.Dock="Top">
    <WrapPanel Margin="0,0,0,8"><Button Content="К списку" Command="{Binding GoBackCommand}" Margin="0,0,8,8" AutomationProperties.AutomationId="BackToList"/><Button Content="Compose preview" Command="{Binding ShowPreviewCommand}" Margin="0,0,8,8" AutomationProperties.AutomationId="ShowCompose"/><Button Content="Сохранить" Command="{Binding SaveCommand}" Style="{DynamicResource Button.Primary}" Margin="0,0,0,8" AutomationProperties.AutomationId="SaveEnvironment"/></WrapPanel>
+   <Button Content="Исследовать / запуск" Command="{Binding InspectSavedCommand}" HorizontalAlignment="Left" Margin="0,0,0,8" ToolTip="Запуск доступен после сохранения описания." ToolTipService.ShowOnDisabled="True" AutomationProperties.AutomationId="EditorInspect"/>
    <TextBlock Text="{Binding SaveDisabledReason}" Foreground="{DynamicResource Brush.TextSecondary}" TextWrapping="Wrap" Focusable="True" AutomationProperties.AutomationId="SaveDisabledReason"/>
    <TextBlock Text="{Binding ActionError}" Foreground="{DynamicResource Brush.ErrorForeground}" TextWrapping="Wrap"/>
    <ProgressBar IsIndeterminate="True" Height="3" Visibility="{Binding IsBusy, Converter={StaticResource Visible}}" Margin="0,4" AutomationProperties.Name="Выполняется действие"/>

@@ -38,6 +38,7 @@ public sealed partial class EnvironmentEditorViewModel : ObservableObject
     public bool IsDirty => unparsedEdits || Draft.IsDirty;
     public bool CanSave => CanEdit && Errors.Count == 0;
     public bool CanPreview => !IsBusy && Errors.Count == 0;
+    public bool CanInspect => IsReadOnly && !IsBusy;
     public string SaveDisabledReason => IsReadOnly ? "Сохранённое описание открыто для просмотра. Изменение требует подтверждённой остановки и очистки." : IsBusy ? "Дождитесь завершения текущего действия." : Errors.Count != 0 ? "Исправьте ошибки структуры перед сохранением." : "";
     public string Title => IsReadOnly ? "Описание окружения" : "Новое окружение";
     public string SavedDocumentJson => System.Text.Json.JsonSerializer.Serialize(Draft.Snapshot, new System.Text.Json.JsonSerializerOptions(CanonicalJson.Options) { WriteIndented = true });
@@ -66,6 +67,7 @@ public sealed partial class EnvironmentEditorViewModel : ObservableObject
     public double ScrollOffset { get; set; }
     public Func<IsolatedEnvironment, Task>? Saved { get; set; }
     public Func<IsolatedEnvironment, Task>? Preview { get; set; }
+    public Func<IsolatedEnvironment, Task>? Inspect { get; set; }
     public Func<Task>? Back { get; set; }
 
     public async Task LoadLibraryAsync(CancellationToken cancellationToken)
@@ -138,7 +140,7 @@ public sealed partial class EnvironmentEditorViewModel : ObservableObject
     private void NotifyState()
     {
         OnPropertyChanged(nameof(IsDirty)); OnPropertyChanged(nameof(CanSave)); OnPropertyChanged(nameof(CanPreview)); OnPropertyChanged(nameof(CanEdit)); OnPropertyChanged(nameof(CanInteract)); OnPropertyChanged(nameof(SaveDisabledReason));
-        SaveCommand.NotifyCanExecuteChanged(); ShowPreviewCommand.NotifyCanExecuteChanged();
+        SaveCommand.NotifyCanExecuteChanged(); ShowPreviewCommand.NotifyCanExecuteChanged(); InspectSavedCommand.NotifyCanExecuteChanged();
     }
     partial void OnIsBusyChanged(bool value) => NotifyState();
 
@@ -247,6 +249,7 @@ public sealed partial class EnvironmentEditorViewModel : ObservableObject
         Validate(); if (Errors.Count == 0 && Preview is not null) { await Preview(BuildSnapshot()); }
     }
     [RelayCommand] private Task GoBackAsync() => Back?.Invoke() ?? Task.CompletedTask;
+    [RelayCommand(CanExecute = nameof(CanInspect))] private Task InspectSavedAsync() => Inspect?.Invoke(Draft.Snapshot) ?? Task.CompletedTask;
     [RelayCommand] private void FocusError(ValidationMessage issue) { FocusField = ""; FocusField = issue.FieldPath; }
     private async Task WithActionAsync(Func<Task> action)
     {

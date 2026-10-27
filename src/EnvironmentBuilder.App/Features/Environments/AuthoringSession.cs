@@ -18,15 +18,22 @@ public sealed class AuthoringSession : ObservableObject
     private readonly NavigationService navigation;
     private readonly IPreviewInputCapture capture;
     private readonly DirtyDraftGuard guard;
+    private readonly InspectViewModel? inspect;
+    private readonly PreviewReviewStore? reviews;
     private object current;
 
     public AuthoringSession(EnvironmentListViewModel list, CreateEnvironmentService create, IComponentLibrary library, IAuthoringInteractions interactions,
-        IInitializationDocumentReader documents, ILocalPathMappings mappings, IInputResolver inputs, ISeedPackStore packs, IPreviewInputCapture capture, NavigationService navigation)
+        IInitializationDocumentReader documents, ILocalPathMappings mappings, IInputResolver inputs, ISeedPackStore packs, IPreviewInputCapture capture, NavigationService navigation, InspectViewModel? inspect = null, PreviewReviewStore? reviews = null)
     {
         List = list; this.create = create; this.library = library; this.interactions = interactions; this.documents = documents; this.mappings = mappings; this.inputs = inputs; this.packs = packs; this.capture = capture; this.navigation = navigation;
         guard = new DirtyDraftGuard(interactions.DecideDirtyDraftAsync); current = list;
+        this.inspect = inspect;
+        this.reviews = reviews;
         List.Create = CreateAsync;
         List.Open = row => OpenAsync(row.Item.Document!);
+        List.Inspect = row => OpenInspectAsync(row.Item.Document!);
+        List.Start = async row => { await OpenInspectAsync(row.Item.Document!); if (Current == inspect && inspect?.StartCommand.CanExecute(null) == true) { await inspect.StartCommand.ExecuteAsync(null); } };
+        List.Compose = row => ShowSavedPreviewAsync(row.Item.Document!);
     }
     public EnvironmentListViewModel List { get; }
     public EnvironmentEditorViewModel? Editor { get; private set; }
@@ -42,6 +49,7 @@ public sealed class AuthoringSession : ObservableObject
     public async Task<bool> LeaveAsync(CancellationToken cancellationToken)
     {
         if (!await CanLeaveAsync(cancellationToken)) { return false; }
+        if (inspect is not null) { await inspect.CloseSessionAsync(); }
         Guid? savedId = Editor?.Draft.IsPersisted == true ? Editor.Id : null;
         if (savedId.HasValue) { await List.LoadAsync(cancellationToken); List.SelectSaved(savedId.Value); }
         DiscardScreen();
@@ -50,13 +58,40 @@ public sealed class AuthoringSession : ObservableObject
     private async Task CreateAsync()
     {
         if (!await CanLeaveAsync(CancellationToken.None)) { return; }
+        if (inspect is not null) { await inspect.CloseSessionAsync(); }
         Editor = null;
         await OpenEditorAsync(EnvironmentDraft.Create());
     }
     public async Task OpenAsync(IsolatedEnvironment environment)
     {
         if (!await CanLeaveAsync(CancellationToken.None)) { return; }
+        if (inspect is not null) { await inspect.CloseSessionAsync(); }
         await OpenEditorAsync(EnvironmentDraft.Open(environment));
+    }
+    public async Task OpenInspectAsync(IsolatedEnvironment environment)
+    {
+        if (inspect is null || !await CanLeaveAsync(CancellationToken.None)) { return; }
+        Editor = null;
+        inspect.Back = async () => { await inspect.CloseSessionAsync(); Current = List; navigation.Navigate(new("environments")); };
+        inspect.Preview = async document =>
+        {
+            await inspect.CloseSessionAsync();
+            var preview = new ComposePreviewViewModel(capture, interactions, reviews) { Back = () => OpenInspectAsync(document) };
+            Current = preview; navigation.Navigate(new("preview", document.Id));
+            await preview.LoadAsync(document, CancellationToken.None);
+        };
+        Current = inspect; navigation.Navigate(new("inspect", environment.Id));
+        await inspect.OpenAsync(environment, CancellationToken.None);
+    }
+    private async Task ShowSavedPreviewAsync(IsolatedEnvironment environment)
+    {
+        if (!await CanLeaveAsync(CancellationToken.None)) { return; }
+        if (inspect is not null) { await inspect.CloseSessionAsync(); }
+        Editor = null;
+        var preview = new ComposePreviewViewModel(capture, interactions, reviews)
+        { Back = () => { Current = List; navigation.Navigate(new("environments")); return Task.CompletedTask; } };
+        Current = preview; navigation.Navigate(new("preview", environment.Id));
+        await preview.LoadAsync(environment, CancellationToken.None);
     }
     private async Task OpenEditorAsync(EnvironmentDraft draft)
     {
@@ -64,6 +99,7 @@ public sealed class AuthoringSession : ObservableObject
         Editor.Saved = async saved => { await List.LoadAsync(CancellationToken.None); List.SelectSaved(saved.Id); Editor = null; Current = List; navigation.Navigate(new NavigationAddress("environments")); };
         Editor.Back = ReturnToListAsync;
         Editor.Preview = ShowPreviewAsync;
+        Editor.Inspect = OpenInspectAsync;
         Current = Editor;
         navigation.Navigate(new NavigationAddress("editor", draft.IsPersisted ? draft.Snapshot.Id : null, draft.DraftId));
         await Editor.LoadLibraryAsync(CancellationToken.None);
@@ -81,7 +117,7 @@ public sealed class AuthoringSession : ObservableObject
     {
         if (Editor is null) { return; }
         EnvironmentEditorViewModel editor = Editor;
-        var preview = new ComposePreviewViewModel(capture, interactions)
+        var preview = new ComposePreviewViewModel(capture, interactions, reviews)
         {
             Back = () => { Current = editor; navigation.Navigate(new NavigationAddress("editor", editor.IsReadOnly ? editor.Id : null, editor.Draft.DraftId)); return Task.CompletedTask; }
         };

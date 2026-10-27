@@ -10,12 +10,14 @@ public sealed class CoordinatorTests
     public async Task A_failed_terminal_commit_never_advertises_success_or_allows_a_second_operation()
     {
         var journal = new MemoryJournal { FailTerminalWrites = true };
-        await using var coordinator = new OperationCoordinator(journal, new SystemClock(), () => true);
+        var coordinator = new OperationCoordinator(journal, new SystemClock(), () => true);
         Operation operation = NewOperation();
         OperationHandle handle = coordinator.Submit(operation, _ => Task.CompletedTask);
         await Assert.ThrowsAsync<IOException>(() => handle.Completion);
         Assert.Equal(OperationState.NeedsAttention, handle.Current.State);
         Assert.Throws<InvalidOperationException>(() => coordinator.Submit(operation with { Id = Guid.NewGuid() }, _ => Task.CompletedTask));
+        await Assert.ThrowsAsync<IOException>(() => coordinator.PrepareCloseAsync(false, TestContext.Current.CancellationToken));
+        await Assert.ThrowsAsync<IOException>(() => coordinator.DisposeAsync().AsTask());
     }
 
     [Fact]
