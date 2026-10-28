@@ -135,11 +135,57 @@ public sealed class ThemeResourcesTests
             VerifyShell(diagnostics);
             VerifyAuthoring(diagnostics);
             VerifyInspect(diagnostics);
+            VerifyDestructiveEdit(diagnostics);
         }
         finally
         {
             app.Shutdown();
         }
+    }
+
+    private static void VerifyDestructiveEdit(BindingDiagnostics diagnostics)
+    {
+        var fixture = new AuthoringUiFixture();
+        var draft = Core.Environments.EnvironmentDraft.Create();
+        draft.AddComponent(fixture.Definitions.First(d => d.ComponentType == "target"), fixture.Definitions);
+        var original = draft.Snapshot with { Name = "Окружение с важными данными · точный план изменения" };
+        var volume = new Core.Operations.OwnedResource(Guid.NewGuid(), Guid.NewGuid(), original.Id, original.Components[0].Id, Core.Operations.ResourceKind.Volume, 1,
+            Guid.NewGuid(), "eb-selected-persisted-data", System.Collections.Immutable.ImmutableDictionary<string, string>.Empty, "eb-selected-persisted-data",
+            new("2026-10-28T00:00:00Z", "local", "local", System.Collections.Immutable.ImmutableDictionary<string, string>.Empty), [], true, Guid.NewGuid(), false);
+        var plan = new Core.Operations.OperationPlan(Guid.NewGuid(), original.Id, 1, Core.Environments.CanonicalJson.Hash(original), volume.DataGenerationId,
+            Core.Environments.CanonicalJson.Hash(original.Baseline), [volume], [], ["verify-quiescence", "remove-containers", "remove-volumes", "remove-network", "publish-revision"],
+            "Удаление данных необратимо. Окружение останется остановленным и неинициализированным. Временные запуски не требуются.", original with { Name = "Новое имя", Revision = 2 })
+        { EnvironmentName = original.Name, EngineId = "engine-pinned", Endpoint = "npipe://local-engine", ObservedAt = DateTimeOffset.UtcNow, NextDataGenerationId = Guid.NewGuid() };
+        var model = new App.Components.DestructivePlanViewModel(plan);
+        var dialog = new App.Components.DestructivePlanDialog { DataContext = model, Left = -10000, Top = 0, WindowStartupLocation = WindowStartupLocation.Manual, ShowActivated = false, ShowInTaskbar = false };
+        dialog.Show();
+        var themes = new App.Shell.ThemeService();
+        foreach (bool dark in new[] { false, true })
+        {
+            themes.Apply(dark); dialog.UpdateLayout(); dialog.Dispatcher.Invoke(() => { }, DispatcherPriority.ContextIdle);
+            Assert.Same(model, dialog.DataContext);
+            Assert.Equal("CancelButton", Assert.IsType<Button>(System.Windows.Input.FocusManager.GetFocusedElement(dialog)).Name);
+            var details = Descendants(dialog).OfType<TextBox>().Single();
+            Assert.Contains(original.Id.ToString(), details.Text); Assert.Contains(volume.ActualDockerId!, details.Text);
+            Assert.True(details.ActualHeight > 200);
+            SavePreview((FrameworkElement)dialog.Content, dark ? "destructive-edit-dark" : "destructive-edit-light");
+        }
+        dialog.Hide();
+        dialog.Left = 80; dialog.Top = 80; dialog.ShowActivated = true;
+        bool escaped = false;
+        dialog.PreviewKeyDown += (_, args) => { if (args.Key == System.Windows.Input.Key.Escape) { escaped = true; } };
+        var timeout = new DispatcherTimer { Interval = TimeSpan.FromSeconds(10) };
+        timeout.Tick += (_, _) => dialog.Close();
+        dialog.Dispatcher.BeginInvoke(new Action(() =>
+        {
+            dialog.Activate();
+            Assert.True(((Button)dialog.FindName("CancelButton")).Focus());
+            FlaUI.Core.Input.Keyboard.Type(FlaUI.Core.WindowsAPI.VirtualKeyShort.ESCAPE);
+        }), DispatcherPriority.ApplicationIdle);
+        timeout.Start();
+        try { Assert.False(dialog.ShowDialog() == true); Assert.True(escaped, "Escape must cancel the destructive dialog through keyboard input."); }
+        finally { timeout.Stop(); }
+        Assert.Empty(diagnostics.Errors);
     }
 
     private static void VerifyInspect(BindingDiagnostics diagnostics)

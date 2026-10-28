@@ -20,15 +20,19 @@ public sealed class AuthoringSession : ObservableObject
     private readonly DirtyDraftGuard guard;
     private readonly InspectViewModel? inspect;
     private readonly PreviewReviewStore? reviews;
+    private readonly EnvironmentCommands? commands;
+    private readonly IDestructiveInteractions? destructive;
     private object current;
 
     public AuthoringSession(EnvironmentListViewModel list, CreateEnvironmentService create, IComponentLibrary library, IAuthoringInteractions interactions,
-        IInitializationDocumentReader documents, ILocalPathMappings mappings, IInputResolver inputs, ISeedPackStore packs, IPreviewInputCapture capture, NavigationService navigation, InspectViewModel? inspect = null, PreviewReviewStore? reviews = null)
+        IInitializationDocumentReader documents, ILocalPathMappings mappings, IInputResolver inputs, ISeedPackStore packs, IPreviewInputCapture capture, NavigationService navigation, InspectViewModel? inspect = null, PreviewReviewStore? reviews = null,
+        EnvironmentCommands? commands = null, IDestructiveInteractions? destructive = null)
     {
         List = list; this.create = create; this.library = library; this.interactions = interactions; this.documents = documents; this.mappings = mappings; this.inputs = inputs; this.packs = packs; this.capture = capture; this.navigation = navigation;
         guard = new DirtyDraftGuard(interactions.DecideDirtyDraftAsync); current = list;
         this.inspect = inspect;
         this.reviews = reviews;
+        this.commands = commands; this.destructive = destructive;
         List.Create = CreateAsync;
         List.Open = row => OpenAsync(row.Item.Document!);
         List.Inspect = row => OpenInspectAsync(row.Item.Document!);
@@ -95,7 +99,7 @@ public sealed class AuthoringSession : ObservableObject
     }
     private async Task OpenEditorAsync(EnvironmentDraft draft)
     {
-        Editor = new EnvironmentEditorViewModel(draft, create, library, interactions, documents, mappings, inputs, packs);
+        Editor = new EnvironmentEditorViewModel(draft, create, library, interactions, documents, mappings, inputs, packs, commands, destructive);
         Editor.Saved = async saved => { await List.LoadAsync(CancellationToken.None); List.SelectSaved(saved.Id); Editor = null; Current = List; navigation.Navigate(new NavigationAddress("environments")); };
         Editor.Back = ReturnToListAsync;
         Editor.Preview = ShowPreviewAsync;

@@ -5,7 +5,11 @@ using EnvironmentBuilder.Core.Environments;
 namespace EnvironmentBuilder.Core.Operations;
 
 public sealed record ResourceEvidence(ResourceKind Kind, string Name, string Identity, ImmutableDictionary<string, string> Labels,
-    VolumeIncarnation? Volume, ImmutableArray<string> Consumers, bool ConsumersKnown, string State);
+    VolumeIncarnation? Volume, ImmutableArray<string> Consumers, bool ConsumersKnown, string State)
+{
+    public string? NetworkDriver { get; init; }
+    public string? NetworkScope { get; init; }
+}
 
 public static class ResourceOwnershipVerifier
 {

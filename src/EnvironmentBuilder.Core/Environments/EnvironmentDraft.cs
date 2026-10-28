@@ -22,6 +22,11 @@ public sealed class EnvironmentDraft
         Snapshot = snapshot;
     }
     public void MarkSaved() { originalHash = CanonicalJson.Hash(Snapshot); IsPersisted = true; }
+    public void AcceptSaved(IsolatedEnvironment snapshot)
+    {
+        if (snapshot.Id != Snapshot.Id || snapshot.Revision < Snapshot.Revision || snapshot.Revision > Snapshot.Revision + 1) { throw new InvalidOperationException("Saved draft identity mismatch."); }
+        Snapshot = snapshot; MarkSaved();
+    }
 
     public void AddComponent(ComponentDefinition definition, IReadOnlyList<ComponentDefinition> library)
     {

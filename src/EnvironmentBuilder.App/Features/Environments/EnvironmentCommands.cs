@@ -6,10 +6,13 @@ using EnvironmentBuilder.Core.Operations;
 namespace EnvironmentBuilder.App.Features.Environments;
 
 // Application-owned handles survive route changes. Observation and cancellation remain independent.
-public sealed class EnvironmentCommands(StartEnvironmentService start, OperationCoordinator coordinator, PreviewReviewStore reviews, IRuntimeInteractions interactions, StopEnvironmentService stop) : ObservableObject
+public sealed class EnvironmentCommands(StartEnvironmentService start, OperationCoordinator coordinator, PreviewReviewStore reviews, IRuntimeInteractions interactions, StopEnvironmentService stop, EditEnvironmentService? edit = null) : ObservableObject, IEnvironmentEditing
 {
     private readonly Dictionary<Guid, OperationHandle> handles = [];
-    public OperationHandle? Get(Guid environment) => handles.GetValueOrDefault(environment);
+    public OperationHandle? Get(Guid environment) => coordinator.Active.FirstOrDefault(h => h.Current.EnvironmentId == environment) ?? handles.GetValueOrDefault(environment);
+    public Task<QuiescenceResult> CheckAsync(IsolatedEnvironment environment, CancellationToken token) => edit?.CheckAsync(environment, token) ?? Task.FromResult(new QuiescenceResult(false, "Изменение недоступно."));
+    public Task<EditEnvironmentResult> SaveAsync(IsolatedEnvironment original, IsolatedEnvironment candidate, Func<OperationPlan, CancellationToken, Task<ConfirmationRecord?>> confirm, CancellationToken token) =>
+        edit?.SaveAsync(original, candidate, confirm, token, handle => handles[original.Id] = handle) ?? Task.FromResult(new EditEnvironmentResult(false, null, null, "edit-unavailable"));
     public string? DisabledReason(Guid environment) => coordinator.AdmissionBlockReason(environment);
     public QuiescenceResult Quiescence(Guid environment, EnvironmentObservation? observation) => QuiescenceGuard.Check(observation, coordinator.AdmissionBlockReason(environment));
     public string? StopDisabledReason(Guid environment, EnvironmentObservation? observation)

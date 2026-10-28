@@ -17,14 +17,20 @@ public sealed partial class EnvironmentEditorViewModel : ObservableObject
     private readonly ILocalPathMappings mappings;
     private readonly IInputResolver inputs;
     private readonly ISeedPackStore packs;
+    private readonly IEnvironmentEditing? editing;
+    private readonly IDestructiveInteractions? destructive;
+    private IsolatedEnvironment? original;
+    private bool editEnabled;
     private bool synchronizing;
     private bool unparsedEdits;
     private long editVersion;
 
     public EnvironmentEditorViewModel(EnvironmentDraft draft, CreateEnvironmentService service, IComponentLibrary library, IAuthoringInteractions interactions,
-        IInitializationDocumentReader documents, ILocalPathMappings mappings, IInputResolver inputs, ISeedPackStore packs)
+        IInitializationDocumentReader documents, ILocalPathMappings mappings, IInputResolver inputs, ISeedPackStore packs,
+        IEnvironmentEditing? editing = null, IDestructiveInteractions? destructive = null)
     {
         Draft = draft; this.service = service; this.library = library; this.interactions = interactions; this.documents = documents; this.mappings = mappings; this.inputs = inputs; this.packs = packs;
+        this.editing = editing; this.destructive = destructive; original = draft.IsPersisted ? draft.Snapshot : null;
         RenderDraft();
         Components.Changed += Edited; Dependencies.Changed += Edited; Baseline.Changed += Edited;
         Validate();
@@ -32,15 +38,16 @@ public sealed partial class EnvironmentEditorViewModel : ObservableObject
     public EnvironmentDraft Draft { get; }
     public Guid Id => Draft.Snapshot.Id;
     public long Revision => Draft.Snapshot.Revision;
-    public bool IsReadOnly => Draft.IsPersisted;
+    public bool IsReadOnly => Draft.IsPersisted && !editEnabled;
     public bool CanEdit => !IsReadOnly && !IsBusy;
     public bool CanInteract => !IsBusy;
     public bool IsDirty => unparsedEdits || Draft.IsDirty;
     public bool CanSave => CanEdit && Errors.Count == 0;
     public bool CanPreview => !IsBusy && Errors.Count == 0;
-    public bool CanInspect => IsReadOnly && !IsBusy;
+    public bool CanInspect => Draft.IsPersisted && !IsBusy && !IsDirty;
+    public bool CanBeginEdit => IsReadOnly && !IsBusy && editing is not null;
     public string SaveDisabledReason => IsReadOnly ? "Сохранённое описание открыто для просмотра. Изменение требует подтверждённой остановки и очистки." : IsBusy ? "Дождитесь завершения текущего действия." : Errors.Count != 0 ? "Исправьте ошибки структуры перед сохранением." : "";
-    public string Title => IsReadOnly ? "Описание окружения" : "Новое окружение";
+    public string Title => IsReadOnly ? "Описание окружения" : Draft.IsPersisted ? "Изменение окружения" : "Новое окружение";
     public string SavedDocumentJson => System.Text.Json.JsonSerializer.Serialize(Draft.Snapshot, new System.Text.Json.JsonSerializerOptions(CanonicalJson.Options) { WriteIndented = true });
     public EditorRows<ComponentEditorViewModel> Components { get; } = [];
     public EditorRows<DependencyEditor> Dependencies { get; } = [];
@@ -141,8 +148,22 @@ public sealed partial class EnvironmentEditorViewModel : ObservableObject
     {
         OnPropertyChanged(nameof(IsDirty)); OnPropertyChanged(nameof(CanSave)); OnPropertyChanged(nameof(CanPreview)); OnPropertyChanged(nameof(CanEdit)); OnPropertyChanged(nameof(CanInteract)); OnPropertyChanged(nameof(SaveDisabledReason));
         SaveCommand.NotifyCanExecuteChanged(); ShowPreviewCommand.NotifyCanExecuteChanged(); InspectSavedCommand.NotifyCanExecuteChanged();
+        OnPropertyChanged(nameof(CanBeginEdit)); OnPropertyChanged(nameof(CanInspect)); BeginEditCommand.NotifyCanExecuteChanged();
     }
     partial void OnIsBusyChanged(bool value) => NotifyState();
+
+    [RelayCommand(CanExecute = nameof(CanBeginEdit))]
+    private async Task BeginEditAsync(CancellationToken token)
+    {
+        if (editing is null || original is null) { return; }
+        await WithActionAsync(async () =>
+        {
+            var guard = await editing.CheckAsync(original, token);
+            if (!guard.ConfirmedQuiescent) { ActionError = guard.Reason ?? "Остановка не подтверждена."; return; }
+            editEnabled = true; RenderDraft();
+            OnPropertyChanged(nameof(IsReadOnly)); OnPropertyChanged(nameof(Title)); NotifyState();
+        });
+    }
 
     [RelayCommand]
     private void AddComponent()
@@ -230,6 +251,31 @@ public sealed partial class EnvironmentEditorViewModel : ObservableObject
         bool saved = false;
         await WithActionAsync(async () =>
         {
+            if (original is not null && editing is not null && destructive is not null)
+            {
+                IsolatedEnvironment requested = BuildSnapshot();
+                var edited = await editing.SaveAsync(original, requested, destructive.ConfirmAsync, cancellationToken);
+                if (edited.Saved && edited.Environment is not null)
+                {
+                    IsolatedEnvironment visible = BuildSnapshot();
+                    saved = CanonicalJson.Hash(visible) == CanonicalJson.Hash(requested);
+                    Draft.AcceptSaved(edited.Environment); original = edited.Environment; unparsedEdits = !saved; editEnabled = !saved;
+                    if (saved) { RenderDraft(); }
+                    else { Draft.Update(visible with { Revision = edited.Environment.Revision }); ActionError = "Сохранён подтверждённый snapshot. Новые изменения остаются в черновике."; }
+                    OnPropertyChanged(nameof(IsReadOnly)); OnPropertyChanged(nameof(Revision)); OnPropertyChanged(nameof(Title));
+                }
+                else
+                {
+                    ActionError = edited.Code switch
+                    {
+                        "cancelled" => "Изменение отменено. Черновик и прежнее описание сохранены.",
+                        "stale-plan" or "saved-configuration-changed" or "resource-authority-changed" => "План устарел. Проверьте состояние и сохраните снова для нового подтверждения.",
+                        _ => "Новая ревизия не сохранена. Прежнее описание остаётся действующим. Уже удалённые данные не восстанавливаются."
+                    };
+                    if (edited.Operation is { } operation) { ActionError += "\nПроверенно удалены: " + string.Join(", ", operation.DeletedResources) + "\nОстатки / требуют сверки: " + string.Join(", ", operation.Remnants); }
+                }
+                return;
+            }
             CreateEnvironmentResult result = await service.CreateAsync(Draft, cancellationToken);
             ReadinessIssues.Clear(); foreach (var issue in result.ReadinessIssues) { ReadinessIssues.Add(issue); }
             // Navigation is only safe if the committed snapshot still matches the visible draft.
@@ -240,7 +286,7 @@ public sealed partial class EnvironmentEditorViewModel : ObservableObject
         });
         NotifyState(); return saved;
     }
-    [RelayCommand(CanExecute = nameof(CanSave))]
+    [RelayCommand(CanExecute = nameof(CanSave), IncludeCancelCommand = true)]
     private async Task SaveAsync(CancellationToken cancellationToken)
     { if (await TrySaveAsync(cancellationToken) && Saved is not null) { await Saved(Draft.Snapshot); } }
     [RelayCommand(CanExecute = nameof(CanPreview))]

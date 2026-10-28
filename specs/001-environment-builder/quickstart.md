@@ -1,6 +1,6 @@
 # Quickstart и acceptance validation
 
-**Status**: реализованы Setup, Foundation и пользовательские истории US1–US3. Команды build/test ниже доступны сейчас; acceptance scripts из раздела 3 относятся к последующим задачам. Автоматические проверки работают с Docker/HTTP doubles и не требуют запущенного Docker.
+**Status**: реализованы Setup, Foundation и пользовательские истории US1–US4. Проверки destructive edit / SC-005 описаны в [edit-verification.md](edit-verification.md). Команды build/test ниже доступны сейчас; acceptance scripts из раздела 3 относятся к последующим задачам. Автоматические проверки работают с Docker/HTTP doubles и не требуют запущенного Docker.
 
 Контракты: [documents](contracts/documents.md), [runtime](contracts/runtime.md), [UI](contracts/ui.md), [data model](data-model.md). Все SC-001–SC-013 входят в приёмку, включая ручные пользовательские измерения.
 

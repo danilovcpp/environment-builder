@@ -14,13 +14,26 @@ public sealed class OperationHandle
 }
 
 public sealed class OperationExecution(DurableEffectRunner effects, Func<bool> canWrite, CancellationToken cancellationToken,
-    Func<Func<Operation, Operation>, Task>? update = null)
+    Func<Func<Operation, Operation>, Task>? update = null,
+    Func<Func<Operation, Operation>, Func<Operation, CancellationToken, Task>, Task>? atomicCommit = null)
 {
     private bool blocked;
     internal bool RequiresReconciliation => blocked;
+    internal bool Finalized { get; private set; }
     public CancellationToken CancellationToken => cancellationToken;
     public Task SetPlanAsync(OperationPlan plan) => update?.Invoke(o => o with { Plan = plan, State = OperationState.AwaitingConfirmation }) ?? Task.CompletedTask;
     public Task ConfirmAsync(string reviewToken) => update?.Invoke(o => o with { State = OperationState.Running, InputReviewToken = reviewToken, Confirmation = new(o.Plan.Hash, DateTimeOffset.UtcNow) }) ?? Task.CompletedTask;
+    public Task ConfirmPlanAsync(ConfirmationRecord confirmation) => update?.Invoke(o => confirmation.PlanHash == o.Plan.Hash
+        ? o with { State = OperationState.Running, Confirmation = confirmation } : throw new PreflightBlockedException("stale-plan")) ?? Task.CompletedTask;
+    public Task SetCleanupAsync(System.Collections.Immutable.ImmutableArray<string> deleted, System.Collections.Immutable.ImmutableArray<string> remnants) => update?.Invoke(o => o with { DeletedResources = deleted, Remnants = remnants }) ?? Task.CompletedTask;
+    public Task MarkDestructiveAsync() => update?.Invoke(o => o with { DestructiveAttempted = true }) ?? Task.CompletedTask;
+    public async Task CompleteAtomicallyAsync(Func<Operation, CancellationToken, Task> commit, DateTimeOffset at)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        if (blocked || atomicCommit is null) { throw new InvalidOperationException("Atomic finalization is unavailable."); }
+        await atomicCommit(o => o with { State = OperationState.Succeeded, CompletedAt = at, ResultCode = null }, commit).ConfigureAwait(false);
+        Finalized = true;
+    }
     public Task ReportAsync(Guid? component, string stage) => update?.Invoke(o => o with { Progress = [new(component, stage, 0, null)] }) ?? Task.CompletedTask;
     public async Task RunStepAsync(OperationStep step, Func<CancellationToken, Task> effect, Func<CancellationToken, Task<EffectObservation>> observe)
     {
@@ -62,12 +75,22 @@ public sealed class OperationCoordinator(IOperationStore store, IClock clock, Fu
     }
 
     public OperationHandle Submit(Operation operation, Func<OperationExecution, Task> workflow)
+        => SubmitCore(operation, workflow, reconciliation: false);
+
+    internal OperationHandle SubmitReconciliation(Operation operation, Func<OperationExecution, Task> workflow)
+        => SubmitCore(operation, workflow, reconciliation: true);
+
+    private OperationHandle SubmitCore(Operation operation, Func<OperationExecution, Task> workflow, bool reconciliation)
     {
         lock (sync)
         {
             ObjectDisposedException.ThrowIf(disposed, this);
-            if (active.TryGetValue(operation.EnvironmentId, out OperationHandle? existing)) { return existing; }
-            if (pendingClose || !canWrite() || (unresolved.Contains(operation.EnvironmentId) && operation.Kind != "stop")) { throw new InvalidOperationException("New effects are blocked by storage, close, or unresolved recovery."); }
+            if (active.TryGetValue(operation.EnvironmentId, out OperationHandle? existing))
+            {
+                if (reconciliation || operation.Kind == "edit") { throw new InvalidOperationException("A conflicting operation is still active."); }
+                return existing;
+            }
+            if (pendingClose || !canWrite() || (unresolved.Contains(operation.EnvironmentId) && operation.Kind != "stop" && !reconciliation)) { throw new InvalidOperationException("New effects are blocked by storage, close, or unresolved recovery."); }
             var handle = new OperationHandle(operation);
             active.Add(operation.EnvironmentId, handle);
             handle.Completion = RunAsync(handle, workflow);
@@ -82,13 +105,16 @@ public sealed class OperationCoordinator(IOperationStore store, IClock clock, Fu
         OperationState terminal;
         string? resultCode = null;
         DateTimeOffset? completedAt = null;
+        bool finalized = false;
         try
         {
             await PersistAsync(handle, operation => operation, CancellationToken.None).ConfigureAwait(false);
             await PersistAsync(handle, operation => operation with { State = operation.CancellationRequested ? OperationState.CancelRequested : OperationState.Running }, CancellationToken.None).ConfigureAwait(false);
             var execution = new OperationExecution(new DurableEffectRunner(store), canWrite, handle.Cancellation.Token,
-                transition => PersistAsync(handle, transition, CancellationToken.None));
+                transition => PersistAsync(handle, transition, CancellationToken.None),
+                (transition, commit) => PersistAsync(handle, transition, CancellationToken.None, commit));
             await workflow(execution).ConfigureAwait(false);
+            finalized = execution.Finalized;
             if (execution.RequiresReconciliation) { throw new UnresolvedEffectException(); }
             terminal = handle.Cancellation.IsCancellationRequested ? OperationState.Cancelled : OperationState.Succeeded;
             completedAt = clock.UtcNow;
@@ -96,14 +122,14 @@ public sealed class OperationCoordinator(IOperationStore store, IClock clock, Fu
         catch (UnresolvedEffectException unknown)
         { terminal = OperationState.NeedsAttention; resultCode = unknown.Code; }
         catch (PreflightBlockedException blocked)
-        { terminal = OperationState.Failed; resultCode = blocked.Code; completedAt = clock.UtcNow; }
+        { terminal = handle.Current.DestructiveAttempted ? OperationState.PartiallyCompleted : OperationState.Failed; resultCode = blocked.Code; completedAt = clock.UtcNow; }
         catch (OperationCanceledException)
-        { terminal = OperationState.Cancelled; completedAt = clock.UtcNow; }
+        { terminal = handle.Current.DestructiveAttempted ? OperationState.PartiallyCompleted : OperationState.Cancelled; completedAt = clock.UtcNow; }
         catch (Exception error) when (error is not OutOfMemoryException)
         { terminal = OperationState.NeedsAttention; resultCode = "operation-interrupted"; }
         try
         {
-            await PersistAsync(handle, operation => operation with { State = terminal, ResultCode = resultCode, CompletedAt = completedAt }, CancellationToken.None).ConfigureAwait(false);
+            if (!finalized) { await PersistAsync(handle, operation => operation with { State = terminal, ResultCode = resultCode, CompletedAt = completedAt }, CancellationToken.None).ConfigureAwait(false); }
         }
         catch
         {
@@ -121,7 +147,8 @@ public sealed class OperationCoordinator(IOperationStore store, IClock clock, Fu
             lock (sync)
             {
                 active.Remove(handle.Current.EnvironmentId);
-                if (handle.Current.State == OperationState.NeedsAttention) { unresolved.Add(handle.Current.EnvironmentId); }
+                if (handle.Current.State is OperationState.NeedsAttention or OperationState.PartiallyCompleted) { unresolved.Add(handle.Current.EnvironmentId); }
+                else if (finalized) { unresolved.Remove(handle.Current.EnvironmentId); }
                 remainingWrites = handle.LastWrite;
             }
             try { await remainingWrites.ConfigureAwait(false); }
@@ -129,17 +156,19 @@ public sealed class OperationCoordinator(IOperationStore store, IClock clock, Fu
         }
     }
 
-    private Task PersistAsync(OperationHandle handle, Func<Operation, Operation> transition, CancellationToken cancellationToken)
+    private Task PersistAsync(OperationHandle handle, Func<Operation, Operation> transition, CancellationToken cancellationToken,
+        Func<Operation, CancellationToken, Task>? commit = null)
     {
         lock (sync)
         {
             Task previous = handle.LastWrite;
-            handle.LastWrite = WriteAfterAsync(previous, handle, transition, cancellationToken);
+            handle.LastWrite = WriteAfterAsync(previous, handle, transition, cancellationToken, commit);
             return handle.LastWrite;
         }
     }
 
-    private async Task WriteAfterAsync(Task previous, OperationHandle handle, Func<Operation, Operation> transition, CancellationToken cancellationToken)
+    private async Task WriteAfterAsync(Task previous, OperationHandle handle, Func<Operation, Operation> transition, CancellationToken cancellationToken,
+        Func<Operation, CancellationToken, Task>? commit)
     {
         await Task.Yield();
         // Its owning caller observes the previous failure. A later write must still be able to record NeedsAttention.
@@ -147,7 +176,7 @@ public sealed class OperationCoordinator(IOperationStore store, IClock clock, Fu
         catch (Exception error) when (error is not OutOfMemoryException) { }
         Operation next;
         lock (sync) { next = transition(handle.Current); }
-        await store.SaveAsync(next, cancellationToken).ConfigureAwait(false);
+        await (commit is null ? store.SaveAsync(next, cancellationToken) : commit(next, cancellationToken)).ConfigureAwait(false);
         // Publishing after commit prevents a UI observer from seeing an undurable terminal success.
         lock (sync)
         {
@@ -166,7 +195,7 @@ public sealed class OperationCoordinator(IOperationStore store, IClock clock, Fu
                 handle.Cancellation.Cancel();
                 return PersistAsync(handle, operation => operation with
                 {
-                    State = operation.State is OperationState.Succeeded or OperationState.Failed or OperationState.Cancelled or OperationState.NeedsAttention ? operation.State : OperationState.CancelRequested,
+                    State = operation.State is OperationState.Succeeded or OperationState.Failed or OperationState.Cancelled or OperationState.NeedsAttention or OperationState.PartiallyCompleted ? operation.State : OperationState.CancelRequested,
                     CancellationRequested = true
                 }, cancellationToken);
             }

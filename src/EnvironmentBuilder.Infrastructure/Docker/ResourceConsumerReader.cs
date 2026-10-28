@@ -96,7 +96,11 @@ public sealed class ResourceConsumerReader(IDockerProcess docker)
                 OomKilled = state.TryGetProperty("OOMKilled", out var oomKilled) ? oomKilled.GetBoolean() : null
             };
         }
-        return new(new(ledger.Kind, name, id, labels, volume, consumers.Distinct(StringComparer.Ordinal).ToImmutableArray(), true, component?.Status ?? "available"), component);
+        return new(new(ledger.Kind, name, id, labels, volume, consumers.Distinct(StringComparer.Ordinal).ToImmutableArray(), true, component?.Status ?? "available")
+        {
+            NetworkDriver = ledger.Kind == ResourceKind.Network && actual.TryGetProperty("Driver", out var driver) ? driver.GetString() : null,
+            NetworkScope = ledger.Kind == ResourceKind.Network && actual.TryGetProperty("Scope", out var networkScope) ? networkScope.GetString() : null
+        }, component);
     }
     internal static void Require(DockerResult result)
     { if (result.ExitCode != 0 || result.Truncated) { throw new IOException("Docker query failed or exceeded its output limit."); } }
