@@ -8,6 +8,8 @@
             <Button Content="Повторить загрузку" Command="{Binding ReloadCommand}" HorizontalAlignment="Left" Margin="0,8" Visibility="{Binding HasError, Converter={StaticResource Visible}}" />
             <TextBlock Text="Загрузка окружений…" Visibility="{Binding IsLoading, Converter={StaticResource Visible}}" />
             <TextBlock Text="{Binding SelectionNotice}" Style="{DynamicResource Text.Optional}" />
+            <TextBlock Text="{Binding DeletionDetails}" Style="{DynamicResource Text.Optional}" Foreground="{DynamicResource Brush.WarningForeground}" AutomationProperties.AutomationId="DeletionRemnants" MaxHeight="150" />
+            <Button Content="Отменить дальнейшие этапы удаления" Command="{Binding CancelDeleteCommand}" Visibility="{Binding IsDeleting, Converter={StaticResource Visible}}" HorizontalAlignment="Left" Margin="0,8" />
         </StackPanel>
         <DockPanel DockPanel.Dock="Bottom" Margin="4,10,0,2">
             <TextBlock DockPanel.Dock="Right" Text="{Binding OfflineStatus}" Style="{DynamicResource Text.Metadata}" FontSize="11" VerticalAlignment="Center" />
@@ -15,6 +17,7 @@
                 <Button Content="{x:Static local:EnvironmentCommands.ObservationLabel}" Command="{Binding ObserveSelectedCommand}" ToolTip="{x:Static local:EnvironmentCommands.ObservationExplanation}" AutomationProperties.AutomationId="ObserveSelectedEnvironment" Margin="0,0,8,0" Style="{DynamicResource Button.Ghost}" FontSize="11" />
                 <Button Content="{x:Static local:EnvironmentCommands.ClearLabel}" Command="{Binding ClearSelectedDataCommand}" ToolTip="{x:Static local:EnvironmentCommands.ClearExplanation}" AutomationProperties.AutomationId="ClearSelectedEnvironmentData" Margin="0,0,8,0" Style="{DynamicResource Button.Ghost}" FontSize="11" />
                 <Button Content="{x:Static local:EnvironmentCommands.RestoreLabel}" Command="{Binding RestoreSelectedBaselineCommand}" ToolTip="{x:Static local:EnvironmentCommands.RestoreExplanation}" AutomationProperties.AutomationId="RestoreSelectedEnvironmentBaseline" Style="{DynamicResource Button.Ghost}" FontSize="11" />
+                <Button Content="{Binding DeleteLabel}" Command="{Binding DeleteSelectedCommand}" ToolTip="{x:Static local:EnvironmentCommands.DeleteExplanation}" AutomationProperties.AutomationId="DeleteSelectedEnvironment" Style="{DynamicResource Button.Destructive}" FontSize="11" Margin="8,0,0,0" />
             </WrapPanel>
         </DockPanel>
         <Border Style="{DynamicResource Panel.Card}" Padding="0" ClipToBounds="True">

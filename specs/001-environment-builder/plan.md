@@ -2,7 +2,7 @@
 
 **Branch**: `main` | **Date**: 2026-10-23 | **Spec**: [spec.md](spec.md)
 
-**Updated**: 2026-10-28 — доработка UI Phase 7a выполнена; следующий функциональный этап — US6 / Phase 8.
+**Updated**: 2026-10-28 — Phase 8 / US6 выполнена; [проверки удаления](delete-verification.md). Следующий функциональный этап — US7 / Phase 9.
 
 **Input**: `specs/001-environment-builder/spec.md`, [source.md](source.md), [конституция](../../.specify/memory/constitution.md) v1.0.0 и [style guide](../../docs/design/style-guide.md).
 
@@ -18,7 +18,7 @@
 
 ## Доработка UI по референсам (Phase 7a, завершена)
 
-**Порядок**: завершённая US5 / Phase 7 → **Phase 7a, T166–T177** в [tasks.md](tasks.md#phase-7a-ui-refinement) → US6 / Phase 8 → US7–US10 → итоговая приёмка. Phase 7a — обязательный checkpoint, завершённый в текущем запуске; следующий функциональный этап — US6 / Phase 8. Существующие ID задач и результаты проверок сохраняются.
+**Порядок**: завершённая US5 / Phase 7 → **Phase 7a, T166–T177** в [tasks.md](tasks.md#phase-7a-ui-refinement) → US6 / Phase 8 → US7–US10 → итоговая приёмка. Phase 7a и Phase 8 завершены; следующий функциональный этап — US7 / Phase 9. Существующие ID задач и результаты проверок сохраняются.
 
 **Визуальный источник истины**: [seed_packs.png](../../docs/design/mockups/seed_packs.png). При расхождениях между референсами или с прежним style guide брать из него общую компоновку, оформление и цвета: пропорции shell/content/context, поверхности, заголовки, таблицы, отступы, типографическую иерархию, кнопки, иконки и бейджи. [environments.png](../../docs/design/mockups/environments.png), [create_edit.png](../../docs/design/mockups/create_edit.png), [inspect.png](../../docs/design/mockups/inspect.png) и [settings.png](../../docs/design/mockups/settings.png) определяют состав и назначение областей своих экранов; их визуальные расхождения нормализуются по `seed_packs.png`. Светлая тема воспроизводит этот эталон, тёмная сохраняет ту же геометрию и иерархию с semantic Dark tokens из style guide. Доступность по QR-002/003 обязательна; необходимые отклонения фиксируются с причиной.
 

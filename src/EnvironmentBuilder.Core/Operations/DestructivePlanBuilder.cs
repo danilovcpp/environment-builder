@@ -5,6 +5,44 @@ namespace EnvironmentBuilder.Core.Operations;
 
 public static class DestructivePlanBuilder
 {
+    public static OperationPlan BuildDeletion(IsolatedEnvironment environment, OperationPlan scope, EnvironmentObservation actual)
+    {
+        RequireDeletionSafe(actual);
+        OperationPlan plan = Build(environment, environment, scope, AsStopped(actual));
+        return plan with
+        {
+            Candidate = null,
+            NextDataGenerationId = null,
+            Inputs = [],
+            ExpectedResources = actual.Resources.Where(r => r.Actual is not null).Select(r => r.Actual! with
+            { Consumers = r.Actual!.Consumers.Order(StringComparer.Ordinal).ToImmutableArray() }).OrderBy(r => r.Kind).ThenBy(r => r.Identity, StringComparer.Ordinal).ToImmutableArray(),
+            Stages = ["stop-before-removal", "verify-quiescence", "invalidate-generation", "remove-containers", "remove-volumes", "remove-network", "verify-absence", "close-description"],
+            Consequences = "Описание окружения, все перечисленные ресурсы, данные и отметки наполнения будут удалены без возможности восстановления. Работающие контейнеры сначала будут остановлены с timeout 30 секунд; после timeout Docker может принудительно завершить их. При сбое описание и остатки останутся видимыми для нового подтверждённого плана удаления."
+        };
+    }
+
+    public static void RequireDeletionSafe(EnvironmentObservation actual)
+    {
+        RequireQuiescent(AsStopped(actual));
+    }
+
+    public static void RequireDeletionCurrent(OperationPlan plan, EnvironmentObservation actual)
+    {
+        RequireDeletionSafe(actual);
+        RequireCurrent(plan, AsStopped(actual));
+        var current = actual.Resources.Where(r => r.Actual is not null).Select(r => r.Actual! with
+        { Consumers = r.Actual!.Consumers.Order(StringComparer.Ordinal).ToImmutableArray() }).OrderBy(r => r.Kind).ThenBy(r => r.Identity, StringComparer.Ordinal);
+        if (CanonicalJson.Hash(current) != CanonicalJson.Hash(plan.ExpectedResources)) { throw new PreflightBlockedException("stale-plan"); }
+    }
+
+    // Deletion alone permits known running states during planning; the real observation remains authoritative.
+    // Cleanup still requires verified Stop and compares all other ownership and consumer evidence unchanged.
+    private static EnvironmentObservation AsStopped(EnvironmentObservation actual) => actual with
+    {
+        Resources = actual.Resources.Select(r => r.Actual is { Kind: ResourceKind.Container, State: "running" or "restarting" or "paused" } container
+            ? r with { Actual = container with { State = "exited" } } : r).ToImmutableArray(),
+        Components = actual.Components.Select(c => c.Status is "running" or "restarting" or "paused" ? c with { Status = "exited" } : c).ToImmutableArray()
+    };
     public static OperationPlan Build(IsolatedEnvironment original, IsolatedEnvironment candidate, OperationPlan scope, EnvironmentObservation actual)
     {
         RequireQuiescent(actual);
@@ -49,6 +87,9 @@ public static class DestructivePlanBuilder
             if (prior is null) { throw new PreflightBlockedException("stale-plan"); }
             var current = resource.Actual with { Consumers = resource.Actual.Consumers.Order(StringComparer.Ordinal).ToImmutableArray() };
             var allowed = prior with { Consumers = prior.Consumers.Where(c => !absent.Contains(c)).Order(StringComparer.Ordinal).ToImmutableArray() };
+            if (plan.Stages.Contains("stop-before-removal") && allowed.Kind == ResourceKind.Container &&
+                allowed.State is "running" or "restarting" or "paused" && QuiescenceGuard.IsStopped(current.State))
+            { allowed = allowed with { State = current.State }; }
             if (CanonicalJson.Hash(current) != CanonicalJson.Hash(allowed)) { throw new PreflightBlockedException("stale-plan"); }
         }
     }

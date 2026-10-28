@@ -43,6 +43,12 @@ public sealed class OperationStore(SqliteWorker worker, IClock clock) : IOperati
                 if (operation.Confirmation.PlanHash != operation.Plan.Hash) { throw new InvalidOperationException("Confirmation does not match the immutable plan."); }
                 Sql.Execute(connection, transaction, "UPDATE Operations SET confirmationHash=$hash,confirmedAt=$at WHERE id=$id", ("$id", operation.Id.ToString()),
                     ("$hash", operation.Confirmation.PlanHash), ("$at", Sql.Instant(operation.Confirmation.ConfirmedAt)));
+                // Publishing confirmation and the visible tombstone together closes the crash gap before cleanup begins.
+                if (operation.Kind == "delete")
+                {
+                    EditFinalization.RequireOriginal(connection, transaction, operation.Plan);
+                    Sql.Execute(connection, transaction, "UPDATE Environments SET deletionState='deleting' WHERE id=$id", ("$id", operation.EnvironmentId.ToString()));
+                }
             }
             if (operation.Plan.Candidate is not null) { EnvironmentStore.SaveReferences(connection, transaction, "operation", operation.Id, operation.Plan.Candidate.Baseline.Applications); }
             foreach (var pack in operation.Plan.Packs) { EnvironmentStore.AddReference(connection, transaction, "operation", operation.Id, CanonicalJson.Hash(pack), pack); }
@@ -83,7 +89,7 @@ public sealed class OperationStore(SqliteWorker worker, IClock clock) : IOperati
 
     public Task<IReadOnlyList<Operation>> ReadUnresolvedAsync(CancellationToken cancellationToken) => worker.ReadAsync<IReadOnlyList<Operation>>(connection =>
     {
-        using SqliteCommand command = Sql.Command(connection, null, "SELECT json FROM Operations o WHERE state NOT IN ('Succeeded','Failed','Cancelled') OR EXISTS(SELECT 1 FROM OperationSteps s WHERE s.operationId=o.id AND s.state IN ('Started','Unknown')) OR EXISTS(SELECT 1 FROM ResourceLedger r WHERE r.operationId=o.id AND r.unresolved=1) ORDER BY createdAt");
+        using SqliteCommand command = Sql.Command(connection, null, "SELECT json FROM Operations o WHERE state NOT IN ('Succeeded','Failed','Cancelled') OR EXISTS(SELECT 1 FROM OperationSteps s WHERE s.operationId=o.id AND s.state IN ('Started','Unknown')) OR EXISTS(SELECT 1 FROM ResourceLedger r WHERE r.operationId=o.id AND r.unresolved=1) OR (kind='delete' AND confirmationHash IS NOT NULL AND EXISTS(SELECT 1 FROM Environments e WHERE e.id=o.environmentId AND e.deletionState='deleting')) ORDER BY createdAt");
         using SqliteDataReader rows = command.ExecuteReader();
         var result = new List<Operation>();
         while (rows.Read()) { result.Add(JsonSerializer.Deserialize<Operation>(rows.GetString(0), CanonicalJson.Options)!); }

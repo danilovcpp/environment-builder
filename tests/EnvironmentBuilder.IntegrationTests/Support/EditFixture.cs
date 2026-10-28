@@ -9,8 +9,9 @@ using EnvironmentBuilder.Infrastructure.Persistence;
 namespace EnvironmentBuilder.IntegrationTests.Support;
 
 // Stateful Engine double: mutations change inspect/list responses, including stopped consumers.
-internal sealed class EditFixture : ICleanupRuntime, IAsyncDisposable
+internal sealed class EditFixture : ICleanupRuntime, IStopRuntime, IAsyncDisposable
 {
+    private bool stopped;
     private OperationCoordinator coordinator = null!;
     private OperationPlan scope = null!;
     private readonly Guid foreignEnvironment = Guid.NewGuid();
@@ -23,15 +24,23 @@ internal sealed class EditFixture : ICleanupRuntime, IAsyncDisposable
     public Guid SecondEnvironmentId => foreignEnvironment;
     public HashSet<Guid> Absent { get; } = [];
     public List<IReadOnlyList<string>> Mutations { get; } = [];
+    public List<IReadOnlyList<string>> Calls { get; } = [];
+    public bool Running { get; set; }
     public string? Fault { get; set; }
     public string? AfterConfirmationFault { get; set; }
     public string? FaultBoundary { get; set; }
+    public Action<string>? BoundaryAction { get; set; }
     public int Preparations { get; private set; }
     public int Confirmations { get; private set; }
     public bool ForeignIntact { get; private set; } = true;
     public Func<Task>? BeforeRemoval { get; set; }
     public Action? AfterRemoval { get; set; }
     public Action? DuringConfirmation { get; set; }
+    public OperationPlan? ConfirmedPlan { get; private set; }
+    public Func<OperationPlan, OperationPlan>? ScopeChange { get; set; }
+    public Task<DeleteEnvironmentResult> DeleteAsync(CancellationToken token) => new DeleteEnvironmentService(Store.Environments, this, this,
+        new DeleteFinalization(Store.Worker, Store.Clock), new(new EditFinalization(Store.Worker, Store.Clock)), coordinator, Store.Clock)
+        .DeleteAsync(Environment, ConfirmAsync, token);
     private static string ContainerId => new('a', 64);
     private static string ForeignId => new('f', 64);
     private static string SecondId => new('b', 64);
@@ -39,7 +48,7 @@ internal sealed class EditFixture : ICleanupRuntime, IAsyncDisposable
     public static async Task<EditFixture> CreateAsync(bool empty = false, Func<IsolatedEnvironment, IsolatedEnvironment>? configure = null)
     {
         var fixture = new EditFixture();
-        fixture.Store = await FoundationStore.CreateAsync(point => { if (fixture.FaultBoundary == point) { throw new IOException("injected " + point); } });
+        fixture.Store = await FoundationStore.CreateAsync(point => { fixture.BoundaryAction?.Invoke(point); if (fixture.FaultBoundary == point) { throw new IOException("injected " + point); } });
         fixture.Environment = configure?.Invoke(fixture.Store.Example()) ?? fixture.Store.Example();
         await fixture.Store.Environments.SaveNewAsync(fixture.Environment, TestContext.Current.CancellationToken);
         Guid generation = await fixture.GenerationAsync();
@@ -68,6 +77,7 @@ internal sealed class EditFixture : ICleanupRuntime, IAsyncDisposable
 
     private async Task<ConfirmationRecord?> ConfirmAsync(OperationPlan plan, CancellationToken token)
     {
+        ConfirmedPlan = plan;
         Confirmations++;
         DuringConfirmation?.Invoke();
         if (AfterConfirmationFault is not null) { Fault = AfterConfirmationFault; }
@@ -92,11 +102,22 @@ internal sealed class EditFixture : ICleanupRuntime, IAsyncDisposable
             if (Fault is "engine-drift" or "ledger-drift" or "revision-drift") { throw new PreflightBlockedException("stale-plan"); }
             return Task.CompletedTask;
         }
-        return Task.FromResult<ICleanupSession>(new DockerCleanupSession(environment, operationId, scope with { Id = operationId }, docker, Revalidate));
+        OperationPlan current = scope with { Id = operationId };
+        return Task.FromResult<ICleanupSession>(new DockerCleanupSession(environment, operationId, ScopeChange?.Invoke(current) ?? current, docker, Revalidate));
     }
+
+    public Task<IStopSession> PrepareAsync(IsolatedEnvironment environment, Guid operationId, int timeoutSeconds, CancellationToken token) =>
+        Task.FromResult<IStopSession>(new DockerStopSession(environment, operationId, scope, timeoutSeconds, new FakeDocker(RunAsync), _ => Task.CompletedTask));
 
     private async Task<DockerResult> RunAsync(IReadOnlyList<string> args)
     {
+        Calls.Add(args);
+        if (args[1] == "stop")
+        {
+            Mutations.Add(args);
+            if (Fault != "stop-failed") { stopped = true; }
+            return new(0, "", "");
+        }
         if (args[1] == "rm")
         {
             if (BeforeRemoval is not null) { await BeforeRemoval(); }
@@ -155,7 +176,7 @@ internal sealed class EditFixture : ICleanupRuntime, IAsyncDisposable
         };
         foreach (OwnedResource container in Resources.Where(r => r.Kind == ResourceKind.Container && !Absent.Contains(r.ResourceId)))
         {
-            all.Add(JsonSerializer.SerializeToElement(Container(Fault == "copied-container-labels" ? new string('d', 64) : container.ActualDockerId!, container.Name, ResourceOwnershipVerifier.Labels(container), true, Fault is "running" or "state-drift" ? "running" : "exited")));
+            all.Add(JsonSerializer.SerializeToElement(Container(Fault == "copied-container-labels" ? new string('d', 64) : container.ActualDockerId!, container.Name, ResourceOwnershipVerifier.Labels(container), true, !stopped && (Running || Fault is "running" or "state-drift" or "stop-failed") ? "running" : "exited")));
         }
         all.Add(JsonSerializer.SerializeToElement(Container(ForeignId, "selected-container-lookalike", ImmutableDictionary<string, string>.Empty, Fault is "foreign-stopped-consumer" or "consumer-drift", "exited")));
         all.Add(JsonSerializer.SerializeToElement(Container(SecondId, "second-copy", ImmutableDictionary<string, string>.Empty.Add("io.environmentbuilder.environment", foreignEnvironment.ToString()), false, "running")));

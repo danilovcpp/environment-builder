@@ -1,6 +1,6 @@
 # Quickstart и acceptance validation
 
-**Status (2026-10-28)**: реализованы Setup, Foundation и пользовательские истории US1–US5; проверки US5 описаны в [data-reset-verification.md](data-reset-verification.md). Следующий этап — [Phase 7a / T166–T177: доработка UI по референсам](tasks.md#phase-7a-ui-refinement), до US6. Команды build/test ниже доступны сейчас; acceptance scripts из раздела 3 относятся к последующим задачам. Автоматические проверки работают с Docker/HTTP doubles и не требуют запущенного Docker.
+**Status (2026-10-28)**: реализованы Setup, Foundation, UI Phase 7a и пользовательские истории US1–US6; проверки US5 описаны в [data-reset-verification.md](data-reset-verification.md), US6 — в [delete-verification.md](delete-verification.md). Следующий этап — Phase 9 / US7 в [tasks.md](tasks.md). Команды build/test ниже доступны сейчас; acceptance scripts из раздела 3 относятся к последующим задачам. Автоматические проверки работают с Docker/HTTP doubles и не требуют запущенного Docker.
 
 Контракты: [documents](contracts/documents.md), [runtime](contracts/runtime.md), [UI](contracts/ui.md), [data model](data-model.md). Все SC-001–SC-013 входят в приёмку, включая ручные пользовательские измерения.
 

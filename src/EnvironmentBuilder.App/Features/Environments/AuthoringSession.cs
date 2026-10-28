@@ -41,6 +41,12 @@ public sealed class AuthoringSession : ObservableObject
         List.Observe = async row => { await OpenInspectAsync(row.Item.Document!); if (Current == inspect && inspect is not null) { await inspect.RefreshCommand.ExecuteAsync(null); } };
         List.ClearData = row => OpenResetAsync(row.Item.Document!, false);
         List.RestoreBaseline = row => OpenResetAsync(row.Item.Document!, true);
+        List.Delete = (row, token) =>
+        {
+            if (commands is null) { throw new InvalidOperationException("Удаление недоступно."); }
+            return commands.DeleteAsync(row.Item.Document!, token);
+        };
+        List.CancelDelete = id => commands?.CancelAsync(id, CancellationToken.None) ?? Task.CompletedTask;
     }
     public EnvironmentListViewModel List { get; }
     public EnvironmentEditorViewModel? Editor { get; private set; }

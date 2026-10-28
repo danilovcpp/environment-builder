@@ -63,6 +63,8 @@ public sealed class AppServices : IAsyncDisposable
             services.AddSingleton<IEditPersistence, EditFinalization>();
             services.AddSingleton<VerifiedCleanupExecutor>();
             services.AddSingleton<EditEnvironmentService>();
+            services.AddSingleton<IDeletePersistence, DeleteFinalization>();
+            services.AddSingleton<DeleteEnvironmentService>();
             services.AddSingleton<IDataResetPersistence, DataResetFinalization>();
             services.AddSingleton<ClearEnvironmentDataService>();
             services.AddSingleton<BaselinePreflight>();

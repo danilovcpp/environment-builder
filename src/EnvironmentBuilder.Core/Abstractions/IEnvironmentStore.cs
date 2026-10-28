@@ -11,4 +11,5 @@ public interface IEnvironmentStore
 public sealed record EnvironmentListItem(Guid Id, string Name, long Revision, IsolatedEnvironment? Document, string? ErrorCode, bool HasUnresolvedOperation)
 {
     public DateTimeOffset? SavedAt { get; init; }
+    public Operations.DeletionTombstone? Deletion { get; init; }
 }

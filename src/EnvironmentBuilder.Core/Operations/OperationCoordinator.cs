@@ -9,6 +9,7 @@ public sealed class OperationHandle
     internal CancellationTokenSource Cancellation { get; } = new();
     internal Task LastWrite { get; set; } = Task.CompletedTask;
     internal bool TerminalWriteFailed { get; set; }
+    internal bool Finalized { get; set; }
     public Operation Current { get => Volatile.Read(ref current); internal set => Volatile.Write(ref current, value); }
     public Task Completion { get; internal set; } = Task.CompletedTask;
 }
@@ -93,7 +94,7 @@ public sealed class OperationCoordinator(IOperationStore store, IClock clock, Fu
             ObjectDisposedException.ThrowIf(disposed, this);
             if (active.TryGetValue(operation.EnvironmentId, out OperationHandle? existing))
             {
-                if (reconciliation || operation.Kind is "edit" or "clear" or "refresh") { throw new InvalidOperationException("A conflicting operation is still active."); }
+                if (reconciliation || operation.Kind is "edit" or "clear" or "refresh" or "delete") { throw new InvalidOperationException("A conflicting operation is still active."); }
                 return existing;
             }
             if (pendingClose || !canWrite() || (unresolved.Contains(operation.EnvironmentId) && operation.Kind != "stop" && !reconciliation)) { throw new InvalidOperationException("New effects are blocked by storage, close, or unresolved recovery."); }
@@ -153,7 +154,8 @@ public sealed class OperationCoordinator(IOperationStore store, IClock clock, Fu
             lock (sync)
             {
                 active.Remove(handle.Current.EnvironmentId);
-                if (handle.Current.State is OperationState.NeedsAttention or OperationState.PartiallyCompleted) { unresolved.Add(handle.Current.EnvironmentId); }
+                if (handle.Current.State is OperationState.NeedsAttention or OperationState.PartiallyCompleted ||
+                    handle.Current.Kind == "delete" && handle.Current.Confirmation is not null && !finalized) { unresolved.Add(handle.Current.EnvironmentId); }
                 else if (finalized) { unresolved.Remove(handle.Current.EnvironmentId); }
                 remainingWrites = handle.LastWrite;
             }
@@ -181,12 +183,18 @@ public sealed class OperationCoordinator(IOperationStore store, IClock clock, Fu
         try { await previous.ConfigureAwait(false); }
         catch (Exception error) when (error is not OutOfMemoryException) { }
         Operation next;
-        lock (sync) { next = transition(handle.Current); }
+        lock (sync)
+        {
+            // A queued cancellation must not resurrect references after an atomic history finalization.
+            if (handle.Finalized) { return; }
+            next = transition(handle.Current);
+        }
         await (commit is null ? store.SaveAsync(next, cancellationToken) : commit(next, cancellationToken)).ConfigureAwait(false);
         // Publishing after commit prevents a UI observer from seeing an undurable terminal success.
         lock (sync)
         {
             handle.Current = handle.TerminalWriteFailed ? next with { State = OperationState.NeedsAttention, ResultCode = "operation-result-not-durable" } : next;
+            if (commit is not null && next.State == OperationState.Succeeded) { handle.Finalized = true; }
         }
     }
 

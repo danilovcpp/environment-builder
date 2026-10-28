@@ -8,11 +8,13 @@ namespace EnvironmentBuilder.App.Features.Environments;
 // Application-owned handles survive route changes. Observation and cancellation remain independent.
 public sealed class EnvironmentCommands(StartEnvironmentService start, OperationCoordinator coordinator, PreviewReviewStore reviews, IRuntimeInteractions interactions, StopEnvironmentService stop, EditEnvironmentService? edit = null,
     ClearEnvironmentDataService? clear = null, RefreshEnvironmentDataService? restore = null, IDestructiveInteractions? destructive = null,
-    IInputResolver? inputs = null, ISeedPackStore? packs = null) : ObservableObject, IEnvironmentEditing
+    IInputResolver? inputs = null, ISeedPackStore? packs = null, DeleteEnvironmentService? delete = null) : ObservableObject, IEnvironmentEditing
 {
     public const string ObservationLabel = "Обновить состояние";
     public const string ClearLabel = "Очистить данные";
     public const string RestoreLabel = "Восстановить baseline (refresh данных)";
+    public const string DeleteLabel = "Удалить окружение";
+    public const string DeleteExplanation = "Показывает точный план удаления описания и данных. Работающее окружение сначала будет остановлено. Частичное удаление остаётся видимым для безопасного повтора.";
     public const string ObservationExplanation = "Только перечитывает состояние Docker. Данные, baseline и ревизия сохраняются.";
     public const string ClearExplanation = "После подтверждения удаляет все данные и отметки наполнения. Окружение остаётся остановленным; baseline и ревизия сохраняются.";
     public const string RestoreExplanation = "Проверяет baseline до удаления, восстанавливает данные с временным запуском компонентов и подтверждает их остановку. Ошибка оставляет частичное восстановление для Inspect и явного Stop.";
@@ -36,6 +38,11 @@ public sealed class EnvironmentCommands(StartEnvironmentService start, Operation
         catch (Exception error) when (error is not OutOfMemoryException) { return "Пакеты или способ применения baseline не подтверждены. Проверьте выбранные версии и входы, затем обновите состояние."; }
     }
     public Task<OperationHandle> ClearAsync(IsolatedEnvironment environment, CancellationToken token) => SubmitResetAsync(environment, false, token);
+    public Task<DeleteEnvironmentResult> DeleteAsync(IsolatedEnvironment environment, CancellationToken token)
+    {
+        if (delete is null || destructive is null) { throw new InvalidOperationException("Удаление окружения недоступно."); }
+        return delete.DeleteAsync(environment, destructive.ConfirmAsync, token, handle => handles[environment.Id] = handle);
+    }
     public Task<OperationHandle> RestoreAsync(IsolatedEnvironment environment, CancellationToken token) => SubmitResetAsync(environment, true, token);
     private Task<OperationHandle> SubmitResetAsync(IsolatedEnvironment environment, bool refresh, CancellationToken token)
     {
