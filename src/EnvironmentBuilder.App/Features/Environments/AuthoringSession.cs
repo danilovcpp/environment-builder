@@ -38,6 +38,9 @@ public sealed class AuthoringSession : ObservableObject
         List.Inspect = row => OpenInspectAsync(row.Item.Document!);
         List.Start = async row => { await OpenInspectAsync(row.Item.Document!); if (Current == inspect && inspect?.StartCommand.CanExecute(null) == true) { await inspect.StartCommand.ExecuteAsync(null); } };
         List.Compose = row => ShowSavedPreviewAsync(row.Item.Document!);
+        List.Observe = async row => { await OpenInspectAsync(row.Item.Document!); if (Current == inspect && inspect is not null) { await inspect.RefreshCommand.ExecuteAsync(null); } };
+        List.ClearData = row => OpenResetAsync(row.Item.Document!, false);
+        List.RestoreBaseline = row => OpenResetAsync(row.Item.Document!, true);
     }
     public EnvironmentListViewModel List { get; }
     public EnvironmentEditorViewModel? Editor { get; private set; }
@@ -86,6 +89,14 @@ public sealed class AuthoringSession : ObservableObject
         };
         Current = inspect; navigation.Navigate(new("inspect", environment.Id));
         await inspect.OpenAsync(environment, CancellationToken.None);
+    }
+    private async Task OpenResetAsync(IsolatedEnvironment environment, bool restore)
+    {
+        await OpenInspectAsync(environment);
+        if (Current != inspect || inspect is null) { return; }
+        await inspect.RefreshCommand.ExecuteAsync(null);
+        var command = restore ? inspect.RestoreBaselineCommand : inspect.ClearDataCommand;
+        if (command.CanExecute(null)) { await command.ExecuteAsync(null); }
     }
     private async Task ShowSavedPreviewAsync(IsolatedEnvironment environment)
     {

@@ -37,7 +37,9 @@ public sealed partial class EnvironmentListViewModel(IEnvironmentStore store) : 
     [ObservableProperty] private string statusFilter = "all";
     [ObservableProperty] private string typeFilter = "all";
     [ObservableProperty] private Guid? selectedId;
-    [ObservableProperty] private EnvironmentRowViewModel? selectedItem;
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(ObserveSelectedCommand), nameof(ClearSelectedDataCommand), nameof(RestoreSelectedBaselineCommand))]
+    private EnvironmentRowViewModel? selectedItem;
     public double ScrollOffset { get; set; }
     public static FilterOption[] StatusOptions { get; } = [new("all", "Все состояния"), new("unknown", "Не проверено"), new("needsAttention", "Требует сверки"), new("unreadable", "Ошибка документа")];
     public static FilterOption[] TypeOptions { get; } = [new("all", "Все типы"), new("target", "Приложение"), new("infrastructure", "Инфраструктура")];
@@ -50,6 +52,9 @@ public sealed partial class EnvironmentListViewModel(IEnvironmentStore store) : 
     public Func<EnvironmentRowViewModel, Task>? Inspect { get; set; }
     public Func<EnvironmentRowViewModel, Task>? Start { get; set; }
     public Func<EnvironmentRowViewModel, Task>? Compose { get; set; }
+    public Func<EnvironmentRowViewModel, Task>? Observe { get; set; }
+    public Func<EnvironmentRowViewModel, Task>? ClearData { get; set; }
+    public Func<EnvironmentRowViewModel, Task>? RestoreBaseline { get; set; }
 
     public async Task LoadAsync(CancellationToken cancellationToken)
     {
@@ -92,4 +97,8 @@ public sealed partial class EnvironmentListViewModel(IEnvironmentStore store) : 
     [RelayCommand] private Task InspectItemAsync(EnvironmentRowViewModel row) => row.CanOpen ? Inspect?.Invoke(row) ?? Task.CompletedTask : Task.CompletedTask;
     [RelayCommand] private Task StartItemAsync(EnvironmentRowViewModel row) => row.CanOpen ? Start?.Invoke(row) ?? Task.CompletedTask : Task.CompletedTask;
     [RelayCommand] private Task ComposeItemAsync(EnvironmentRowViewModel row) => row.CanOpen ? Compose?.Invoke(row) ?? Task.CompletedTask : Task.CompletedTask;
+    private bool CanUseSelected() => SelectedItem?.CanOpen == true;
+    [RelayCommand(CanExecute = nameof(CanUseSelected))] private Task ObserveSelectedAsync() => SelectedItem?.CanOpen == true ? Observe?.Invoke(SelectedItem) ?? Task.CompletedTask : Task.CompletedTask;
+    [RelayCommand(CanExecute = nameof(CanUseSelected))] private Task ClearSelectedDataAsync() => SelectedItem?.CanOpen == true ? ClearData?.Invoke(SelectedItem) ?? Task.CompletedTask : Task.CompletedTask;
+    [RelayCommand(CanExecute = nameof(CanUseSelected))] private Task RestoreSelectedBaselineAsync() => SelectedItem?.CanOpen == true ? RestoreBaseline?.Invoke(SelectedItem) ?? Task.CompletedTask : Task.CompletedTask;
 }

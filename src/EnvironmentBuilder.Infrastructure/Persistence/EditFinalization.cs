@@ -11,7 +11,7 @@ public sealed class EditFinalization(SqliteWorker worker, IClock clock) : IEditP
     public Task InvalidateAsync(OperationPlan plan, Guid operationId, CancellationToken token) => worker.CommitAsync("generation-invalidation", (connection, transaction) =>
     {
         RequireOriginal(connection, transaction, plan);
-        int changed = Sql.Execute(connection, transaction, "UPDATE DataGenerations SET validity='invalidated',invalidatedAt=$at,reason='destructive-edit',operationId=$operation WHERE id=$id AND environmentId=$environment AND validity='active'",
+        int changed = Sql.Execute(connection, transaction, "UPDATE DataGenerations SET validity='invalidated',invalidatedAt=$at,reason='destructive-cleanup',operationId=$operation WHERE id=$id AND environmentId=$environment AND validity IN ('active','invalidated')",
             ("$id", plan.DataGenerationId.ToString()), ("$environment", plan.EnvironmentId.ToString()), ("$operation", operationId.ToString()), ("$at", Sql.Instant(clock.UtcNow)));
         if (changed != 1) { throw new PreflightBlockedException("data-generation-not-active"); }
         return true;
@@ -75,7 +75,7 @@ public sealed class EditFinalization(SqliteWorker worker, IClock clock) : IEditP
         }
     }
 
-    private static void RequireOriginal(SqliteConnection connection, SqliteTransaction transaction, OperationPlan plan)
+    internal static void RequireOriginal(SqliteConnection connection, SqliteTransaction transaction, OperationPlan plan)
     {
         using var command = Sql.Command(connection, transaction, "SELECT revision,hash,generationId FROM Environments WHERE id=$id", ("$id", plan.EnvironmentId.ToString()));
         using var row = command.ExecuteReader();
@@ -83,7 +83,7 @@ public sealed class EditFinalization(SqliteWorker worker, IClock clock) : IEditP
         { throw new PreflightBlockedException("saved-configuration-changed"); }
     }
 
-    private static void RequireProof(SqliteConnection connection, SqliteTransaction transaction, Guid operation, string step, string action, string target)
+    internal static void RequireProof(SqliteConnection connection, SqliteTransaction transaction, Guid operation, string step, string action, string target)
     {
         using var command = Sql.Command(connection, transaction, "SELECT resultJson FROM OperationSteps WHERE operationId=$id AND stepId=$step AND action=$action AND target=$target AND state='Succeeded'",
             ("$id", operation.ToString()), ("$step", step), ("$action", action), ("$target", target));

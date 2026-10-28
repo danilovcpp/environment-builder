@@ -136,6 +136,7 @@ public sealed class ThemeResourcesTests
             VerifyAuthoring(diagnostics);
             VerifyInspect(diagnostics);
             VerifyDestructiveEdit(diagnostics);
+            VerifyDataReset(diagnostics);
         }
         finally
         {
@@ -188,6 +189,43 @@ public sealed class ThemeResourcesTests
         Assert.Empty(diagnostics.Errors);
     }
 
+    private static void VerifyDataReset(BindingDiagnostics diagnostics)
+    {
+        var fixture = new AuthoringUiFixture();
+        var draft = Core.Environments.EnvironmentDraft.Create();
+        draft.AddComponent(fixture.Definitions.First(d => d.ComponentType == "target"), fixture.Definitions);
+        var environment = draft.Snapshot with { Name = "Baseline · восстановление данных и временный запуск" };
+        var container = new Core.Operations.OwnedResource(Guid.NewGuid(), Guid.NewGuid(), environment.Id, environment.Components[0].Id, Core.Operations.ResourceKind.Container, 1,
+            Guid.NewGuid(), "eb-temporary-component", System.Collections.Immutable.ImmutableDictionary<string, string>.Empty, null, null, [], true, Guid.NewGuid(), true);
+        foreach (bool restore in new[] { false, true })
+        {
+            var plan = new Core.Operations.OperationPlan(Guid.NewGuid(), environment.Id, 1, Core.Environments.CanonicalJson.Hash(environment), Guid.NewGuid(),
+                Core.Environments.CanonicalJson.Hash(environment.Baseline), [], [], restore ? ["cleanup", "temporary-start", "baseline", "temporary-stop", "verify-stop"] : ["cleanup", "reset-generation"],
+                restore ? App.Features.Environments.EnvironmentCommands.RestoreExplanation : App.Features.Environments.EnvironmentCommands.ClearExplanation)
+            {
+                EnvironmentName = environment.Name,
+                EngineId = "engine-pinned",
+                Endpoint = "npipe://local-engine",
+                NextDataGenerationId = Guid.NewGuid(),
+                TemporaryResources = restore ? [container] : [],
+                TemporaryPorts = restore ? [new(environment.Components[0].Id, new("control", 8080, "tcp", null, "127.0.0.1", true))] : []
+            };
+            var model = new App.Components.DestructivePlanViewModel(plan);
+            Assert.DoesNotContain("сохранить новую ревизию", model.Title);
+            Assert.Contains("(сохраняется)", model.Details);
+            if (restore) { Assert.Contains("Временные порты", model.Details); Assert.Contains("eb-temporary-component", model.Details); }
+            var dialog = new App.Components.DestructivePlanDialog { DataContext = model, Left = -10000, Top = 0, WindowStartupLocation = WindowStartupLocation.Manual, ShowActivated = false, ShowInTaskbar = false };
+            dialog.Show();
+            foreach (bool dark in new[] { false, true })
+            {
+                new App.Shell.ThemeService().Apply(dark); dialog.UpdateLayout(); dialog.Dispatcher.Invoke(() => { }, DispatcherPriority.ContextIdle);
+                SavePreview((FrameworkElement)dialog.Content, (restore ? "restore" : "clear") + (dark ? "-dark" : "-light"));
+            }
+            dialog.Close();
+        }
+        Assert.Empty(diagnostics.Errors);
+    }
+
     private static void VerifyInspect(BindingDiagnostics diagnostics)
     {
         var fixture = new InspectVisualFixture();
@@ -217,6 +255,8 @@ public sealed class ThemeResourcesTests
         public bool IsOperationActive => true;
         public string StartDisabledReason => "Операция уже выполняется";
         public string StopDisabledReason => "Операция уже выполняется";
+        public string DataResetDisabledReason => "Подтвердите остановку и принадлежность ресурсов перед удалением данных.";
+        public string RestoreDisabledReason => "Baseline проверяется до удаления данных; ошибка оставляет работающие компоненты для явного Stop.";
         public string QuiescenceStatus => "Остановка не подтверждена: running";
         public string Error => "";
         public string Measurements => "CPU 125.5% ≈ · memory unavailable · покрытие 1/2";
@@ -229,6 +269,8 @@ public sealed class ThemeResourcesTests
         public App.Features.Environments.InspectComponentRow? SelectedComponent { get; set; }
         public System.Windows.Input.ICommand StartCommand { get; } = new CommunityToolkit.Mvvm.Input.RelayCommand(() => { }, () => false);
         public System.Windows.Input.ICommand StopCommand { get; } = new CommunityToolkit.Mvvm.Input.RelayCommand(() => { }, () => false);
+        public System.Windows.Input.ICommand ClearDataCommand { get; } = new CommunityToolkit.Mvvm.Input.RelayCommand(() => { }, () => false);
+        public System.Windows.Input.ICommand RestoreBaselineCommand { get; } = new CommunityToolkit.Mvvm.Input.RelayCommand(() => { }, () => false);
         public System.Windows.Input.ICommand CancelCommand { get; } = new CommunityToolkit.Mvvm.Input.RelayCommand(() => { });
         public System.Windows.Input.ICommand RefreshCommand { get; } = new CommunityToolkit.Mvvm.Input.RelayCommand(() => { });
         public System.Windows.Input.ICommand ReturnCommand { get; } = new CommunityToolkit.Mvvm.Input.RelayCommand(() => { });

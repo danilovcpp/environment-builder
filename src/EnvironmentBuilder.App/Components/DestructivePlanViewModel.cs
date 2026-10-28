@@ -5,13 +5,15 @@ namespace EnvironmentBuilder.App.Components;
 public sealed class DestructivePlanViewModel(OperationPlan plan)
 {
     public OperationPlan Plan { get; } = plan;
+    public string Title => Plan.Candidate is not null ? "Удалить прежние данные и сохранить новую ревизию" : Plan.TemporaryResources.IsDefaultOrEmpty ? "Очистить данные окружения" : "Восстановить baseline (refresh данных)";
+    public string ConfirmLabel => Plan.Candidate is not null ? "Удалить данные и сохранить" : Plan.TemporaryResources.IsDefaultOrEmpty ? "Удалить данные" : "Удалить данные и восстановить baseline";
     public string Warning => "Данные будут удалены без возможности восстановления. При частичной очистке прежняя спецификация останется сохранённой; уже удалённые данные не восстановятся.";
-    public string Details => $"Окружение: {Plan.EnvironmentName}\nID: {Plan.EnvironmentId}\nРевизия: {Plan.Revision} → {Plan.Candidate?.Revision}\n" +
+    public string Details => $"Окружение: {Plan.EnvironmentName}\nID: {Plan.EnvironmentId}\nРевизия: {Plan.Revision}" + (Plan.Candidate is null ? " (сохраняется)\n" : $" → {Plan.Candidate.Revision}\n") +
         $"Engine: {Plan.EngineId}\nEndpoint: {Plan.Endpoint}\nПроверено: {Plan.ObservedAt?.ToLocalTime():g}\n" +
         $"Поколение данных: {Plan.DataGenerationId} → {Plan.NextDataGenerationId}\nBaseline: {Plan.BaselineHash}\n" +
         $"План: {Plan.Id}\nПодтверждаемый hash: {Plan.Hash}\n\n" +
-        $"Новое имя: {Plan.Candidate?.Name}\n" + string.Join("\n", Plan.Candidate?.Components.Select(c => $"{c.DefinitionSnapshot.Name}: {c.Id}") ?? []) + "\n\n" +
-        (Plan.Resources.Length == 0 ? "Проверено отсутствие прежних ресурсов. Изменение сохранённого описания всё равно требует подтверждения.\n" :
+        (Plan.Candidate is null ? "" : $"Новое имя: {Plan.Candidate.Name}\n" + string.Join("\n", Plan.Candidate.Components.Select(c => $"{c.DefinitionSnapshot.Name}: {c.Id}")) + "\n\n") +
+        (Plan.Resources.Length == 0 ? "Проверено отсутствие прежних ресурсов. Операция всё равно требует подтверждения.\n" :
         string.Join("\n\n", Plan.Resources.Select(resource =>
             $"{resource.Kind}: {resource.Name}\nID: {resource.ActualDockerId}\nResource UUID: {resource.ResourceId}\nКомпонент: {resource.ComponentId}\n" +
             $"Installation: {resource.InstallationId}\nРевизия создания: {resource.CreationRevision}\nПоколение: {resource.DataGenerationId}\n" +
@@ -19,6 +21,8 @@ public sealed class DestructivePlanViewModel(OperationPlan plan)
             "Потребители: " + string.Join(", ", Plan.ExpectedResources?.SingleOrDefault(e => e.Kind == resource.Kind && e.Identity == resource.ActualDockerId)?.Consumers ?? []) +
             "\nСостояние: " + (Plan.ExpectedResources?.SingleOrDefault(e => e.Kind == resource.Kind && e.Identity == resource.ActualDockerId)?.State ?? "уже отсутствует"))) + "\n") +
         "\nЭтапы:\n" + string.Join(" → ", Plan.Stages) + "\n\n" + Plan.Consequences +
-        "\n\nВходы кандидата:\n" + string.Join("\n", Plan.Inputs.Select(i => i.Reference + ": " + i.Hash)) +
+        "\n\nПроверенные входы:\n" + string.Join("\n", Plan.Inputs.Select(i => i.Reference + ": " + i.Hash + " " + i.RuntimeIdentity)) +
+        (Plan.TemporaryResources.IsDefaultOrEmpty ? "" : "\n\nВременный запуск и последующая остановка:\n" + string.Join("\n", Plan.TemporaryResources.Select(r => $"{r.Kind}: {r.Name}; UUID {r.ResourceId}; компонент {r.ComponentId}"))) +
+        (Plan.TemporaryPorts.IsDefaultOrEmpty ? "" : "\n\nВременные порты:\n" + string.Join("\n", Plan.TemporaryPorts.Select(p => $"{p.ComponentId}: {p.Port.HostIp}:{p.Port.Published?.ToString() ?? "auto"} → {p.Port.Target}/{p.Port.Protocol}; control={p.Port.AutomaticControl}"))) +
         "\n\nПри изменении состава или условий потребуется новый план и подтверждение.";
 }

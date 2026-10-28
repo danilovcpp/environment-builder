@@ -44,6 +44,11 @@ public sealed class InspectSmokeTests
             Press(Find(window, "InspectEnvironment")); Find(window, "InspectComponents");
             Assert.False(Find(window, "CancelOperation").IsEnabled);
             Assert.False(Find(window, "StopEnvironment").IsEnabled);
+            Assert.Equal("Обновить состояние", Find(window, "RefreshObservation").Name);
+            Assert.Equal("Очистить данные", Find(window, "ClearEnvironmentData").Name);
+            Assert.Equal("Восстановить baseline (refresh данных)", Find(window, "RestoreEnvironmentBaseline").Name);
+            Assert.False(Find(window, "ClearEnvironmentData").IsEnabled);
+            Assert.False(Find(window, "RestoreEnvironmentBaseline").IsEnabled);
             AutomationElement theme = window.FindFirstDescendant(cf => cf.ByName("Переключить светлую и тёмную тему"))!;
             Press(theme); Find(window, "InspectLogs"); Press(theme);
             Press(Find(window, "InspectCompose"));

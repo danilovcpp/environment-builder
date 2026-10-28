@@ -26,9 +26,12 @@ public sealed class DockerProcessFactory(ISecretVault vault)
 
 public sealed class DockerRuntimeAdapter(AppDataDirectory directory, SqliteWorker worker, IEnvironmentStore environments, ResourceLedgerStore ledger,
     DataApplicationStore applications, RuntimeInputCapture capture, IInputResolver inputs, ISeedPackStore packs, ISecretVault vault,
-    ContentBlobStore blobs, DockerProcessFactory processes) : IStartRuntime
+    ContentBlobStore blobs, DockerProcessFactory processes) : IStartRuntime, IRefreshRuntime
 {
-    public async Task<IStartSession> PrepareAsync(IsolatedEnvironment environment, Guid operationId, CancellationToken token)
+    public Task<IStartSession> PrepareAsync(IsolatedEnvironment environment, Guid operationId, CancellationToken token) => PrepareAsync(environment, operationId, null, token);
+    Task<IStartSession> IRefreshRuntime.PrepareAsync(IsolatedEnvironment environment, Guid operationId, Guid generation, CancellationToken token) => PrepareAsync(environment, operationId, generation, token);
+
+    private async Task<IStartSession> PrepareAsync(IsolatedEnvironment environment, Guid operationId, Guid? resetGeneration, CancellationToken token)
     {
         EnvironmentListItem saved = (await environments.ListAsync(token).ConfigureAwait(false)).Single(i => i.Id == environment.Id);
         if (saved.Document is null || CanonicalJson.Hash(saved.Document) != CanonicalJson.Hash(environment)) { throw new InvalidOperationException("Saved configuration changed."); }
@@ -36,8 +39,8 @@ public sealed class DockerRuntimeAdapter(AppDataDirectory directory, SqliteWorke
         if (issues.Any(i => i.Code != "image-identity-unknown")) { throw new InvalidOperationException("Required input is unavailable: " + issues.First(i => i.Code != "image-identity-unknown").Code); }
         (Guid installation, Guid generation) = await worker.ReadAsync(connection =>
         {
-            using var command = Sql.Command(connection, null, "SELECT (SELECT value FROM AppMetadata WHERE key='installationId'),g.id FROM DataGenerations g JOIN Environments e ON e.generationId=g.id WHERE e.id=$id AND g.validity='active' AND g.baselineHash=$baseline",
-                ("$id", environment.Id.ToString()), ("$baseline", CanonicalJson.Hash(environment.Baseline)));
+            using var command = Sql.Command(connection, null, "SELECT (SELECT value FROM AppMetadata WHERE key='installationId'),g.id FROM DataGenerations g JOIN Environments e ON e.generationId=g.id WHERE e.id=$id AND (g.validity='active' OR $reset=1) AND g.baselineHash=$baseline",
+                ("$id", environment.Id.ToString()), ("$baseline", CanonicalJson.Hash(environment.Baseline)), ("$reset", resetGeneration.HasValue ? 1 : 0));
             using var row = command.ExecuteReader();
             if (!row.Read()) { throw new PreflightBlockedException("data-generation-invalid"); }
             return (Guid.Parse(row.GetString(0)), Guid.Parse(row.GetString(1)));
@@ -59,12 +62,12 @@ public sealed class DockerRuntimeAdapter(AppDataDirectory directory, SqliteWorke
         }
         var activeGeneration = new DataGeneration(generation, environment.Id, CanonicalJson.Hash(environment.Baseline), DateTimeOffset.MinValue, GenerationValidity.Active);
         string? generationBlock = DataGenerationGuard.BlockReason(environment, activeGeneration, generationResources);
-        if (generationBlock is not null)
+        if (generationBlock is not null && resetGeneration is null)
         {
             await applications.InvalidateAsync(generation, operationId, generationBlock, DateTimeOffset.UtcNow, token).ConfigureAwait(false);
             throw new PreflightBlockedException(generationBlock);
         }
-        if (generationResources.Any(r => !r.Ownership.Verified)) { throw new PreflightBlockedException("existing-resource-unverified"); }
+        if (generationResources.Any(r => !r.Ownership.Verified && (resetGeneration is null || r.Actual is not null))) { throw new PreflightBlockedException("existing-resource-unverified"); }
         foreach (EnvironmentComponent component in environment.Components)
         {
             string containerName = ComposeCompiler.Compile(environment).ProjectName + "-c-" + component.Id.ToString("N");
@@ -102,9 +105,12 @@ public sealed class DockerRuntimeAdapter(AppDataDirectory directory, SqliteWorke
                 string header = value.SecretRef is null ? value.Literal! : new string(values[value.SecretRef].Value.Span);
                 if (header.Any(char.IsControl)) { throw new InvalidOperationException("Initialization header input is invalid."); }
             }
-            var session = new Session(environment, operationId, installation, generation, directory, ledger, applications, blobs, packs, docker, probe, capability, reader, captured, images, values, existing);
+            var session = new Session(environment, operationId, installation, resetGeneration ?? generation, directory, ledger, applications, blobs, packs, docker, probe, capability, reader, captured, images, values, resetGeneration.HasValue ? [] : existing);
             foreach (OwnedResource resource in session.Plan.Resources.Where(r => r.ActualDockerId is null))
-            { if (await reader.ReadAsync(resource, all, token).ConfigureAwait(false) is not null) { await session.DisposeAsync().ConfigureAwait(false); throw new InvalidOperationException("Planned resource name is already occupied."); } }
+            {
+                if (resetGeneration.HasValue && existing.Any(r => r.Kind == resource.Kind && r.Name == resource.Name)) { continue; }
+                if (await reader.ReadAsync(resource, all, token).ConfigureAwait(false) is not null) { await session.DisposeAsync().ConfigureAwait(false); throw new InvalidOperationException("Planned resource name is already occupied."); }
+            }
             return session;
         }
         catch { foreach (SecretValue value in values.Values) { value.Dispose(); } await captured.DisposeAsync().ConfigureAwait(false); throw; }

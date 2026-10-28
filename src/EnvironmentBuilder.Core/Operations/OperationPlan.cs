@@ -11,6 +11,8 @@ public sealed record OperationPlan(Guid Id, Guid EnvironmentId, long Revision, s
     public ImmutableArray<EnvironmentBuilder.Core.SeedPacks.SeedPackReference> Packs { get; init; } = [];
     public string? Endpoint { get; init; }
     public string? EngineId { get; init; }
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingDefault)] public ImmutableArray<OwnedResource> TemporaryResources { get; init; }
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingDefault)] public ImmutableArray<TemporaryPort> TemporaryPorts { get; init; }
     [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] public string? EnvironmentName { get; init; }
     [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] public Guid? NextDataGenerationId { get; init; }
     [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] public DateTimeOffset? ObservedAt { get; init; }
@@ -19,3 +21,4 @@ public sealed record OperationPlan(Guid Id, Guid EnvironmentId, long Revision, s
 }
 public sealed record ConfirmationRecord(string PlanHash, DateTimeOffset ConfirmedAt);
 public sealed record InputFingerprint(string Reference, string? Hash, string? RuntimeIdentity);
+public sealed record TemporaryPort(Guid ComponentId, ComposePort Port);

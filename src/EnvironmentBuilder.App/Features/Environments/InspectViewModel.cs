@@ -28,6 +28,8 @@ public sealed partial class InspectViewModel(IEnvironmentObservationSource sourc
     private IsolatedEnvironment? environment;
     private EnvironmentObservation? observation;
     private Guid sessionId;
+    private string? baselineInputReason = "Входы baseline ещё не проверены.";
+    private bool baselineChecked;
     public ObservableCollection<InspectComponentRow> Components { get; } = [];
     [ObservableProperty] private InspectComponentRow? selectedComponent;
     [ObservableProperty] private string name = "";
@@ -42,16 +44,20 @@ public sealed partial class InspectViewModel(IEnvironmentObservationSource sourc
     [ObservableProperty] private string error = "";
     [ObservableProperty] private bool logsPaused;
     [ObservableProperty]
-    [NotifyCanExecuteChangedFor(nameof(StartCommand), nameof(StopCommand), nameof(CancelCommand))]
+    [NotifyCanExecuteChangedFor(nameof(StartCommand), nameof(StopCommand), nameof(CancelCommand), nameof(ClearDataCommand), nameof(RestoreBaselineCommand))]
     private bool isOperationActive;
     private const string GenerationRecovery = "Сохранность поколения данных не подтверждена. Остановите окружение, проверьте ресурсы и рассмотрите восстановление baseline с подтверждением плана потери данных.";
     public string StartDisabledReason => environment is null ? "Окружение не выбрано." : commands.DisabledReason(environment.Id) ?? (observation?.Components.Any(c => c.Reason == "data-generation-invalid") == true ? GenerationRecovery : "");
     public string StopDisabledReason => environment is null ? "Окружение не выбрано." : commands.StopDisabledReason(environment.Id, observation) ?? "";
+    public string DataResetDisabledReason => environment is null ? "Окружение не выбрано." : commands.DataResetDisabledReason(environment.Id, observation) ?? "";
+    public string RestoreDisabledReason => DataResetDisabledReason.Length > 0 ? DataResetDisabledReason : baselineInputReason ?? "";
     public string QuiescenceStatus => environment is not null && commands.Quiescence(environment.Id, observation) is { ConfirmedQuiescent: true }
         ? "Остановка подтверждена проверкой ресурсов." : environment is null ? "Окружение не выбрано." : commands.Quiescence(environment.Id, observation).Reason!;
     private bool CanStart() => environment is not null && StartDisabledReason.Length == 0;
     private bool CanStop() => environment is not null && commands.StopDisabledReason(environment.Id, observation) is null;
     private bool CanCancel() => IsOperationActive;
+    private bool CanReset() => !IsOperationActive && environment is not null && DataResetDisabledReason.Length == 0;
+    private bool CanRestore() => CanReset() && RestoreDisabledReason.Length == 0;
     public Func<Task>? Back { get; set; }
     public Func<IsolatedEnvironment, Task>? Preview { get; set; }
 
@@ -59,8 +65,9 @@ public sealed partial class InspectViewModel(IEnvironmentObservationSource sourc
     {
         await CloseSessionAsync();
         environment = document; observation = null; sessionId = Guid.NewGuid(); Name = document.Name;
+        baselineChecked = false; baselineInputReason = "Входы baseline ещё не проверены.";
         SelectedComponent = null; Components.Clear(); Logs = ""; Endpoints = "Адреса не проверены"; Error = "";
-        StartCommand.NotifyCanExecuteChanged(); StopCommand.NotifyCanExecuteChanged(); OnPropertyChanged(nameof(StopDisabledReason)); OnPropertyChanged(nameof(QuiescenceStatus));
+        StartCommand.NotifyCanExecuteChanged(); StopCommand.NotifyCanExecuteChanged(); ClearDataCommand.NotifyCanExecuteChanged(); RestoreBaselineCommand.NotifyCanExecuteChanged(); OnPropertyChanged(nameof(DataResetDisabledReason)); OnPropertyChanged(nameof(StopDisabledReason)); OnPropertyChanged(nameof(QuiescenceStatus));
         cancellation = CancellationTokenSource.CreateLinkedTokenSource(token);
         session = streams.Create(document);
         polling = PollAsync(document, sessionId, cancellation.Token);
@@ -83,12 +90,15 @@ public sealed partial class InspectViewModel(IEnvironmentObservationSource sourc
         try
         {
             EnvironmentObservation next = await source.ReadAsync(document, id, observation, token).ConfigureAwait(false);
+            string? inputReason = baselineInputReason;
+            if (!baselineChecked) { inputReason = await commands.CheckRestoreInputsAsync(document, token).ConfigureAwait(false); }
             Guid? selected = SelectedComponent?.ComponentId ?? next.Components.FirstOrDefault()?.ComponentId;
             InspectionStreamsSnapshot live = await session!.ReadAsync(next, selected, LogsPaused, token).ConfigureAwait(false);
             await apply(() =>
             {
                 if (id != sessionId || token.IsCancellationRequested || next.EnvironmentId != document.Id || next.SessionId != id) { return; }
                 observation = next;
+                baselineInputReason = inputReason; baselineChecked = true; OnPropertyChanged(nameof(RestoreDisabledReason));
                 string freshness = next.Freshness == "current" ? "Актуальное состояние" : next.Freshness == "stale" ? "Данные устарели" : "Состояние неизвестно";
                 Status = $"{freshness} · проверено {next.CheckedAt.LocalDateTime:g} · последняя успешная проверка {next.LastSuccessfulAt?.LocalDateTime.ToString("g") ?? "неизвестна"}";
                 Components.Clear();
@@ -111,8 +121,10 @@ public sealed partial class InspectViewModel(IEnvironmentObservationSource sourc
                 var handle = commands.Get(document.Id);
                 OperationId = handle?.Current.Id.ToString() ?? "";
                 IsOperationActive = handle is { Completion.IsCompleted: false };
-                StartCommand.NotifyCanExecuteChanged(); StopCommand.NotifyCanExecuteChanged(); CancelCommand.NotifyCanExecuteChanged(); OnPropertyChanged(nameof(StartDisabledReason)); OnPropertyChanged(nameof(StopDisabledReason)); OnPropertyChanged(nameof(QuiescenceStatus));
-                Progress = handle is null ? "Нет активной операции" : StateLabel(handle.Current.State) + " · " + string.Join("; ", handle.Current.Progress.Select(p => p.ComponentId + " " + p.Stage)) + ResultLabel(handle.Current.ResultCode);
+                StartCommand.NotifyCanExecuteChanged(); StopCommand.NotifyCanExecuteChanged(); CancelCommand.NotifyCanExecuteChanged(); ClearDataCommand.NotifyCanExecuteChanged(); RestoreBaselineCommand.NotifyCanExecuteChanged(); OnPropertyChanged(nameof(DataResetDisabledReason)); OnPropertyChanged(nameof(StartDisabledReason)); OnPropertyChanged(nameof(StopDisabledReason)); OnPropertyChanged(nameof(QuiescenceStatus));
+                Progress = handle is null ? "Нет активной операции" : StateLabel(handle.Current.State) + " · " + string.Join("; ", handle.Current.Progress.Select(p => p.ComponentId + " " + p.Stage)) + ResultLabel(handle.Current.ResultCode) +
+                    (handle.Current.Kind is "clear" or "refresh" ? "\nУдалено: " + string.Join(", ", handle.Current.DeletedResources) + "\nОстатки очистки: " + string.Join(", ", handle.Current.Remnants) +
+                    (handle.Current.State is OperationState.PartiallyCompleted or OperationState.NeedsAttention ? "\nЧастичное восстановление данных. Проверьте фактические компоненты. Для их остановки используйте отдельную команду «Остановить». Удалённые данные не восстанавливаются." : "") : "");
                 Error = next.Reason ?? (next.Components.Any(c => c.Reason == "data-generation-invalid") ? GenerationRecovery : "");
             }, token).ConfigureAwait(false);
         }
@@ -126,8 +138,9 @@ public sealed partial class InspectViewModel(IEnvironmentObservationSource sourc
         OperationState.CancelRequested => "Ожидание безопасной отмены",
         OperationState.Succeeded => "Все обязательные этапы завершены",
         OperationState.Cancelled => "Отменено",
+        OperationState.PartiallyCompleted => "Выполнено частично",
         OperationState.NeedsAttention => "Требуется сверка результата",
-        OperationState.Failed => "Запуск заблокирован или не удался",
+        OperationState.Failed => "Операция заблокирована или не удалась",
         _ => state.ToString()
     };
     private static string ResultLabel(string? code) => code switch
@@ -156,7 +169,25 @@ public sealed partial class InspectViewModel(IEnvironmentObservationSource sourc
         catch (Exception error) when (error is not OutOfMemoryException) { Error = "Остановка заблокирована. Обновите состояние и проверьте принадлежность контейнеров."; }
     }
     [RelayCommand(CanExecute = nameof(CanCancel))] private Task CancelAsync() => environment is null ? Task.CompletedTask : commands.CancelAsync(environment.Id, CancellationToken.None);
-    [RelayCommand] private Task RefreshAsync() => environment is null || cancellation is null ? Task.CompletedTask : RefreshCoreAsync(environment, sessionId, cancellation.Token);
+    [RelayCommand(CanExecute = nameof(CanReset))] private Task ClearDataAsync() => ResetAsync(false);
+    [RelayCommand(CanExecute = nameof(CanRestore))] private Task RestoreBaselineAsync() => ResetAsync(true);
+    private async Task ResetAsync(bool restore)
+    {
+        if (environment is null) { return; }
+        try
+        {
+            OperationHandle handle = restore ? await commands.RestoreAsync(environment, CancellationToken.None) : await commands.ClearAsync(environment, CancellationToken.None);
+            OperationId = handle.Current.Id.ToString(); IsOperationActive = true;
+            Progress = "Проверка остановки, принадлежности и входов; затем подтверждение плана потери данных.";
+        }
+        catch (Exception error) when (error is not OutOfMemoryException) { Error = "Операция с данными заблокирована. Обновите состояние и проверьте входы и незавершённые операции."; }
+    }
+    [RelayCommand]
+    private Task RefreshAsync()
+    {
+        baselineChecked = false;
+        return environment is null || cancellation is null ? Task.CompletedTask : RefreshCoreAsync(environment, sessionId, cancellation.Token);
+    }
     [RelayCommand] private Task ReturnAsync() => Back?.Invoke() ?? Task.CompletedTask;
     [RelayCommand] private Task ShowComposeAsync() => environment is null ? Task.CompletedTask : Preview?.Invoke(environment) ?? Task.CompletedTask;
     public async Task CloseSessionAsync()

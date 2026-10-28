@@ -13,6 +13,7 @@ public sealed record Operation(Guid Id, Guid EnvironmentId, string Kind, Operati
     public ImmutableArray<string> Remnants { get; init; } = [];
     public ImmutableArray<string> DeletedResources { get; init; } = [];
     public bool DestructiveAttempted { get; init; }
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingDefault)] public bool DataResetCompleted { get; init; }
     public ImmutableArray<StageProgress> Progress { get; init; } = [];
     public string? ResultCode { get; init; }
     public string? InputReviewToken { get; init; }

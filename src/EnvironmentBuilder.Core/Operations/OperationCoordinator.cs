@@ -27,6 +27,12 @@ public sealed class OperationExecution(DurableEffectRunner effects, Func<bool> c
         ? o with { State = OperationState.Running, Confirmation = confirmation } : throw new PreflightBlockedException("stale-plan")) ?? Task.CompletedTask;
     public Task SetCleanupAsync(System.Collections.Immutable.ImmutableArray<string> deleted, System.Collections.Immutable.ImmutableArray<string> remnants) => update?.Invoke(o => o with { DeletedResources = deleted, Remnants = remnants }) ?? Task.CompletedTask;
     public Task MarkDestructiveAsync() => update?.Invoke(o => o with { DestructiveAttempted = true }) ?? Task.CompletedTask;
+    public Task CommitDataResetAsync(Func<Operation, CancellationToken, Task> commit)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        if (blocked || atomicCommit is null) { throw new InvalidOperationException("Atomic data reset is unavailable."); }
+        return atomicCommit(o => o with { DataResetCompleted = true, DestructiveAttempted = true }, commit);
+    }
     public async Task CompleteAtomicallyAsync(Func<Operation, CancellationToken, Task> commit, DateTimeOffset at)
     {
         cancellationToken.ThrowIfCancellationRequested();
@@ -87,7 +93,7 @@ public sealed class OperationCoordinator(IOperationStore store, IClock clock, Fu
             ObjectDisposedException.ThrowIf(disposed, this);
             if (active.TryGetValue(operation.EnvironmentId, out OperationHandle? existing))
             {
-                if (reconciliation || operation.Kind == "edit") { throw new InvalidOperationException("A conflicting operation is still active."); }
+                if (reconciliation || operation.Kind is "edit" or "clear" or "refresh") { throw new InvalidOperationException("A conflicting operation is still active."); }
                 return existing;
             }
             if (pendingClose || !canWrite() || (unresolved.Contains(operation.EnvironmentId) && operation.Kind != "stop" && !reconciliation)) { throw new InvalidOperationException("New effects are blocked by storage, close, or unresolved recovery."); }

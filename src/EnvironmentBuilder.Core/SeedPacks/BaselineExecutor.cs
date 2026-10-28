@@ -6,6 +6,21 @@ namespace EnvironmentBuilder.Core.SeedPacks;
 
 public sealed class BaselineExecutor(IDataApplicationJournal journal, IClock clock)
 {
+    public async Task VerifyAsync(IsolatedEnvironment environment, IStartSession session, CancellationToken token)
+    {
+        await session.ValidateDataGenerationAsync(token).ConfigureAwait(false);
+        foreach (BaselineApplication application in environment.Baseline.Applications)
+        {
+            foreach (InitializationStep step in application.Initializer.Steps)
+            {
+                var key = new DataApplicationKey(environment.Id, application.ComponentId, session.Plan.DataGenerationId, session.Plan.BaselineHash,
+                    CanonicalJson.Hash(application), CanonicalJson.Hash(application.Initializer), step.Id);
+                if ((await journal.ReadAsync(key, token).ConfigureAwait(false))?.State != StepState.Succeeded)
+                { throw new UnresolvedEffectException("baseline-not-verified"); }
+            }
+        }
+    }
+
     public async Task ExecuteAsync(IsolatedEnvironment environment, EnvironmentComponent component, IStartSession session, CancellationToken token)
     {
         foreach (BaselineApplication application in environment.Baseline.Applications.Where(a => a.ComponentId == component.Id))

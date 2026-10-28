@@ -53,7 +53,9 @@ public sealed class AppServices : IAsyncDisposable
             services.AddSingleton<BaselineExecutor>();
             services.AddSingleton<DockerProcessFactory>();
             services.AddSingleton<RuntimeInputCapture>();
-            services.AddSingleton<IStartRuntime, DockerRuntimeAdapter>();
+            services.AddSingleton<DockerRuntimeAdapter>();
+            services.AddSingleton<IStartRuntime>(p => p.GetRequiredService<DockerRuntimeAdapter>());
+            services.AddSingleton<IRefreshRuntime>(p => p.GetRequiredService<DockerRuntimeAdapter>());
             services.AddSingleton<StartEnvironmentService>();
             services.AddSingleton<IStopRuntime, DockerStopAdapter>();
             services.AddSingleton<StopEnvironmentService>();
@@ -61,6 +63,10 @@ public sealed class AppServices : IAsyncDisposable
             services.AddSingleton<IEditPersistence, EditFinalization>();
             services.AddSingleton<VerifiedCleanupExecutor>();
             services.AddSingleton<EditEnvironmentService>();
+            services.AddSingleton<IDataResetPersistence, DataResetFinalization>();
+            services.AddSingleton<ClearEnvironmentDataService>();
+            services.AddSingleton<BaselinePreflight>();
+            services.AddSingleton<RefreshEnvironmentDataService>();
             services.AddSingleton<IDestructiveInteractions, DestructiveInteractions>();
             services.AddSingleton<IEnvironmentObservationSource, DockerObservationReader>();
             services.AddSingleton<LogMemoryBudget>();

@@ -20,6 +20,11 @@
    <TextBlock Text="Окружений пока нет. Создайте описание из компонентов библиотеки." Visibility="{Binding IsEmpty, Converter={StaticResource Visible}}" TextWrapping="Wrap" Margin="0,16"/>
    <TextBlock Text="По заданным фильтрам ничего не найдено." Visibility="{Binding NoResults, Converter={StaticResource Visible}}" Margin="0,16"/>
    <TextBlock Text="{Binding SelectionNotice}" TextWrapping="Wrap"/>
+   <WrapPanel Margin="0,8,0,12">
+    <Button Content="{x:Static local:EnvironmentCommands.ObservationLabel}" Command="{Binding ObserveSelectedCommand}" ToolTip="{x:Static local:EnvironmentCommands.ObservationExplanation}" AutomationProperties.AutomationId="ObserveSelectedEnvironment" Margin="0,0,8,8"/>
+    <Button Content="{x:Static local:EnvironmentCommands.ClearLabel}" Command="{Binding ClearSelectedDataCommand}" ToolTip="{x:Static local:EnvironmentCommands.ClearExplanation}" AutomationProperties.AutomationId="ClearSelectedEnvironmentData" Margin="0,0,8,8"/>
+    <Button Content="{x:Static local:EnvironmentCommands.RestoreLabel}" Command="{Binding RestoreSelectedBaselineCommand}" ToolTip="{x:Static local:EnvironmentCommands.RestoreExplanation}" AutomationProperties.AutomationId="RestoreSelectedEnvironmentBaseline" Margin="0,0,0,8"/>
+   </WrapPanel>
   </StackPanel>
   <ListBox x:Name="Rows" ItemsSource="{Binding VisibleItems}" SelectedItem="{Binding SelectedItem}" AutomationProperties.AutomationId="EnvironmentRows"
    ScrollViewer.CanContentScroll="True" ScrollViewer.VerticalScrollBarVisibility="Auto" VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling"

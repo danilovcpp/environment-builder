@@ -19,6 +19,8 @@ internal sealed class EditFixture : ICleanupRuntime, IAsyncDisposable
     public ImmutableArray<OwnedResource> Resources { get; private set; } = [];
     public ResourceLedgerStore Ledger => new(Store.Worker);
     public EditEnvironmentService Service { get; private set; } = null!;
+    public OperationCoordinator Coordinator => coordinator;
+    public Guid SecondEnvironmentId => foreignEnvironment;
     public HashSet<Guid> Absent { get; } = [];
     public List<IReadOnlyList<string>> Mutations { get; } = [];
     public string? Fault { get; set; }
@@ -34,11 +36,11 @@ internal sealed class EditFixture : ICleanupRuntime, IAsyncDisposable
     private static string ForeignId => new('f', 64);
     private static string SecondId => new('b', 64);
 
-    public static async Task<EditFixture> CreateAsync(bool empty = false)
+    public static async Task<EditFixture> CreateAsync(bool empty = false, Func<IsolatedEnvironment, IsolatedEnvironment>? configure = null)
     {
         var fixture = new EditFixture();
         fixture.Store = await FoundationStore.CreateAsync(point => { if (fixture.FaultBoundary == point) { throw new IOException("injected " + point); } });
-        fixture.Environment = fixture.Store.Example();
+        fixture.Environment = configure?.Invoke(fixture.Store.Example()) ?? fixture.Store.Example();
         await fixture.Store.Environments.SaveNewAsync(fixture.Environment, TestContext.Current.CancellationToken);
         Guid generation = await fixture.GenerationAsync();
         Guid installation = await fixture.Store.Worker.ReadAsync(connection =>
@@ -165,7 +167,7 @@ internal sealed class EditFixture : ICleanupRuntime, IAsyncDisposable
     { using var command = connection.CreateCommand(); command.CommandText = "SELECT generationId FROM Environments WHERE id=$id"; command.Parameters.AddWithValue("$id", Environment.Id.ToString()); return Guid.Parse((string)command.ExecuteScalar()!); }, TestContext.Current.CancellationToken);
     public Task<string> ValidityAsync(Guid generation) => Store.Worker.ReadAsync(connection =>
     { using var command = connection.CreateCommand(); command.CommandText = "SELECT validity FROM DataGenerations WHERE id=$id"; command.Parameters.AddWithValue("$id", generation.ToString()); return (string)command.ExecuteScalar()!; }, TestContext.Current.CancellationToken);
-    public async Task<IsolatedEnvironment> SavedAsync() => (await Store.Environments.ListAsync(TestContext.Current.CancellationToken)).Single().Document!;
+    public async Task<IsolatedEnvironment> SavedAsync() => (await Store.Environments.ListAsync(TestContext.Current.CancellationToken)).Single(e => e.Id == Environment.Id).Document!;
     public async ValueTask DisposeAsync() { await coordinator.DisposeAsync(); await Store.DisposeAsync(); }
     private sealed class FakeDocker(Func<IReadOnlyList<string>, Task<DockerResult>> run) : IDockerProcess
     {
