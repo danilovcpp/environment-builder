@@ -44,7 +44,7 @@ public sealed class EnvironmentDraft
             Snapshot = Snapshot with { Components = Snapshot.Components.Add(component) };
             if (item.Initialization is not null)
             { Snapshot = Snapshot with { Baseline = new DataBaseline(Snapshot.Baseline.Applications.Add(new BaselineApplication(component.Id, item.Initialization, null))) }; }
-            foreach (DependencyRequirement requirement in item.DependencyRequirements)
+            foreach (DependencyRequirement requirement in item.DependencyRequirements.Where(requirement => !requirement.Optional))
             {
                 if (Snapshot.Components.Any(c => Matches(c, requirement))) { continue; }
                 ComponentDefinition? dependency = library.SingleOrDefault(d => d.Id == requirement.DefinitionId && d.Version == requirement.DefinitionVersion);
@@ -55,7 +55,8 @@ public sealed class EnvironmentDraft
     }
 
     public ImmutableArray<DependencyChoice> UnresolvedDependencies => Snapshot.Components.SelectMany(component =>
-        component.DefinitionSnapshot.DependencyRequirements.Where(requirement => !Snapshot.Dependencies.Any(e => e.DependentId == component.Id && e.RequirementId == requirement.Id))
+        component.DefinitionSnapshot.DependencyRequirements.Where(requirement => !Snapshot.Dependencies.Any(e => e.DependentId == component.Id && e.RequirementId == requirement.Id) &&
+            (!requirement.Optional || Snapshot.Components.Any(candidate => candidate.Id != component.Id && Matches(candidate, requirement))))
             .Select(requirement => new DependencyChoice(component.Id, requirement, Snapshot.Components.Where(c => c.Id != component.Id && Matches(c, requirement)).Select(c => c.Id).ToImmutableArray()))).ToImmutableArray();
 
     public void BindUnambiguous()

@@ -97,7 +97,7 @@
                                                 </Grid.ColumnDefinitions>
                                                 <CheckBox IsChecked="{Binding IsSelected}" Command="{Binding DataContext.ToggleDefinitionCommand, RelativeSource={RelativeSource AncestorType=local:EnvironmentEditorPage}}" CommandParameter="{Binding}" AutomationProperties.AutomationId="ChooseTargetService" AutomationProperties.Name="{Binding Definition.Name}" />
                                                 <DockPanel Grid.Column="1" VerticalAlignment="Center">
-                                                    <icons:PackIconLucide DockPanel.Dock="Left" Kind="Settings" Width="22" Height="22" Foreground="{DynamicResource Brush.ServiceIcon}" Margin="0,0,12,0" />
+                                                    <components:ServiceBadge DockPanel.Dock="Left" Icon="{Binding Definition.Icon}" Color="{Binding Definition.Color}" LogoUrl="{Binding Definition.LogoUrl}" Margin="0,0,12,0" />
                                                     <TextBlock Text="{Binding Definition.Name}" FontSize="{DynamicResource FontSize.Metadata}" FontWeight="SemiBold" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" ToolTip="{Binding Label}" />
                                                 </DockPanel>
                                                 <TextBlock Grid.Column="2" Text="{Binding SourceLabel}" FontSize="{DynamicResource FontSize.Small}" Foreground="{DynamicResource Brush.TextSecondary}" VerticalAlignment="Center" Margin="{DynamicResource Margin.SearchContent}" TextWrapping="Wrap" />
@@ -144,7 +144,7 @@
                                                 </Grid.ColumnDefinitions>
                                                 <CheckBox IsChecked="{Binding IsSelected}" Command="{Binding DataContext.ToggleDefinitionCommand, RelativeSource={RelativeSource AncestorType=local:EnvironmentEditorPage}}" CommandParameter="{Binding}" AutomationProperties.AutomationId="ChooseInfrastructureService" AutomationProperties.Name="{Binding Definition.Name}" />
                                                 <DockPanel Grid.Column="1" VerticalAlignment="Center">
-                                                    <icons:PackIconLucide DockPanel.Dock="Left" Kind="Database" Width="22" Height="22" Foreground="{DynamicResource Brush.InfrastructureIcon}" Margin="0,0,12,0" />
+                                                    <components:ServiceBadge DockPanel.Dock="Left" Icon="{Binding Definition.Icon}" Color="{Binding Definition.Color}" LogoUrl="{Binding Definition.LogoUrl}" Margin="0,0,12,0" />
                                                     <TextBlock Text="{Binding Definition.Name}" FontSize="{DynamicResource FontSize.Metadata}" FontWeight="SemiBold" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" ToolTip="{Binding Label}" />
                                                 </DockPanel>
                                                 <TextBlock Grid.Column="2" Text="{Binding SourceLabel}" FontSize="{DynamicResource FontSize.Small}" Foreground="{DynamicResource Brush.TextSecondary}" VerticalAlignment="Center" Margin="{DynamicResource Margin.SearchContent}" TextWrapping="Wrap" />

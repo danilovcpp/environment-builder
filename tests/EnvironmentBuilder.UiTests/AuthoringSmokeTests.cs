@@ -34,6 +34,7 @@ public sealed class AuthoringSmokeTests
             using (var app = Launch(exe, root))
             {
                 Window window = app.GetMainWindow(automation, TimeSpan.FromSeconds(15)) ?? throw new InvalidOperationException("Interactive main window unavailable.");
+                Wait(() => window.FindFirstDescendant(cf => cf.ByName("Хранилище доступно · Docker не проверен")) is not null, "initial storage load before navigation");
                 window.Focus();
                 Press(Find(window, "NavigateSettings"));
                 Find(window, "ApplicationTheme").Focus(); Keyboard.Type(VirtualKeyShort.END); Keyboard.Type(VirtualKeyShort.TAB);

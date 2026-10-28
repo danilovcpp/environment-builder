@@ -25,7 +25,9 @@
                     <DataGrid ItemsSource="{Binding Definitions}" SelectedItem="{Binding SelectedDefinition}" AutoGenerateColumns="False" IsReadOnly="False" IsEnabled="{Binding CanConfigure}" RowHeight="38" ColumnHeaderHeight="34" BorderThickness="0" AutomationProperties.AutomationId="SettingsDefinitions">
                         <DataGrid.Columns>
                             <DataGridCheckBoxColumn Header="Вкл." Binding="{Binding Enabled, UpdateSourceTrigger=PropertyChanged}" Width="50" ElementStyle="{StaticResource CheckBox.TableDisplay}" EditingElementStyle="{StaticResource CheckBox.Table}" />
-                            <DataGridTextColumn Header="Сервис" Binding="{Binding Name}" IsReadOnly="True" Width="*" ElementStyle="{StaticResource Text.Table}" EditingElementStyle="{StaticResource Input.Table}" />
+                            <DataGridTemplateColumn Header="Сервис" IsReadOnly="True" Width="*">
+                                <DataGridTemplateColumn.CellTemplate><DataTemplate><DockPanel><components:ServiceBadge DockPanel.Dock="Left" Icon="{Binding Icon}" Color="{Binding Color}" LogoUrl="{Binding Editor.LogoUrl}" Margin="0,0,8,0" /><TextBlock Text="{Binding Name}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" /></DockPanel></DataTemplate></DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
                             <DataGridTextColumn Header="Тип" Binding="{Binding Type}" IsReadOnly="True" Width="0.85*" ElementStyle="{StaticResource Text.Table}" EditingElementStyle="{StaticResource Input.Table}" />
                         </DataGrid.Columns>
                     </DataGrid>

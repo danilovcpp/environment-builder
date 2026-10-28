@@ -70,7 +70,11 @@ internal static class UiReferenceTests
                     {
                         Assert.True(fixture.Shell.NavigateCommand.ExecuteAsync(route).IsCompletedSuccessfully);
                         Layout(window); Capture(window, route + suffix);
-                        if (route == "services") { VerifyComponentTabs(window, suffix); }
+                        if (route == "services")
+                        {
+                            Assert.Empty(Descendants(window).OfType<ComponentEditor>());
+                            Assert.DoesNotContain(Descendants(window).OfType<TabControl>(), control => control.IsVisible);
+                        }
                         if (route == "seedpacks")
                         {
                             var page = Descendants(window).OfType<SeedPackLibraryPage>().Single();
@@ -98,6 +102,7 @@ internal static class UiReferenceTests
                     editor.SelectedDefinition = editor.Library.First(d => d.Definition.ComponentType == "target");
                     editor.AddComponentCommand.Execute(null);
                     Layout(window); Capture(window, "editor" + suffix);
+                    VerifyComponentTabs(window, suffix);
                     var context = Descendants(window).OfType<ContextPanel>().Single();
                     Assert.Equal(!compact, context.IsExpanded);
                     var input = Descendants(window).OfType<TextBox>().Single(text => text.Name == "NameInput");
@@ -149,7 +154,7 @@ internal static class UiReferenceTests
                 Rect glyph = input.GetRectFromCharacterIndex(0);
                 Assert.True(glyph.IsEmpty || glyph.Bottom <= input.ActualHeight, "Visible component input must retain its full line height.");
             }
-            Capture(window, "settings-tab-" + tab.Header + suffix);
+            Capture(window, "environment-component-tab-" + tab.Header + suffix);
         }
         tabs.SelectedIndex = 0;
     }

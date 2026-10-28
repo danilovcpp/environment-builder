@@ -22,7 +22,7 @@ public sealed class SettingsWorkflowTests
         settings.AddTargetCommand.Execute(null);
         var target = settings.SelectedDefinition!;
         target.Name = "My API"; target.Editor.ImageReference = "nginx:stable-alpine";
-        target.Editor.Variables.Add(new ValueEditor { Key = "MODE", Text = "default" });
+        target.Icon = "Globe"; target.Color = "#123ABC";
         settings.AddInfrastructureCommand.Execute(null);
         var infrastructure = settings.SelectedDefinition!;
         infrastructure.Name = "Redis"; infrastructure.Editor.ImageReference = "redis:7.2-alpine";
@@ -44,11 +44,26 @@ public sealed class SettingsWorkflowTests
         editor.Name = "My environment";
         editor.AddDefinitionCommand.Execute(editor.Library.Single(d => d.Definition.Id == target.Definition.Id));
         editor.AddDefinitionCommand.Execute(editor.Library.Single(d => d.Definition.Id == infrastructure.Definition.Id));
-        editor.Components.Single(c => c.Definition.Id == target.Definition.Id).Variables.Single().Text = "environment-only";
+        var targetInstance = editor.Components.Single(c => c.Definition.Id == target.Definition.Id);
+        targetInstance.Variables.Add(new ValueEditor { Key = "MODE", Text = "environment-only" });
+        targetInstance.Ports.Add(new PortEditor { Id = "http", ContainerPort = "80", HostPort = "8081" });
         Assert.True(await editor.TrySaveAsync(TestContext.Current.CancellationToken));
         var saved = Assert.Single(await fixture.Environments.ListAsync(TestContext.Current.CancellationToken)).Document!;
         Assert.Equal("environment-only", saved.Components.Single(c => c.DefinitionSnapshot.Id == target.Definition.Id).Environment["MODE"].Literal);
-        Assert.Equal("default", (await reopenedLibrary.ReadEntriesAsync(TestContext.Current.CancellationToken)).Single(d => d.Definition.Id == target.Definition.Id).Definition.DefaultEnvironment["MODE"].Literal);
+        var libraryDefinition = (await reopenedLibrary.ReadEntriesAsync(TestContext.Current.CancellationToken)).Single(d => d.Definition.Id == target.Definition.Id).Definition;
+        Assert.Empty(libraryDefinition.DefaultEnvironment); Assert.Empty(libraryDefinition.DefaultPorts);
+        Assert.Equal("Globe", libraryDefinition.Icon); Assert.Equal("#123ABC", libraryDefinition.Color);
+        Assert.Equal(8081, saved.Components.Single(c => c.DefinitionSnapshot.Id == target.Definition.Id).Ports.Single().HostPort);
+        var independent = Editor(fixture, reopenedLibrary, mappings);
+        await independent.LoadLibraryAsync(TestContext.Current.CancellationToken);
+        independent.AddDefinitionCommand.Execute(independent.Library.Single(d => d.Definition.Id == target.Definition.Id));
+        var independentInstance = Assert.Single(independent.Components);
+        Assert.Empty(independentInstance.Variables); Assert.Empty(independentInstance.Ports);
+        independent.Name = "Another environment";
+        independentInstance.Variables.Add(new ValueEditor { Key = "MODE", Text = "second-environment" });
+        independentInstance.Ports.Add(new PortEditor { Id = "http", ContainerPort = "80", HostPort = "8082" });
+        Assert.True(await independent.TrySaveAsync(TestContext.Current.CancellationToken));
+        Assert.Equal("environment-only", saved.Components.Single(c => c.DefinitionSnapshot.Id == target.Definition.Id).Environment["MODE"].Literal);
 
         reopened.Definitions.Single(d => d.Definition.Id == target.Definition.Id).Editor.ImageReference = "nginx:other-tag";
         await reopened.SaveCommand.ExecuteAsync(null);

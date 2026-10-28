@@ -27,7 +27,8 @@ public static class DependencyValidator
         {
             foreach (DependencyRequirement requirement in component.DefinitionSnapshot.DependencyRequirements)
             {
-                if (environment.Dependencies.Count(e => e.DependentId == component.Id && e.RequirementId == requirement.Id) != 1)
+                int count = environment.Dependencies.Count(e => e.DependentId == component.Id && e.RequirementId == requirement.Id);
+                if (count != 1 && !(requirement.Optional && count == 0))
                 { throw new DocumentException("/dependencies", "explicit-binding-required:" + component.Id + "/" + requirement.Id); }
             }
         }

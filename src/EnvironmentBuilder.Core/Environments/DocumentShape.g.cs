@@ -12,9 +12,9 @@ public static class DocumentShape
         switch (kind)
         {
             case "component": Rule0(value, ""); break;
-            case "environment": Rule148(value, ""); break;
-            case "initialization": Rule98(value, ""); break;
-            case "seedpack": Rule189(value, ""); break;
+            case "environment": Rule152(value, ""); break;
+            case "initialization": Rule102(value, ""); break;
+            case "seedpack": Rule193(value, ""); break;
             default: throw new DocumentException("/kind", "unsupported-kind");
         }
     }
@@ -61,31 +61,51 @@ public static class DocumentShape
     private static void Rule8(JsonElement value, string path)
     {
         Require(value.ValueKind == JsonValueKind.String, path);
-        Require(value.GetString()!.EnumerateRunes().Count() <= 4096, path);
+        Require(value.GetString()!.EnumerateRunes().Count() <= 64, path);
+        Require(Matches(value.GetString()!, "^[A-Za-z][A-Za-z0-9]{0,63}(?![\\s\\S])"), path);
     }
 
     private static void Rule9(JsonElement value, string path)
     {
-        Require(value.ValueKind == JsonValueKind.String && value.GetString() is "target" or "infrastructure", path);
+        Require(value.ValueKind == JsonValueKind.String, path);
+        Require(Matches(value.GetString()!, "^#[0-9A-Fa-f]{6}(?![\\s\\S])"), path);
+    }
+
+    private static void Rule10(JsonElement value, string path)
+    {
+        Require(value.ValueKind == JsonValueKind.String, path);
+        Require(value.GetString()!.EnumerateRunes().Count() <= 2048, path);
+        Require(Matches(value.GetString()!, "^https://[^\\s]+(?![\\s\\S])"), path);
+    }
+
+    private static void Rule11(JsonElement value, string path)
+    {
+        Require(value.ValueKind == JsonValueKind.String, path);
+        Require(value.GetString()!.EnumerateRunes().Count() <= 4096, path);
     }
 
     private static void Rule12(JsonElement value, string path)
+    {
+        Require(value.ValueKind == JsonValueKind.String && value.GetString() is "target" or "infrastructure", path);
+    }
+
+    private static void Rule15(JsonElement value, string path)
     {
         Require(value.ValueKind == JsonValueKind.String, path);
         Require(Matches(value.GetString()!, "^[a-z][a-z0-9.-]{0,127}(?![\\s\\S])"), path);
     }
 
-    private static void Rule11(JsonElement value, string path)
+    private static void Rule14(JsonElement value, string path)
     {
-        Rule12(value, path);
+        Rule15(value, path);
     }
 
-    private static void Rule13(JsonElement value, string path)
+    private static void Rule16(JsonElement value, string path)
     {
         Rule6(value, path);
     }
 
-    private static void Rule10(JsonElement value, string path)
+    private static void Rule13(JsonElement value, string path)
     {
         Require(value.ValueKind == JsonValueKind.Object, path);
         Require(value.TryGetProperty("id", out _), path);
@@ -94,26 +114,26 @@ public static class DocumentShape
         {
             switch (property.Name)
             {
-                case "id": Rule11(property.Value, path + "/id"); break;
-                case "version": Rule13(property.Value, path + "/version"); break;
+                case "id": Rule14(property.Value, path + "/id"); break;
+                case "version": Rule16(property.Value, path + "/version"); break;
                 default: throw new DocumentException(path + "/" + property.Name, "unknown-property");
             }
         }
     }
 
-    private static void Rule17(JsonElement value, string path)
+    private static void Rule20(JsonElement value, string path)
     {
         Require(value.ValueKind == JsonValueKind.String && value.GetString() == "image", path);
     }
 
-    private static void Rule18(JsonElement value, string path)
+    private static void Rule21(JsonElement value, string path)
     {
         Require(value.ValueKind == JsonValueKind.String, path);
         Require(value.GetString()!.EnumerateRunes().Count() >= 1, path);
         Require(value.GetString()!.EnumerateRunes().Count() <= 512, path);
     }
 
-    private static void Rule16(JsonElement value, string path)
+    private static void Rule19(JsonElement value, string path)
     {
         Require(value.ValueKind == JsonValueKind.Object, path);
         Require(value.TryGetProperty("kind", out _), path);
@@ -122,30 +142,30 @@ public static class DocumentShape
         {
             switch (property.Name)
             {
-                case "kind": Rule17(property.Value, path + "/kind"); break;
-                case "reference": Rule18(property.Value, path + "/reference"); break;
+                case "kind": Rule20(property.Value, path + "/kind"); break;
+                case "reference": Rule21(property.Value, path + "/reference"); break;
                 default: throw new DocumentException(path + "/" + property.Name, "unknown-property");
             }
         }
     }
 
-    private static void Rule20(JsonElement value, string path)
+    private static void Rule23(JsonElement value, string path)
     {
         Require(value.ValueKind == JsonValueKind.String && value.GetString() == "build", path);
     }
 
-    private static void Rule22(JsonElement value, string path)
+    private static void Rule25(JsonElement value, string path)
     {
         Require(value.ValueKind == JsonValueKind.String, path);
         Require(Matches(value.GetString()!, "^local-path://[a-zA-Z0-9._-]{1,128}(?![\\s\\S])"), path);
     }
 
-    private static void Rule21(JsonElement value, string path)
+    private static void Rule24(JsonElement value, string path)
     {
-        Rule22(value, path);
+        Rule25(value, path);
     }
 
-    private static void Rule24(JsonElement value, string path)
+    private static void Rule27(JsonElement value, string path)
     {
         Require(value.ValueKind == JsonValueKind.String, path);
         Require(value.GetString()!.EnumerateRunes().Count() >= 1, path);
@@ -153,25 +173,25 @@ public static class DocumentShape
         Require(Matches(value.GetString()!, "^[^\\\\:/\\u0000-\\u001f]+(?:/[^\\\\:\\u0000-\\u001f]+)*(?![\\s\\S])"), path);
     }
 
-    private static void Rule23(JsonElement value, string path)
+    private static void Rule26(JsonElement value, string path)
     {
-        Rule24(value, path);
+        Rule27(value, path);
     }
 
-    private static void Rule25(JsonElement value, string path)
+    private static void Rule28(JsonElement value, string path)
     {
         Require(value.ValueKind == JsonValueKind.String, path);
         Require(value.GetString()!.EnumerateRunes().Count() >= 1, path);
         Require(value.GetString()!.EnumerateRunes().Count() <= 512, path);
     }
 
-    private static void Rule27(JsonElement value, string path)
+    private static void Rule30(JsonElement value, string path)
     {
         Require(value.ValueKind == JsonValueKind.String, path);
         Require(value.GetString()!.EnumerateRunes().Count() <= 4096, path);
     }
 
-    private static void Rule26(JsonElement value, string path)
+    private static void Rule29(JsonElement value, string path)
     {
         Require(value.ValueKind == JsonValueKind.Object, path);
         foreach (JsonProperty property in value.EnumerateObject())
@@ -179,23 +199,23 @@ public static class DocumentShape
             Require(Matches(property.Name, "^[A-Za-z_][A-Za-z0-9_.-]{0,127}(?![\\s\\S])"), path);
             switch (property.Name)
             {
-                default: Rule27(property.Value, path + "/" + property.Name); break;
+                default: Rule30(property.Value, path + "/" + property.Name); break;
             }
         }
     }
 
-    private static void Rule30(JsonElement value, string path)
+    private static void Rule33(JsonElement value, string path)
     {
         Require(value.ValueKind == JsonValueKind.String, path);
         Require(Matches(value.GetString()!, "^secret://[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}(?![\\s\\S])"), path);
     }
 
-    private static void Rule29(JsonElement value, string path)
+    private static void Rule32(JsonElement value, string path)
     {
-        Rule30(value, path);
+        Rule33(value, path);
     }
 
-    private static void Rule28(JsonElement value, string path)
+    private static void Rule31(JsonElement value, string path)
     {
         Require(value.ValueKind == JsonValueKind.Object, path);
         foreach (JsonProperty property in value.EnumerateObject())
@@ -203,12 +223,12 @@ public static class DocumentShape
             Require(Matches(property.Name, "^[A-Za-z_][A-Za-z0-9_.-]{0,127}(?![\\s\\S])"), path);
             switch (property.Name)
             {
-                default: Rule29(property.Value, path + "/" + property.Name); break;
+                default: Rule32(property.Value, path + "/" + property.Name); break;
             }
         }
     }
 
-    private static void Rule19(JsonElement value, string path)
+    private static void Rule22(JsonElement value, string path)
     {
         Require(value.ValueKind == JsonValueKind.Object, path);
         Require(value.TryGetProperty("kind", out _), path);
@@ -221,55 +241,55 @@ public static class DocumentShape
         {
             switch (property.Name)
             {
-                case "kind": Rule20(property.Value, path + "/kind"); break;
-                case "pathRef": Rule21(property.Value, path + "/pathRef"); break;
-                case "dockerfile": Rule23(property.Value, path + "/dockerfile"); break;
-                case "contextSubdirectory": Rule25(property.Value, path + "/contextSubdirectory"); break;
-                case "buildArguments": Rule26(property.Value, path + "/buildArguments"); break;
-                case "buildSecrets": Rule28(property.Value, path + "/buildSecrets"); break;
+                case "kind": Rule23(property.Value, path + "/kind"); break;
+                case "pathRef": Rule24(property.Value, path + "/pathRef"); break;
+                case "dockerfile": Rule26(property.Value, path + "/dockerfile"); break;
+                case "contextSubdirectory": Rule28(property.Value, path + "/contextSubdirectory"); break;
+                case "buildArguments": Rule29(property.Value, path + "/buildArguments"); break;
+                case "buildSecrets": Rule31(property.Value, path + "/buildSecrets"); break;
                 default: throw new DocumentException(path + "/" + property.Name, "unknown-property");
             }
         }
     }
 
-    private static void Rule15(JsonElement value, string path)
+    private static void Rule18(JsonElement value, string path)
     {
-        Alternatives(value, path, true, [Rule16, Rule19]);
+        Alternatives(value, path, true, [Rule19, Rule22]);
     }
 
-    private static void Rule14(JsonElement value, string path)
+    private static void Rule17(JsonElement value, string path)
     {
-        Rule15(value, path);
+        Rule18(value, path);
     }
 
-    private static void Rule33(JsonElement value, string path)
+    private static void Rule36(JsonElement value, string path)
     {
         Require(value.ValueKind == JsonValueKind.String, path);
         Require(Matches(value.GetString()!, "^[A-Za-z_][A-Za-z0-9_]{0,127}(?![\\s\\S])"), path);
     }
 
-    private static void Rule34(JsonElement value, string path)
+    private static void Rule37(JsonElement value, string path)
     {
         Require(value.ValueKind == JsonValueKind.String && value.GetString() is "string" or "integer" or "boolean", path);
     }
 
-    private static void Rule35(JsonElement value, string path)
+    private static void Rule38(JsonElement value, string path)
     {
         Require(value.ValueKind is JsonValueKind.True or JsonValueKind.False, path);
     }
 
-    private static void Rule36(JsonElement value, string path)
+    private static void Rule39(JsonElement value, string path)
     {
         Require(value.ValueKind is JsonValueKind.True or JsonValueKind.False, path);
     }
 
-    private static void Rule41(JsonElement value, string path)
+    private static void Rule44(JsonElement value, string path)
     {
         Require(value.ValueKind == JsonValueKind.String, path);
         Require(value.GetString()!.EnumerateRunes().Count() <= 65536, path);
     }
 
-    private static void Rule40(JsonElement value, string path)
+    private static void Rule43(JsonElement value, string path)
     {
         Require(value.ValueKind == JsonValueKind.Object, path);
         Require(value.TryGetProperty("literal", out _), path);
@@ -277,18 +297,18 @@ public static class DocumentShape
         {
             switch (property.Name)
             {
-                case "literal": Rule41(property.Value, path + "/literal"); break;
+                case "literal": Rule44(property.Value, path + "/literal"); break;
                 default: throw new DocumentException(path + "/" + property.Name, "unknown-property");
             }
         }
     }
 
-    private static void Rule43(JsonElement value, string path)
+    private static void Rule46(JsonElement value, string path)
     {
-        Rule30(value, path);
+        Rule33(value, path);
     }
 
-    private static void Rule42(JsonElement value, string path)
+    private static void Rule45(JsonElement value, string path)
     {
         Require(value.ValueKind == JsonValueKind.Object, path);
         Require(value.TryGetProperty("secretRef", out _), path);
@@ -296,39 +316,39 @@ public static class DocumentShape
         {
             switch (property.Name)
             {
-                case "secretRef": Rule43(property.Value, path + "/secretRef"); break;
+                case "secretRef": Rule46(property.Value, path + "/secretRef"); break;
                 default: throw new DocumentException(path + "/" + property.Name, "unknown-property");
             }
         }
     }
 
-    private static void Rule39(JsonElement value, string path)
+    private static void Rule42(JsonElement value, string path)
     {
-        Alternatives(value, path, true, [Rule40, Rule42]);
+        Alternatives(value, path, true, [Rule43, Rule45]);
     }
 
-    private static void Rule38(JsonElement value, string path)
+    private static void Rule41(JsonElement value, string path)
     {
-        Rule39(value, path);
+        Rule42(value, path);
     }
 
-    private static void Rule44(JsonElement value, string path)
+    private static void Rule47(JsonElement value, string path)
     {
         Require(value.ValueKind == JsonValueKind.Null, path);
     }
 
-    private static void Rule37(JsonElement value, string path)
+    private static void Rule40(JsonElement value, string path)
     {
-        Alternatives(value, path, false, [Rule38, Rule44]);
+        Alternatives(value, path, false, [Rule41, Rule47]);
     }
 
-    private static void Rule45(JsonElement value, string path)
+    private static void Rule48(JsonElement value, string path)
     {
         Require(value.ValueKind == JsonValueKind.String, path);
         Require(Matches(value.GetString()!, "^[A-Za-z_][A-Za-z0-9_]{0,127}(?![\\s\\S])"), path);
     }
 
-    private static void Rule32(JsonElement value, string path)
+    private static void Rule35(JsonElement value, string path)
     {
         Require(value.ValueKind == JsonValueKind.Object, path);
         Require(value.TryGetProperty("name", out _), path);
@@ -341,29 +361,29 @@ public static class DocumentShape
         {
             switch (property.Name)
             {
-                case "name": Rule33(property.Value, path + "/name"); break;
-                case "type": Rule34(property.Value, path + "/type"); break;
-                case "required": Rule35(property.Value, path + "/required"); break;
-                case "secret": Rule36(property.Value, path + "/secret"); break;
-                case "defaultValue": Rule37(property.Value, path + "/defaultValue"); break;
-                case "environmentVariable": Rule45(property.Value, path + "/environmentVariable"); break;
+                case "name": Rule36(property.Value, path + "/name"); break;
+                case "type": Rule37(property.Value, path + "/type"); break;
+                case "required": Rule38(property.Value, path + "/required"); break;
+                case "secret": Rule39(property.Value, path + "/secret"); break;
+                case "defaultValue": Rule40(property.Value, path + "/defaultValue"); break;
+                case "environmentVariable": Rule48(property.Value, path + "/environmentVariable"); break;
                 default: throw new DocumentException(path + "/" + property.Name, "unknown-property");
             }
         }
     }
 
-    private static void Rule31(JsonElement value, string path)
+    private static void Rule34(JsonElement value, string path)
     {
         Require(value.ValueKind == JsonValueKind.Array, path);
-        for (int i = 0; i < value.GetArrayLength(); i++) { Rule32(value[i], path + "/" + i); }
+        for (int i = 0; i < value.GetArrayLength(); i++) { Rule35(value[i], path + "/" + i); }
     }
 
-    private static void Rule47(JsonElement value, string path)
+    private static void Rule50(JsonElement value, string path)
     {
-        Rule39(value, path);
+        Rule42(value, path);
     }
 
-    private static void Rule46(JsonElement value, string path)
+    private static void Rule49(JsonElement value, string path)
     {
         Require(value.ValueKind == JsonValueKind.Object, path);
         foreach (JsonProperty property in value.EnumerateObject())
@@ -371,26 +391,14 @@ public static class DocumentShape
             Require(Matches(property.Name, "^[A-Za-z_][A-Za-z0-9_.-]{0,127}(?![\\s\\S])"), path);
             switch (property.Name)
             {
-                default: Rule47(property.Value, path + "/" + property.Name); break;
+                default: Rule50(property.Value, path + "/" + property.Name); break;
             }
         }
     }
 
-    private static void Rule51(JsonElement value, string path)
+    private static void Rule54(JsonElement value, string path)
     {
-        Rule12(value, path);
-    }
-
-    private static void Rule52(JsonElement value, string path)
-    {
-        Require(TryInteger(value, out _), path);
-        Require(Integer(value) >= 1L, path);
-        Require(Integer(value) <= 65535L, path);
-    }
-
-    private static void Rule53(JsonElement value, string path)
-    {
-        Require(value.ValueKind == JsonValueKind.String && value.GetString() is "tcp" or "udp", path);
+        Rule15(value, path);
     }
 
     private static void Rule55(JsonElement value, string path)
@@ -402,25 +410,37 @@ public static class DocumentShape
 
     private static void Rule56(JsonElement value, string path)
     {
-        Require(value.ValueKind == JsonValueKind.Null, path);
-    }
-
-    private static void Rule54(JsonElement value, string path)
-    {
-        Alternatives(value, path, false, [Rule55, Rule56]);
-    }
-
-    private static void Rule57(JsonElement value, string path)
-    {
-        Require(value.ValueKind == JsonValueKind.String && value.GetString() is "loopback" or "network", path);
+        Require(value.ValueKind == JsonValueKind.String && value.GetString() is "tcp" or "udp", path);
     }
 
     private static void Rule58(JsonElement value, string path)
     {
+        Require(TryInteger(value, out _), path);
+        Require(Integer(value) >= 1L, path);
+        Require(Integer(value) <= 65535L, path);
+    }
+
+    private static void Rule59(JsonElement value, string path)
+    {
+        Require(value.ValueKind == JsonValueKind.Null, path);
+    }
+
+    private static void Rule57(JsonElement value, string path)
+    {
+        Alternatives(value, path, false, [Rule58, Rule59]);
+    }
+
+    private static void Rule60(JsonElement value, string path)
+    {
+        Require(value.ValueKind == JsonValueKind.String && value.GetString() is "loopback" or "network", path);
+    }
+
+    private static void Rule61(JsonElement value, string path)
+    {
         Require(value.ValueKind == JsonValueKind.String && value.GetString() is "application" or "control", path);
     }
 
-    private static void Rule50(JsonElement value, string path)
+    private static void Rule53(JsonElement value, string path)
     {
         Require(value.ValueKind == JsonValueKind.Object, path);
         Require(value.TryGetProperty("id", out _), path);
@@ -433,46 +453,46 @@ public static class DocumentShape
         {
             switch (property.Name)
             {
-                case "id": Rule51(property.Value, path + "/id"); break;
-                case "containerPort": Rule52(property.Value, path + "/containerPort"); break;
-                case "protocol": Rule53(property.Value, path + "/protocol"); break;
-                case "hostPort": Rule54(property.Value, path + "/hostPort"); break;
-                case "access": Rule57(property.Value, path + "/access"); break;
-                case "purpose": Rule58(property.Value, path + "/purpose"); break;
+                case "id": Rule54(property.Value, path + "/id"); break;
+                case "containerPort": Rule55(property.Value, path + "/containerPort"); break;
+                case "protocol": Rule56(property.Value, path + "/protocol"); break;
+                case "hostPort": Rule57(property.Value, path + "/hostPort"); break;
+                case "access": Rule60(property.Value, path + "/access"); break;
+                case "purpose": Rule61(property.Value, path + "/purpose"); break;
                 default: throw new DocumentException(path + "/" + property.Name, "unknown-property");
             }
         }
     }
 
-    private static void Rule49(JsonElement value, string path)
+    private static void Rule52(JsonElement value, string path)
     {
-        Rule50(value, path);
+        Rule53(value, path);
     }
 
-    private static void Rule48(JsonElement value, string path)
+    private static void Rule51(JsonElement value, string path)
     {
         Require(value.ValueKind == JsonValueKind.Array, path);
-        for (int i = 0; i < value.GetArrayLength(); i++) { Rule49(value[i], path + "/" + i); }
+        for (int i = 0; i < value.GetArrayLength(); i++) { Rule52(value[i], path + "/" + i); }
     }
 
-    private static void Rule63(JsonElement value, string path)
+    private static void Rule66(JsonElement value, string path)
     {
-        Rule12(value, path);
+        Rule15(value, path);
     }
 
-    private static void Rule64(JsonElement value, string path)
+    private static void Rule67(JsonElement value, string path)
     {
         Require(value.ValueKind == JsonValueKind.String && value.GetString() == "managed", path);
     }
 
-    private static void Rule65(JsonElement value, string path)
+    private static void Rule68(JsonElement value, string path)
     {
         Require(value.ValueKind == JsonValueKind.String, path);
         Require(value.GetString()!.EnumerateRunes().Count() >= 1, path);
         Require(value.GetString()!.EnumerateRunes().Count() <= 512, path);
     }
 
-    private static void Rule62(JsonElement value, string path)
+    private static void Rule65(JsonElement value, string path)
     {
         Require(value.ValueKind == JsonValueKind.Object, path);
         Require(value.TryGetProperty("id", out _), path);
@@ -482,37 +502,37 @@ public static class DocumentShape
         {
             switch (property.Name)
             {
-                case "id": Rule63(property.Value, path + "/id"); break;
-                case "kind": Rule64(property.Value, path + "/kind"); break;
-                case "targetPath": Rule65(property.Value, path + "/targetPath"); break;
+                case "id": Rule66(property.Value, path + "/id"); break;
+                case "kind": Rule67(property.Value, path + "/kind"); break;
+                case "targetPath": Rule68(property.Value, path + "/targetPath"); break;
                 default: throw new DocumentException(path + "/" + property.Name, "unknown-property");
             }
         }
     }
 
-    private static void Rule67(JsonElement value, string path)
+    private static void Rule70(JsonElement value, string path)
     {
-        Rule12(value, path);
+        Rule15(value, path);
     }
 
-    private static void Rule68(JsonElement value, string path)
+    private static void Rule71(JsonElement value, string path)
     {
         Require(value.ValueKind == JsonValueKind.String && value.GetString() == "readOnlyInput", path);
     }
 
-    private static void Rule69(JsonElement value, string path)
+    private static void Rule72(JsonElement value, string path)
     {
         Require(value.ValueKind == JsonValueKind.String, path);
         Require(value.GetString()!.EnumerateRunes().Count() >= 1, path);
         Require(value.GetString()!.EnumerateRunes().Count() <= 512, path);
     }
 
-    private static void Rule70(JsonElement value, string path)
+    private static void Rule73(JsonElement value, string path)
     {
-        Rule22(value, path);
+        Rule25(value, path);
     }
 
-    private static void Rule66(JsonElement value, string path)
+    private static void Rule69(JsonElement value, string path)
     {
         Require(value.ValueKind == JsonValueKind.Object, path);
         Require(value.TryGetProperty("id", out _), path);
@@ -523,49 +543,49 @@ public static class DocumentShape
         {
             switch (property.Name)
             {
-                case "id": Rule67(property.Value, path + "/id"); break;
-                case "kind": Rule68(property.Value, path + "/kind"); break;
-                case "targetPath": Rule69(property.Value, path + "/targetPath"); break;
-                case "pathRef": Rule70(property.Value, path + "/pathRef"); break;
+                case "id": Rule70(property.Value, path + "/id"); break;
+                case "kind": Rule71(property.Value, path + "/kind"); break;
+                case "targetPath": Rule72(property.Value, path + "/targetPath"); break;
+                case "pathRef": Rule73(property.Value, path + "/pathRef"); break;
                 default: throw new DocumentException(path + "/" + property.Name, "unknown-property");
             }
         }
     }
 
-    private static void Rule61(JsonElement value, string path)
+    private static void Rule64(JsonElement value, string path)
     {
-        Alternatives(value, path, true, [Rule62, Rule66]);
+        Alternatives(value, path, true, [Rule65, Rule69]);
     }
 
-    private static void Rule60(JsonElement value, string path)
+    private static void Rule63(JsonElement value, string path)
     {
-        Rule61(value, path);
+        Rule64(value, path);
     }
 
-    private static void Rule59(JsonElement value, string path)
+    private static void Rule62(JsonElement value, string path)
     {
         Require(value.ValueKind == JsonValueKind.Array, path);
-        for (int i = 0; i < value.GetArrayLength(); i++) { Rule60(value[i], path + "/" + i); }
+        for (int i = 0; i < value.GetArrayLength(); i++) { Rule63(value[i], path + "/" + i); }
     }
 
-    private static void Rule74(JsonElement value, string path)
+    private static void Rule77(JsonElement value, string path)
     {
-        Rule12(value, path);
+        Rule15(value, path);
     }
 
-    private static void Rule75(JsonElement value, string path)
+    private static void Rule78(JsonElement value, string path)
     {
         Require(TryInteger(value, out _), path);
         Require(Integer(value) >= 1L, path);
         Require(Integer(value) <= 65535L, path);
     }
 
-    private static void Rule76(JsonElement value, string path)
+    private static void Rule79(JsonElement value, string path)
     {
         Require(value.ValueKind == JsonValueKind.String && value.GetString() is "http" or "https", path);
     }
 
-    private static void Rule77(JsonElement value, string path)
+    private static void Rule80(JsonElement value, string path)
     {
         Require(value.ValueKind == JsonValueKind.String, path);
         Require(value.GetString()!.EnumerateRunes().Count() >= 1, path);
@@ -573,7 +593,7 @@ public static class DocumentShape
         Require(Matches(value.GetString()!, "^/(?:[^/?#\\\\\\u0000-\\u001f]+(?:/[^/?#\\\\\\u0000-\\u001f]+)*)?(?![\\s\\S])"), path);
     }
 
-    private static void Rule73(JsonElement value, string path)
+    private static void Rule76(JsonElement value, string path)
     {
         Require(value.ValueKind == JsonValueKind.Object, path);
         Require(value.TryGetProperty("id", out _), path);
@@ -584,73 +604,32 @@ public static class DocumentShape
         {
             switch (property.Name)
             {
-                case "id": Rule74(property.Value, path + "/id"); break;
-                case "containerPort": Rule75(property.Value, path + "/containerPort"); break;
-                case "scheme": Rule76(property.Value, path + "/scheme"); break;
-                case "basePath": Rule77(property.Value, path + "/basePath"); break;
+                case "id": Rule77(property.Value, path + "/id"); break;
+                case "containerPort": Rule78(property.Value, path + "/containerPort"); break;
+                case "scheme": Rule79(property.Value, path + "/scheme"); break;
+                case "basePath": Rule80(property.Value, path + "/basePath"); break;
                 default: throw new DocumentException(path + "/" + property.Name, "unknown-property");
             }
         }
     }
 
-    private static void Rule72(JsonElement value, string path)
+    private static void Rule75(JsonElement value, string path)
     {
-        Rule73(value, path);
+        Rule76(value, path);
     }
 
-    private static void Rule71(JsonElement value, string path)
+    private static void Rule74(JsonElement value, string path)
     {
         Require(value.ValueKind == JsonValueKind.Array, path);
-        for (int i = 0; i < value.GetArrayLength(); i++) { Rule72(value[i], path + "/" + i); }
-    }
-
-    private static void Rule81(JsonElement value, string path)
-    {
-        Require(value.ValueKind == JsonValueKind.String && value.GetString() is "none" or "running" or "dockerHealth", path);
-    }
-
-    private static void Rule82(JsonElement value, string path)
-    {
-        Require(TryInteger(value, out _), path);
-        Require(Integer(value) >= 1L, path);
-        Require(Integer(value) <= 600L, path);
-    }
-
-    private static void Rule80(JsonElement value, string path)
-    {
-        Require(value.ValueKind == JsonValueKind.Object, path);
-        Require(value.TryGetProperty("kind", out _), path);
-        Require(value.TryGetProperty("timeoutSeconds", out _), path);
-        foreach (JsonProperty property in value.EnumerateObject())
-        {
-            switch (property.Name)
-            {
-                case "kind": Rule81(property.Value, path + "/kind"); break;
-                case "timeoutSeconds": Rule82(property.Value, path + "/timeoutSeconds"); break;
-                default: throw new DocumentException(path + "/" + property.Name, "unknown-property");
-            }
-        }
+        for (int i = 0; i < value.GetArrayLength(); i++) { Rule75(value[i], path + "/" + i); }
     }
 
     private static void Rule84(JsonElement value, string path)
     {
-        Require(value.ValueKind == JsonValueKind.String && value.GetString() == "http", path);
+        Require(value.ValueKind == JsonValueKind.String && value.GetString() is "none" or "running" or "dockerHealth", path);
     }
 
     private static void Rule85(JsonElement value, string path)
-    {
-        Rule12(value, path);
-    }
-
-    private static void Rule86(JsonElement value, string path)
-    {
-        Require(value.ValueKind == JsonValueKind.String, path);
-        Require(value.GetString()!.EnumerateRunes().Count() >= 1, path);
-        Require(value.GetString()!.EnumerateRunes().Count() <= 1024, path);
-        Require(Matches(value.GetString()!, "^/(?!/)[^#\\\\\\u0000-\\u001f]*(?![\\s\\S])"), path);
-    }
-
-    private static void Rule87(JsonElement value, string path)
     {
         Require(TryInteger(value, out _), path);
         Require(Integer(value) >= 1L, path);
@@ -661,6 +640,47 @@ public static class DocumentShape
     {
         Require(value.ValueKind == JsonValueKind.Object, path);
         Require(value.TryGetProperty("kind", out _), path);
+        Require(value.TryGetProperty("timeoutSeconds", out _), path);
+        foreach (JsonProperty property in value.EnumerateObject())
+        {
+            switch (property.Name)
+            {
+                case "kind": Rule84(property.Value, path + "/kind"); break;
+                case "timeoutSeconds": Rule85(property.Value, path + "/timeoutSeconds"); break;
+                default: throw new DocumentException(path + "/" + property.Name, "unknown-property");
+            }
+        }
+    }
+
+    private static void Rule87(JsonElement value, string path)
+    {
+        Require(value.ValueKind == JsonValueKind.String && value.GetString() == "http", path);
+    }
+
+    private static void Rule88(JsonElement value, string path)
+    {
+        Rule15(value, path);
+    }
+
+    private static void Rule89(JsonElement value, string path)
+    {
+        Require(value.ValueKind == JsonValueKind.String, path);
+        Require(value.GetString()!.EnumerateRunes().Count() >= 1, path);
+        Require(value.GetString()!.EnumerateRunes().Count() <= 1024, path);
+        Require(Matches(value.GetString()!, "^/(?!/)[^#\\\\\\u0000-\\u001f]*(?![\\s\\S])"), path);
+    }
+
+    private static void Rule90(JsonElement value, string path)
+    {
+        Require(TryInteger(value, out _), path);
+        Require(Integer(value) >= 1L, path);
+        Require(Integer(value) <= 600L, path);
+    }
+
+    private static void Rule86(JsonElement value, string path)
+    {
+        Require(value.ValueKind == JsonValueKind.Object, path);
+        Require(value.TryGetProperty("kind", out _), path);
         Require(value.TryGetProperty("endpointId", out _), path);
         Require(value.TryGetProperty("path", out _), path);
         Require(value.TryGetProperty("timeoutSeconds", out _), path);
@@ -668,58 +688,63 @@ public static class DocumentShape
         {
             switch (property.Name)
             {
-                case "kind": Rule84(property.Value, path + "/kind"); break;
-                case "endpointId": Rule85(property.Value, path + "/endpointId"); break;
-                case "path": Rule86(property.Value, path + "/path"); break;
-                case "timeoutSeconds": Rule87(property.Value, path + "/timeoutSeconds"); break;
+                case "kind": Rule87(property.Value, path + "/kind"); break;
+                case "endpointId": Rule88(property.Value, path + "/endpointId"); break;
+                case "path": Rule89(property.Value, path + "/path"); break;
+                case "timeoutSeconds": Rule90(property.Value, path + "/timeoutSeconds"); break;
                 default: throw new DocumentException(path + "/" + property.Name, "unknown-property");
             }
         }
     }
 
-    private static void Rule79(JsonElement value, string path)
+    private static void Rule82(JsonElement value, string path)
     {
-        Alternatives(value, path, true, [Rule80, Rule83]);
+        Alternatives(value, path, true, [Rule83, Rule86]);
     }
 
-    private static void Rule78(JsonElement value, string path)
+    private static void Rule81(JsonElement value, string path)
     {
-        Rule79(value, path);
-    }
-
-    private static void Rule90(JsonElement value, string path)
-    {
-        Rule12(value, path);
-    }
-
-    private static void Rule91(JsonElement value, string path)
-    {
-        Rule4(value, path);
-    }
-
-    private static void Rule92(JsonElement value, string path)
-    {
-        Rule6(value, path);
-    }
-
-    private static void Rule94(JsonElement value, string path)
-    {
-        Require(value.ValueKind == JsonValueKind.String && value.GetString() is "running" or "healthy" or "ready", path);
+        Rule82(value, path);
     }
 
     private static void Rule93(JsonElement value, string path)
     {
-        Rule94(value, path);
+        Require(value.ValueKind is JsonValueKind.True or JsonValueKind.False, path);
+    }
+
+    private static void Rule94(JsonElement value, string path)
+    {
+        Rule15(value, path);
     }
 
     private static void Rule95(JsonElement value, string path)
+    {
+        Rule4(value, path);
+    }
+
+    private static void Rule96(JsonElement value, string path)
+    {
+        Rule6(value, path);
+    }
+
+    private static void Rule98(JsonElement value, string path)
+    {
+        Require(value.ValueKind == JsonValueKind.String && value.GetString() is "running" or "healthy" or "ready", path);
+    }
+
+    private static void Rule97(JsonElement value, string path)
+    {
+        Rule98(value, path);
+    }
+
+    private static void Rule99(JsonElement value, string path)
     {
         Require(value.ValueKind == JsonValueKind.String, path);
         Require(value.GetString()!.EnumerateRunes().Count() >= 1, path);
         Require(value.GetString()!.EnumerateRunes().Count() <= 1024, path);
     }
 
-    private static void Rule89(JsonElement value, string path)
+    private static void Rule92(JsonElement value, string path)
     {
         Require(value.ValueKind == JsonValueKind.Object, path);
         Require(value.TryGetProperty("id", out _), path);
@@ -731,61 +756,62 @@ public static class DocumentShape
         {
             switch (property.Name)
             {
-                case "id": Rule90(property.Value, path + "/id"); break;
-                case "definitionId": Rule91(property.Value, path + "/definitionId"); break;
-                case "definitionVersion": Rule92(property.Value, path + "/definitionVersion"); break;
-                case "condition": Rule93(property.Value, path + "/condition"); break;
-                case "reason": Rule95(property.Value, path + "/reason"); break;
+                case "optional": Rule93(property.Value, path + "/optional"); break;
+                case "id": Rule94(property.Value, path + "/id"); break;
+                case "definitionId": Rule95(property.Value, path + "/definitionId"); break;
+                case "definitionVersion": Rule96(property.Value, path + "/definitionVersion"); break;
+                case "condition": Rule97(property.Value, path + "/condition"); break;
+                case "reason": Rule99(property.Value, path + "/reason"); break;
                 default: throw new DocumentException(path + "/" + property.Name, "unknown-property");
             }
         }
     }
 
-    private static void Rule88(JsonElement value, string path)
+    private static void Rule91(JsonElement value, string path)
     {
         Require(value.ValueKind == JsonValueKind.Array, path);
-        for (int i = 0; i < value.GetArrayLength(); i++) { Rule89(value[i], path + "/" + i); }
+        for (int i = 0; i < value.GetArrayLength(); i++) { Rule92(value[i], path + "/" + i); }
     }
 
-    private static void Rule99(JsonElement value, string path)
+    private static void Rule103(JsonElement value, string path)
     {
         Require(value.ValueKind == JsonValueKind.String && value.GetString() == "initialization", path);
     }
 
-    private static void Rule100(JsonElement value, string path)
+    private static void Rule104(JsonElement value, string path)
     {
         Require(TryInteger(value, out long constant) && constant == 1, path);
     }
 
-    private static void Rule101(JsonElement value, string path)
+    private static void Rule105(JsonElement value, string path)
     {
         Rule4(value, path);
     }
 
-    private static void Rule102(JsonElement value, string path)
-    {
-        Rule6(value, path);
-    }
-
-    private static void Rule105(JsonElement value, string path)
-    {
-        Rule12(value, path);
-    }
-
-    private static void Rule107(JsonElement value, string path)
-    {
-        Rule6(value, path);
-    }
-
     private static void Rule106(JsonElement value, string path)
+    {
+        Rule6(value, path);
+    }
+
+    private static void Rule109(JsonElement value, string path)
+    {
+        Rule15(value, path);
+    }
+
+    private static void Rule111(JsonElement value, string path)
+    {
+        Rule6(value, path);
+    }
+
+    private static void Rule110(JsonElement value, string path)
     {
         Require(value.ValueKind == JsonValueKind.Array, path);
         Require(value.GetArrayLength() >= 1, path);
-        for (int i = 0; i < value.GetArrayLength(); i++) { Rule107(value[i], path + "/" + i); }
+        for (int i = 0; i < value.GetArrayLength(); i++) { Rule111(value[i], path + "/" + i); }
         Require(value.EnumerateArray().Select(item => Convert.ToBase64String(CanonicalJson.Encode(item))).Distinct(StringComparer.Ordinal).Count() == value.GetArrayLength(), path);
     }
 
-    private static void Rule104(JsonElement value, string path)
+    private static void Rule108(JsonElement value, string path)
     {
         Require(value.ValueKind == JsonValueKind.Object, path);
         Require(value.TryGetProperty("contractId", out _), path);
@@ -794,41 +820,41 @@ public static class DocumentShape
         {
             switch (property.Name)
             {
-                case "contractId": Rule105(property.Value, path + "/contractId"); break;
-                case "versions": Rule106(property.Value, path + "/versions"); break;
+                case "contractId": Rule109(property.Value, path + "/contractId"); break;
+                case "versions": Rule110(property.Value, path + "/versions"); break;
                 default: throw new DocumentException(path + "/" + property.Name, "unknown-property");
             }
         }
     }
 
-    private static void Rule103(JsonElement value, string path)
+    private static void Rule107(JsonElement value, string path)
     {
-        Rule104(value, path);
+        Rule108(value, path);
     }
 
-    private static void Rule110(JsonElement value, string path)
+    private static void Rule114(JsonElement value, string path)
     {
-        Rule12(value, path);
+        Rule15(value, path);
     }
 
-    private static void Rule111(JsonElement value, string path)
+    private static void Rule115(JsonElement value, string path)
     {
         Require(value.ValueKind == JsonValueKind.String, path);
         Require(value.GetString()!.EnumerateRunes().Count() >= 1, path);
         Require(value.GetString()!.EnumerateRunes().Count() <= 256, path);
     }
 
-    private static void Rule112(JsonElement value, string path)
+    private static void Rule116(JsonElement value, string path)
     {
-        Rule12(value, path);
+        Rule15(value, path);
     }
 
-    private static void Rule113(JsonElement value, string path)
+    private static void Rule117(JsonElement value, string path)
     {
         Require(value.ValueKind == JsonValueKind.String && value.GetString() is "GET" or "HEAD" or "POST" or "PUT" or "PATCH" or "DELETE", path);
     }
 
-    private static void Rule114(JsonElement value, string path)
+    private static void Rule118(JsonElement value, string path)
     {
         Require(value.ValueKind == JsonValueKind.String, path);
         Require(value.GetString()!.EnumerateRunes().Count() >= 1, path);
@@ -836,12 +862,12 @@ public static class DocumentShape
         Require(Matches(value.GetString()!, "^/(?!/)[^#\\\\\\u0000-\\u001f]*(?![\\s\\S])"), path);
     }
 
-    private static void Rule116(JsonElement value, string path)
+    private static void Rule120(JsonElement value, string path)
     {
-        Rule39(value, path);
+        Rule42(value, path);
     }
 
-    private static void Rule115(JsonElement value, string path)
+    private static void Rule119(JsonElement value, string path)
     {
         Require(value.ValueKind == JsonValueKind.Object, path);
         foreach (JsonProperty property in value.EnumerateObject())
@@ -849,17 +875,17 @@ public static class DocumentShape
             Require(Matches(property.Name, "^[A-Za-z_][A-Za-z0-9_.-]{0,127}(?![\\s\\S])"), path);
             switch (property.Name)
             {
-                default: Rule116(property.Value, path + "/" + property.Name); break;
+                default: Rule120(property.Value, path + "/" + property.Name); break;
             }
         }
     }
 
-    private static void Rule119(JsonElement value, string path)
+    private static void Rule123(JsonElement value, string path)
     {
         Require(value.ValueKind == JsonValueKind.String && value.GetString() == "none", path);
     }
 
-    private static void Rule118(JsonElement value, string path)
+    private static void Rule122(JsonElement value, string path)
     {
         Require(value.ValueKind == JsonValueKind.Object, path);
         Require(value.TryGetProperty("kind", out _), path);
@@ -867,23 +893,23 @@ public static class DocumentShape
         {
             switch (property.Name)
             {
-                case "kind": Rule119(property.Value, path + "/kind"); break;
+                case "kind": Rule123(property.Value, path + "/kind"); break;
                 default: throw new DocumentException(path + "/" + property.Name, "unknown-property");
             }
         }
     }
 
-    private static void Rule121(JsonElement value, string path)
+    private static void Rule125(JsonElement value, string path)
     {
         Require(value.ValueKind == JsonValueKind.String && value.GetString() == "inline", path);
     }
 
-    private static void Rule122(JsonElement value, string path)
+    private static void Rule126(JsonElement value, string path)
     {
 
     }
 
-    private static void Rule120(JsonElement value, string path)
+    private static void Rule124(JsonElement value, string path)
     {
         Require(value.ValueKind == JsonValueKind.Object, path);
         Require(value.TryGetProperty("kind", out _), path);
@@ -892,24 +918,24 @@ public static class DocumentShape
         {
             switch (property.Name)
             {
-                case "kind": Rule121(property.Value, path + "/kind"); break;
-                case "value": Rule122(property.Value, path + "/value"); break;
+                case "kind": Rule125(property.Value, path + "/kind"); break;
+                case "value": Rule126(property.Value, path + "/value"); break;
                 default: throw new DocumentException(path + "/" + property.Name, "unknown-property");
             }
         }
     }
 
-    private static void Rule124(JsonElement value, string path)
+    private static void Rule128(JsonElement value, string path)
     {
         Require(value.ValueKind == JsonValueKind.String && value.GetString() == "seedSection", path);
     }
 
-    private static void Rule125(JsonElement value, string path)
+    private static void Rule129(JsonElement value, string path)
     {
-        Rule12(value, path);
+        Rule15(value, path);
     }
 
-    private static void Rule123(JsonElement value, string path)
+    private static void Rule127(JsonElement value, string path)
     {
         Require(value.ValueKind == JsonValueKind.Object, path);
         Require(value.TryGetProperty("kind", out _), path);
@@ -918,46 +944,46 @@ public static class DocumentShape
         {
             switch (property.Name)
             {
-                case "kind": Rule124(property.Value, path + "/kind"); break;
-                case "sectionId": Rule125(property.Value, path + "/sectionId"); break;
+                case "kind": Rule128(property.Value, path + "/kind"); break;
+                case "sectionId": Rule129(property.Value, path + "/sectionId"); break;
                 default: throw new DocumentException(path + "/" + property.Name, "unknown-property");
             }
         }
     }
 
-    private static void Rule117(JsonElement value, string path)
+    private static void Rule121(JsonElement value, string path)
     {
-        Alternatives(value, path, true, [Rule118, Rule120, Rule123]);
+        Alternatives(value, path, true, [Rule122, Rule124, Rule127]);
     }
 
-    private static void Rule128(JsonElement value, string path)
+    private static void Rule132(JsonElement value, string path)
     {
         Require(TryInteger(value, out _), path);
         Require(Integer(value) >= 100L, path);
         Require(Integer(value) <= 599L, path);
     }
 
-    private static void Rule127(JsonElement value, string path)
+    private static void Rule131(JsonElement value, string path)
     {
         Require(value.ValueKind == JsonValueKind.Array, path);
         Require(value.GetArrayLength() >= 1, path);
-        for (int i = 0; i < value.GetArrayLength(); i++) { Rule128(value[i], path + "/" + i); }
+        for (int i = 0; i < value.GetArrayLength(); i++) { Rule132(value[i], path + "/" + i); }
         Require(value.EnumerateArray().Select(Integer).Distinct().Count() == value.GetArrayLength(), path);
     }
 
-    private static void Rule131(JsonElement value, string path)
+    private static void Rule135(JsonElement value, string path)
     {
         Require(value.ValueKind == JsonValueKind.String, path);
         Require(value.GetString()!.EnumerateRunes().Count() <= 1024, path);
         Require(Matches(value.GetString()!, "^(|/.*)(?![\\s\\S])"), path);
     }
 
-    private static void Rule132(JsonElement value, string path)
+    private static void Rule136(JsonElement value, string path)
     {
 
     }
 
-    private static void Rule130(JsonElement value, string path)
+    private static void Rule134(JsonElement value, string path)
     {
         Require(value.ValueKind == JsonValueKind.Object, path);
         Require(value.TryGetProperty("pointer", out _), path);
@@ -966,20 +992,20 @@ public static class DocumentShape
         {
             switch (property.Name)
             {
-                case "pointer": Rule131(property.Value, path + "/pointer"); break;
-                case "equals": Rule132(property.Value, path + "/equals"); break;
+                case "pointer": Rule135(property.Value, path + "/pointer"); break;
+                case "equals": Rule136(property.Value, path + "/equals"); break;
                 default: throw new DocumentException(path + "/" + property.Name, "unknown-property");
             }
         }
     }
 
-    private static void Rule129(JsonElement value, string path)
+    private static void Rule133(JsonElement value, string path)
     {
         Require(value.ValueKind == JsonValueKind.Array, path);
-        for (int i = 0; i < value.GetArrayLength(); i++) { Rule130(value[i], path + "/" + i); }
+        for (int i = 0; i < value.GetArrayLength(); i++) { Rule134(value[i], path + "/" + i); }
     }
 
-    private static void Rule126(JsonElement value, string path)
+    private static void Rule130(JsonElement value, string path)
     {
         Require(value.ValueKind == JsonValueKind.Object, path);
         Require(value.TryGetProperty("statuses", out _), path);
@@ -988,78 +1014,41 @@ public static class DocumentShape
         {
             switch (property.Name)
             {
-                case "statuses": Rule127(property.Value, path + "/statuses"); break;
-                case "assertions": Rule129(property.Value, path + "/assertions"); break;
+                case "statuses": Rule131(property.Value, path + "/statuses"); break;
+                case "assertions": Rule133(property.Value, path + "/assertions"); break;
                 default: throw new DocumentException(path + "/" + property.Name, "unknown-property");
             }
         }
     }
 
-    private static void Rule133(JsonElement value, string path)
+    private static void Rule137(JsonElement value, string path)
     {
         Require(TryInteger(value, out _), path);
         Require(Integer(value) >= 1L, path);
         Require(Integer(value) <= 600L, path);
     }
 
-    private static void Rule136(JsonElement value, string path)
+    private static void Rule140(JsonElement value, string path)
     {
         Require(value.ValueKind == JsonValueKind.String && value.GetString() == "none", path);
     }
 
-    private static void Rule137(JsonElement value, string path)
+    private static void Rule141(JsonElement value, string path)
     {
         Require(TryInteger(value, out long constant) && constant == 1, path);
     }
 
-    private static void Rule135(JsonElement value, string path)
-    {
-        Require(value.ValueKind == JsonValueKind.Object, path);
-        Require(value.TryGetProperty("mode", out _), path);
-        Require(value.TryGetProperty("maxAttempts", out _), path);
-        foreach (JsonProperty property in value.EnumerateObject())
-        {
-            switch (property.Name)
-            {
-                case "mode": Rule136(property.Value, path + "/mode"); break;
-                case "maxAttempts": Rule137(property.Value, path + "/maxAttempts"); break;
-                default: throw new DocumentException(path + "/" + property.Name, "unknown-property");
-            }
-        }
-    }
-
     private static void Rule139(JsonElement value, string path)
     {
-        Require(value.ValueKind == JsonValueKind.String && value.GetString() == "idempotent", path);
-    }
-
-    private static void Rule140(JsonElement value, string path)
-    {
-        Require(TryInteger(value, out _), path);
-        Require(Integer(value) >= 1L, path);
-        Require(Integer(value) <= 3L, path);
-    }
-
-    private static void Rule141(JsonElement value, string path)
-    {
-        Require(value.ValueKind == JsonValueKind.String, path);
-        Require(value.GetString()!.EnumerateRunes().Count() >= 1, path);
-        Require(value.GetString()!.EnumerateRunes().Count() <= 1024, path);
-    }
-
-    private static void Rule138(JsonElement value, string path)
-    {
         Require(value.ValueKind == JsonValueKind.Object, path);
         Require(value.TryGetProperty("mode", out _), path);
         Require(value.TryGetProperty("maxAttempts", out _), path);
-        Require(value.TryGetProperty("safetyEvidence", out _), path);
         foreach (JsonProperty property in value.EnumerateObject())
         {
             switch (property.Name)
             {
-                case "mode": Rule139(property.Value, path + "/mode"); break;
-                case "maxAttempts": Rule140(property.Value, path + "/maxAttempts"); break;
-                case "safetyEvidence": Rule141(property.Value, path + "/safetyEvidence"); break;
+                case "mode": Rule140(property.Value, path + "/mode"); break;
+                case "maxAttempts": Rule141(property.Value, path + "/maxAttempts"); break;
                 default: throw new DocumentException(path + "/" + property.Name, "unknown-property");
             }
         }
@@ -1067,7 +1056,7 @@ public static class DocumentShape
 
     private static void Rule143(JsonElement value, string path)
     {
-        Require(value.ValueKind == JsonValueKind.String && value.GetString() == "key", path);
+        Require(value.ValueKind == JsonValueKind.String && value.GetString() == "idempotent", path);
     }
 
     private static void Rule144(JsonElement value, string path)
@@ -1080,17 +1069,54 @@ public static class DocumentShape
     private static void Rule145(JsonElement value, string path)
     {
         Require(value.ValueKind == JsonValueKind.String, path);
+        Require(value.GetString()!.EnumerateRunes().Count() >= 1, path);
+        Require(value.GetString()!.EnumerateRunes().Count() <= 1024, path);
+    }
+
+    private static void Rule142(JsonElement value, string path)
+    {
+        Require(value.ValueKind == JsonValueKind.Object, path);
+        Require(value.TryGetProperty("mode", out _), path);
+        Require(value.TryGetProperty("maxAttempts", out _), path);
+        Require(value.TryGetProperty("safetyEvidence", out _), path);
+        foreach (JsonProperty property in value.EnumerateObject())
+        {
+            switch (property.Name)
+            {
+                case "mode": Rule143(property.Value, path + "/mode"); break;
+                case "maxAttempts": Rule144(property.Value, path + "/maxAttempts"); break;
+                case "safetyEvidence": Rule145(property.Value, path + "/safetyEvidence"); break;
+                default: throw new DocumentException(path + "/" + property.Name, "unknown-property");
+            }
+        }
+    }
+
+    private static void Rule147(JsonElement value, string path)
+    {
+        Require(value.ValueKind == JsonValueKind.String && value.GetString() == "key", path);
+    }
+
+    private static void Rule148(JsonElement value, string path)
+    {
+        Require(TryInteger(value, out _), path);
+        Require(Integer(value) >= 1L, path);
+        Require(Integer(value) <= 3L, path);
+    }
+
+    private static void Rule149(JsonElement value, string path)
+    {
+        Require(value.ValueKind == JsonValueKind.String, path);
         Require(Matches(value.GetString()!, "^[A-Za-z0-9-]{1,128}(?![\\s\\S])"), path);
     }
 
-    private static void Rule146(JsonElement value, string path)
+    private static void Rule150(JsonElement value, string path)
     {
         Require(value.ValueKind == JsonValueKind.String, path);
         Require(value.GetString()!.EnumerateRunes().Count() >= 1, path);
         Require(value.GetString()!.EnumerateRunes().Count() <= 1024, path);
     }
 
-    private static void Rule142(JsonElement value, string path)
+    private static void Rule146(JsonElement value, string path)
     {
         Require(value.ValueKind == JsonValueKind.Object, path);
         Require(value.TryGetProperty("mode", out _), path);
@@ -1101,21 +1127,21 @@ public static class DocumentShape
         {
             switch (property.Name)
             {
-                case "mode": Rule143(property.Value, path + "/mode"); break;
-                case "maxAttempts": Rule144(property.Value, path + "/maxAttempts"); break;
-                case "idempotencyHeader": Rule145(property.Value, path + "/idempotencyHeader"); break;
-                case "safetyEvidence": Rule146(property.Value, path + "/safetyEvidence"); break;
+                case "mode": Rule147(property.Value, path + "/mode"); break;
+                case "maxAttempts": Rule148(property.Value, path + "/maxAttempts"); break;
+                case "idempotencyHeader": Rule149(property.Value, path + "/idempotencyHeader"); break;
+                case "safetyEvidence": Rule150(property.Value, path + "/safetyEvidence"); break;
                 default: throw new DocumentException(path + "/" + property.Name, "unknown-property");
             }
         }
     }
 
-    private static void Rule134(JsonElement value, string path)
+    private static void Rule138(JsonElement value, string path)
     {
-        Alternatives(value, path, true, [Rule135, Rule138, Rule142]);
+        Alternatives(value, path, true, [Rule139, Rule142, Rule146]);
     }
 
-    private static void Rule109(JsonElement value, string path)
+    private static void Rule113(JsonElement value, string path)
     {
         Require(value.ValueKind == JsonValueKind.Object, path);
         Require(value.TryGetProperty("id", out _), path);
@@ -1132,29 +1158,29 @@ public static class DocumentShape
         {
             switch (property.Name)
             {
-                case "id": Rule110(property.Value, path + "/id"); break;
-                case "title": Rule111(property.Value, path + "/title"); break;
-                case "endpointId": Rule112(property.Value, path + "/endpointId"); break;
-                case "method": Rule113(property.Value, path + "/method"); break;
-                case "path": Rule114(property.Value, path + "/path"); break;
-                case "headers": Rule115(property.Value, path + "/headers"); break;
-                case "body": Rule117(property.Value, path + "/body"); break;
-                case "expect": Rule126(property.Value, path + "/expect"); break;
-                case "timeoutSeconds": Rule133(property.Value, path + "/timeoutSeconds"); break;
-                case "retry": Rule134(property.Value, path + "/retry"); break;
+                case "id": Rule114(property.Value, path + "/id"); break;
+                case "title": Rule115(property.Value, path + "/title"); break;
+                case "endpointId": Rule116(property.Value, path + "/endpointId"); break;
+                case "method": Rule117(property.Value, path + "/method"); break;
+                case "path": Rule118(property.Value, path + "/path"); break;
+                case "headers": Rule119(property.Value, path + "/headers"); break;
+                case "body": Rule121(property.Value, path + "/body"); break;
+                case "expect": Rule130(property.Value, path + "/expect"); break;
+                case "timeoutSeconds": Rule137(property.Value, path + "/timeoutSeconds"); break;
+                case "retry": Rule138(property.Value, path + "/retry"); break;
                 default: throw new DocumentException(path + "/" + property.Name, "unknown-property");
             }
         }
     }
 
-    private static void Rule108(JsonElement value, string path)
+    private static void Rule112(JsonElement value, string path)
     {
         Require(value.ValueKind == JsonValueKind.Array, path);
         Require(value.GetArrayLength() <= 1000, path);
-        for (int i = 0; i < value.GetArrayLength(); i++) { Rule109(value[i], path + "/" + i); }
+        for (int i = 0; i < value.GetArrayLength(); i++) { Rule113(value[i], path + "/" + i); }
     }
 
-    private static void Rule98(JsonElement value, string path)
+    private static void Rule102(JsonElement value, string path)
     {
         Require(value.ValueKind == JsonValueKind.Object, path);
         Require(value.TryGetProperty("kind", out _), path);
@@ -1167,30 +1193,30 @@ public static class DocumentShape
         {
             switch (property.Name)
             {
-                case "kind": Rule99(property.Value, path + "/kind"); break;
-                case "schemaVersion": Rule100(property.Value, path + "/schemaVersion"); break;
-                case "id": Rule101(property.Value, path + "/id"); break;
-                case "version": Rule102(property.Value, path + "/version"); break;
-                case "targetContract": Rule103(property.Value, path + "/targetContract"); break;
-                case "steps": Rule108(property.Value, path + "/steps"); break;
+                case "kind": Rule103(property.Value, path + "/kind"); break;
+                case "schemaVersion": Rule104(property.Value, path + "/schemaVersion"); break;
+                case "id": Rule105(property.Value, path + "/id"); break;
+                case "version": Rule106(property.Value, path + "/version"); break;
+                case "targetContract": Rule107(property.Value, path + "/targetContract"); break;
+                case "steps": Rule112(property.Value, path + "/steps"); break;
                 default: throw new DocumentException(path + "/" + property.Name, "unknown-property");
             }
         }
     }
 
-    private static void Rule97(JsonElement value, string path)
+    private static void Rule101(JsonElement value, string path)
     {
-        Rule98(value, path);
+        Rule102(value, path);
     }
 
-    private static void Rule147(JsonElement value, string path)
+    private static void Rule151(JsonElement value, string path)
     {
         Require(value.ValueKind == JsonValueKind.Null, path);
     }
 
-    private static void Rule96(JsonElement value, string path)
+    private static void Rule100(JsonElement value, string path)
     {
-        Alternatives(value, path, false, [Rule97, Rule147]);
+        Alternatives(value, path, false, [Rule101, Rule151]);
     }
 
     private static void Rule0(JsonElement value, string path)
@@ -1221,18 +1247,21 @@ public static class DocumentShape
                 case "id": Rule3(property.Value, path + "/id"); break;
                 case "version": Rule5(property.Value, path + "/version"); break;
                 case "name": Rule7(property.Value, path + "/name"); break;
-                case "description": Rule8(property.Value, path + "/description"); break;
-                case "componentType": Rule9(property.Value, path + "/componentType"); break;
-                case "contract": Rule10(property.Value, path + "/contract"); break;
-                case "defaultSource": Rule14(property.Value, path + "/defaultSource"); break;
-                case "parameterDefinitions": Rule31(property.Value, path + "/parameterDefinitions"); break;
-                case "defaultEnvironment": Rule46(property.Value, path + "/defaultEnvironment"); break;
-                case "defaultPorts": Rule48(property.Value, path + "/defaultPorts"); break;
-                case "defaultStorage": Rule59(property.Value, path + "/defaultStorage"); break;
-                case "endpoints": Rule71(property.Value, path + "/endpoints"); break;
-                case "readiness": Rule78(property.Value, path + "/readiness"); break;
-                case "dependencyRequirements": Rule88(property.Value, path + "/dependencyRequirements"); break;
-                case "initialization": Rule96(property.Value, path + "/initialization"); break;
+                case "icon": Rule8(property.Value, path + "/icon"); break;
+                case "color": Rule9(property.Value, path + "/color"); break;
+                case "logoUrl": Rule10(property.Value, path + "/logoUrl"); break;
+                case "description": Rule11(property.Value, path + "/description"); break;
+                case "componentType": Rule12(property.Value, path + "/componentType"); break;
+                case "contract": Rule13(property.Value, path + "/contract"); break;
+                case "defaultSource": Rule17(property.Value, path + "/defaultSource"); break;
+                case "parameterDefinitions": Rule34(property.Value, path + "/parameterDefinitions"); break;
+                case "defaultEnvironment": Rule49(property.Value, path + "/defaultEnvironment"); break;
+                case "defaultPorts": Rule51(property.Value, path + "/defaultPorts"); break;
+                case "defaultStorage": Rule62(property.Value, path + "/defaultStorage"); break;
+                case "endpoints": Rule74(property.Value, path + "/endpoints"); break;
+                case "readiness": Rule81(property.Value, path + "/readiness"); break;
+                case "dependencyRequirements": Rule91(property.Value, path + "/dependencyRequirements"); break;
+                case "initialization": Rule100(property.Value, path + "/initialization"); break;
                 default: throw new DocumentException(path + "/" + property.Name, "unknown-property");
             }
         }
@@ -1242,115 +1271,115 @@ public static class DocumentShape
         }
     }
 
-    private static void Rule149(JsonElement value, string path)
+    private static void Rule153(JsonElement value, string path)
     {
         Require(value.ValueKind == JsonValueKind.String && value.GetString() == "environment", path);
     }
 
-    private static void Rule150(JsonElement value, string path)
+    private static void Rule154(JsonElement value, string path)
     {
         Require(TryInteger(value, out long constant) && constant == 1, path);
     }
 
-    private static void Rule151(JsonElement value, string path)
+    private static void Rule155(JsonElement value, string path)
     {
         Rule4(value, path);
     }
 
-    private static void Rule152(JsonElement value, string path)
+    private static void Rule156(JsonElement value, string path)
     {
         Require(TryInteger(value, out _), path);
         Require(Integer(value) >= 1L, path);
         Require(Integer(value) <= 9007199254740991L, path);
     }
 
-    private static void Rule153(JsonElement value, string path)
+    private static void Rule157(JsonElement value, string path)
     {
         Require(value.ValueKind == JsonValueKind.String, path);
         Require(value.GetString()!.EnumerateRunes().Count() >= 1, path);
         Require(value.GetString()!.EnumerateRunes().Count() <= 256, path);
     }
 
-    private static void Rule154(JsonElement value, string path)
+    private static void Rule158(JsonElement value, string path)
     {
         Require(value.ValueKind == JsonValueKind.String, path);
         Require(value.GetString()!.EnumerateRunes().Count() <= 4096, path);
     }
 
-    private static void Rule157(JsonElement value, string path)
+    private static void Rule161(JsonElement value, string path)
     {
         Rule4(value, path);
     }
 
-    private static void Rule158(JsonElement value, string path)
+    private static void Rule162(JsonElement value, string path)
     {
         Rule0(value, path);
     }
 
-    private static void Rule159(JsonElement value, string path)
-    {
-        Rule15(value, path);
-    }
-
-    private static void Rule161(JsonElement value, string path)
-    {
-        Rule39(value, path);
-    }
-
-    private static void Rule160(JsonElement value, string path)
-    {
-        Require(value.ValueKind == JsonValueKind.Object, path);
-        foreach (JsonProperty property in value.EnumerateObject())
-        {
-            Require(Matches(property.Name, "^[A-Za-z_][A-Za-z0-9_.-]{0,127}(?![\\s\\S])"), path);
-            switch (property.Name)
-            {
-                default: Rule161(property.Value, path + "/" + property.Name); break;
-            }
-        }
-    }
-
     private static void Rule163(JsonElement value, string path)
     {
-        Rule39(value, path);
-    }
-
-    private static void Rule162(JsonElement value, string path)
-    {
-        Require(value.ValueKind == JsonValueKind.Object, path);
-        foreach (JsonProperty property in value.EnumerateObject())
-        {
-            Require(Matches(property.Name, "^[A-Za-z_][A-Za-z0-9_.-]{0,127}(?![\\s\\S])"), path);
-            switch (property.Name)
-            {
-                default: Rule163(property.Value, path + "/" + property.Name); break;
-            }
-        }
+        Rule18(value, path);
     }
 
     private static void Rule165(JsonElement value, string path)
     {
-        Rule50(value, path);
+        Rule42(value, path);
     }
 
     private static void Rule164(JsonElement value, string path)
     {
-        Require(value.ValueKind == JsonValueKind.Array, path);
-        for (int i = 0; i < value.GetArrayLength(); i++) { Rule165(value[i], path + "/" + i); }
+        Require(value.ValueKind == JsonValueKind.Object, path);
+        foreach (JsonProperty property in value.EnumerateObject())
+        {
+            Require(Matches(property.Name, "^[A-Za-z_][A-Za-z0-9_.-]{0,127}(?![\\s\\S])"), path);
+            switch (property.Name)
+            {
+                default: Rule165(property.Value, path + "/" + property.Name); break;
+            }
+        }
     }
 
     private static void Rule167(JsonElement value, string path)
     {
-        Rule61(value, path);
+        Rule42(value, path);
     }
 
     private static void Rule166(JsonElement value, string path)
     {
-        Require(value.ValueKind == JsonValueKind.Array, path);
-        for (int i = 0; i < value.GetArrayLength(); i++) { Rule167(value[i], path + "/" + i); }
+        Require(value.ValueKind == JsonValueKind.Object, path);
+        foreach (JsonProperty property in value.EnumerateObject())
+        {
+            Require(Matches(property.Name, "^[A-Za-z_][A-Za-z0-9_.-]{0,127}(?![\\s\\S])"), path);
+            switch (property.Name)
+            {
+                default: Rule167(property.Value, path + "/" + property.Name); break;
+            }
+        }
     }
 
-    private static void Rule156(JsonElement value, string path)
+    private static void Rule169(JsonElement value, string path)
+    {
+        Rule53(value, path);
+    }
+
+    private static void Rule168(JsonElement value, string path)
+    {
+        Require(value.ValueKind == JsonValueKind.Array, path);
+        for (int i = 0; i < value.GetArrayLength(); i++) { Rule169(value[i], path + "/" + i); }
+    }
+
+    private static void Rule171(JsonElement value, string path)
+    {
+        Rule64(value, path);
+    }
+
+    private static void Rule170(JsonElement value, string path)
+    {
+        Require(value.ValueKind == JsonValueKind.Array, path);
+        for (int i = 0; i < value.GetArrayLength(); i++) { Rule171(value[i], path + "/" + i); }
+    }
+
+    private static void Rule160(JsonElement value, string path)
     {
         Require(value.ValueKind == JsonValueKind.Object, path);
         Require(value.TryGetProperty("id", out _), path);
@@ -1364,64 +1393,64 @@ public static class DocumentShape
         {
             switch (property.Name)
             {
-                case "id": Rule157(property.Value, path + "/id"); break;
-                case "definitionSnapshot": Rule158(property.Value, path + "/definitionSnapshot"); break;
-                case "source": Rule159(property.Value, path + "/source"); break;
-                case "parameters": Rule160(property.Value, path + "/parameters"); break;
-                case "environment": Rule162(property.Value, path + "/environment"); break;
-                case "ports": Rule164(property.Value, path + "/ports"); break;
-                case "storage": Rule166(property.Value, path + "/storage"); break;
+                case "id": Rule161(property.Value, path + "/id"); break;
+                case "definitionSnapshot": Rule162(property.Value, path + "/definitionSnapshot"); break;
+                case "source": Rule163(property.Value, path + "/source"); break;
+                case "parameters": Rule164(property.Value, path + "/parameters"); break;
+                case "environment": Rule166(property.Value, path + "/environment"); break;
+                case "ports": Rule168(property.Value, path + "/ports"); break;
+                case "storage": Rule170(property.Value, path + "/storage"); break;
                 default: throw new DocumentException(path + "/" + property.Name, "unknown-property");
             }
         }
     }
 
-    private static void Rule155(JsonElement value, string path)
+    private static void Rule159(JsonElement value, string path)
     {
         Require(value.ValueKind == JsonValueKind.Array, path);
         Require(value.GetArrayLength() >= 1, path);
         Require(value.GetArrayLength() <= 100, path);
-        for (int i = 0; i < value.GetArrayLength(); i++) { Rule156(value[i], path + "/" + i); }
-    }
-
-    private static void Rule170(JsonElement value, string path)
-    {
-        Rule4(value, path);
-    }
-
-    private static void Rule171(JsonElement value, string path)
-    {
-        Rule4(value, path);
-    }
-
-    private static void Rule173(JsonElement value, string path)
-    {
-        Rule12(value, path);
+        for (int i = 0; i < value.GetArrayLength(); i++) { Rule160(value[i], path + "/" + i); }
     }
 
     private static void Rule174(JsonElement value, string path)
     {
-        Require(value.ValueKind == JsonValueKind.Null, path);
-    }
-
-    private static void Rule172(JsonElement value, string path)
-    {
-        Alternatives(value, path, false, [Rule173, Rule174]);
+        Rule4(value, path);
     }
 
     private static void Rule175(JsonElement value, string path)
     {
-        Rule94(value, path);
+        Rule4(value, path);
+    }
+
+    private static void Rule177(JsonElement value, string path)
+    {
+        Rule15(value, path);
+    }
+
+    private static void Rule178(JsonElement value, string path)
+    {
+        Require(value.ValueKind == JsonValueKind.Null, path);
     }
 
     private static void Rule176(JsonElement value, string path)
+    {
+        Alternatives(value, path, false, [Rule177, Rule178]);
+    }
+
+    private static void Rule179(JsonElement value, string path)
+    {
+        Rule98(value, path);
+    }
+
+    private static void Rule180(JsonElement value, string path)
     {
         Require(value.ValueKind == JsonValueKind.String, path);
         Require(value.GetString()!.EnumerateRunes().Count() >= 1, path);
         Require(value.GetString()!.EnumerateRunes().Count() <= 1024, path);
     }
 
-    private static void Rule169(JsonElement value, string path)
+    private static void Rule173(JsonElement value, string path)
     {
         Require(value.ValueKind == JsonValueKind.Object, path);
         Require(value.TryGetProperty("dependentId", out _), path);
@@ -1433,30 +1462,20 @@ public static class DocumentShape
         {
             switch (property.Name)
             {
-                case "dependentId": Rule170(property.Value, path + "/dependentId"); break;
-                case "requiredId": Rule171(property.Value, path + "/requiredId"); break;
-                case "requirementId": Rule172(property.Value, path + "/requirementId"); break;
-                case "condition": Rule175(property.Value, path + "/condition"); break;
-                case "reason": Rule176(property.Value, path + "/reason"); break;
+                case "dependentId": Rule174(property.Value, path + "/dependentId"); break;
+                case "requiredId": Rule175(property.Value, path + "/requiredId"); break;
+                case "requirementId": Rule176(property.Value, path + "/requirementId"); break;
+                case "condition": Rule179(property.Value, path + "/condition"); break;
+                case "reason": Rule180(property.Value, path + "/reason"); break;
                 default: throw new DocumentException(path + "/" + property.Name, "unknown-property");
             }
         }
     }
 
-    private static void Rule168(JsonElement value, string path)
+    private static void Rule172(JsonElement value, string path)
     {
         Require(value.ValueKind == JsonValueKind.Array, path);
-        for (int i = 0; i < value.GetArrayLength(); i++) { Rule169(value[i], path + "/" + i); }
-    }
-
-    private static void Rule180(JsonElement value, string path)
-    {
-        Rule4(value, path);
-    }
-
-    private static void Rule181(JsonElement value, string path)
-    {
-        Rule98(value, path);
+        for (int i = 0; i < value.GetArrayLength(); i++) { Rule173(value[i], path + "/" + i); }
     }
 
     private static void Rule184(JsonElement value, string path)
@@ -1466,21 +1485,31 @@ public static class DocumentShape
 
     private static void Rule185(JsonElement value, string path)
     {
+        Rule102(value, path);
+    }
+
+    private static void Rule188(JsonElement value, string path)
+    {
+        Rule4(value, path);
+    }
+
+    private static void Rule189(JsonElement value, string path)
+    {
         Rule6(value, path);
     }
 
-    private static void Rule187(JsonElement value, string path)
+    private static void Rule191(JsonElement value, string path)
     {
         Require(value.ValueKind == JsonValueKind.String, path);
         Require(Matches(value.GetString()!, "^[0-9a-f]{64}(?![\\s\\S])"), path);
     }
 
-    private static void Rule186(JsonElement value, string path)
+    private static void Rule190(JsonElement value, string path)
     {
-        Rule187(value, path);
+        Rule191(value, path);
     }
 
-    private static void Rule183(JsonElement value, string path)
+    private static void Rule187(JsonElement value, string path)
     {
         Require(value.ValueKind == JsonValueKind.Object, path);
         Require(value.TryGetProperty("id", out _), path);
@@ -1490,25 +1519,25 @@ public static class DocumentShape
         {
             switch (property.Name)
             {
-                case "id": Rule184(property.Value, path + "/id"); break;
-                case "version": Rule185(property.Value, path + "/version"); break;
-                case "contentHash": Rule186(property.Value, path + "/contentHash"); break;
+                case "id": Rule188(property.Value, path + "/id"); break;
+                case "version": Rule189(property.Value, path + "/version"); break;
+                case "contentHash": Rule190(property.Value, path + "/contentHash"); break;
                 default: throw new DocumentException(path + "/" + property.Name, "unknown-property");
             }
         }
     }
 
-    private static void Rule188(JsonElement value, string path)
+    private static void Rule192(JsonElement value, string path)
     {
         Require(value.ValueKind == JsonValueKind.Null, path);
     }
 
-    private static void Rule182(JsonElement value, string path)
+    private static void Rule186(JsonElement value, string path)
     {
-        Alternatives(value, path, false, [Rule183, Rule188]);
+        Alternatives(value, path, false, [Rule187, Rule192]);
     }
 
-    private static void Rule179(JsonElement value, string path)
+    private static void Rule183(JsonElement value, string path)
     {
         Require(value.ValueKind == JsonValueKind.Object, path);
         Require(value.TryGetProperty("componentId", out _), path);
@@ -1518,21 +1547,21 @@ public static class DocumentShape
         {
             switch (property.Name)
             {
-                case "componentId": Rule180(property.Value, path + "/componentId"); break;
-                case "initializer": Rule181(property.Value, path + "/initializer"); break;
-                case "seedPack": Rule182(property.Value, path + "/seedPack"); break;
+                case "componentId": Rule184(property.Value, path + "/componentId"); break;
+                case "initializer": Rule185(property.Value, path + "/initializer"); break;
+                case "seedPack": Rule186(property.Value, path + "/seedPack"); break;
                 default: throw new DocumentException(path + "/" + property.Name, "unknown-property");
             }
         }
     }
 
-    private static void Rule178(JsonElement value, string path)
+    private static void Rule182(JsonElement value, string path)
     {
         Require(value.ValueKind == JsonValueKind.Array, path);
-        for (int i = 0; i < value.GetArrayLength(); i++) { Rule179(value[i], path + "/" + i); }
+        for (int i = 0; i < value.GetArrayLength(); i++) { Rule183(value[i], path + "/" + i); }
     }
 
-    private static void Rule177(JsonElement value, string path)
+    private static void Rule181(JsonElement value, string path)
     {
         Require(value.ValueKind == JsonValueKind.Object, path);
         Require(value.TryGetProperty("applications", out _), path);
@@ -1540,13 +1569,13 @@ public static class DocumentShape
         {
             switch (property.Name)
             {
-                case "applications": Rule178(property.Value, path + "/applications"); break;
+                case "applications": Rule182(property.Value, path + "/applications"); break;
                 default: throw new DocumentException(path + "/" + property.Name, "unknown-property");
             }
         }
     }
 
-    private static void Rule148(JsonElement value, string path)
+    private static void Rule152(JsonElement value, string path)
     {
         Require(value.ValueKind == JsonValueKind.Object, path);
         Require(value.TryGetProperty("kind", out _), path);
@@ -1561,111 +1590,111 @@ public static class DocumentShape
         {
             switch (property.Name)
             {
-                case "kind": Rule149(property.Value, path + "/kind"); break;
-                case "schemaVersion": Rule150(property.Value, path + "/schemaVersion"); break;
-                case "id": Rule151(property.Value, path + "/id"); break;
-                case "revision": Rule152(property.Value, path + "/revision"); break;
-                case "name": Rule153(property.Value, path + "/name"); break;
-                case "description": Rule154(property.Value, path + "/description"); break;
-                case "components": Rule155(property.Value, path + "/components"); break;
-                case "dependencies": Rule168(property.Value, path + "/dependencies"); break;
-                case "baseline": Rule177(property.Value, path + "/baseline"); break;
+                case "kind": Rule153(property.Value, path + "/kind"); break;
+                case "schemaVersion": Rule154(property.Value, path + "/schemaVersion"); break;
+                case "id": Rule155(property.Value, path + "/id"); break;
+                case "revision": Rule156(property.Value, path + "/revision"); break;
+                case "name": Rule157(property.Value, path + "/name"); break;
+                case "description": Rule158(property.Value, path + "/description"); break;
+                case "components": Rule159(property.Value, path + "/components"); break;
+                case "dependencies": Rule172(property.Value, path + "/dependencies"); break;
+                case "baseline": Rule181(property.Value, path + "/baseline"); break;
                 default: throw new DocumentException(path + "/" + property.Name, "unknown-property");
             }
         }
     }
 
-    private static void Rule190(JsonElement value, string path)
+    private static void Rule194(JsonElement value, string path)
     {
         Require(value.ValueKind == JsonValueKind.String && value.GetString() == "seedpack", path);
     }
 
-    private static void Rule191(JsonElement value, string path)
+    private static void Rule195(JsonElement value, string path)
     {
         Require(TryInteger(value, out long constant) && constant == 1, path);
     }
 
-    private static void Rule192(JsonElement value, string path)
+    private static void Rule196(JsonElement value, string path)
     {
         Rule4(value, path);
     }
 
-    private static void Rule193(JsonElement value, string path)
+    private static void Rule197(JsonElement value, string path)
     {
         Rule6(value, path);
     }
 
-    private static void Rule194(JsonElement value, string path)
+    private static void Rule198(JsonElement value, string path)
     {
         Require(value.ValueKind == JsonValueKind.String, path);
         Require(value.GetString()!.EnumerateRunes().Count() >= 1, path);
         Require(value.GetString()!.EnumerateRunes().Count() <= 256, path);
     }
 
-    private static void Rule195(JsonElement value, string path)
+    private static void Rule199(JsonElement value, string path)
     {
         Require(value.ValueKind == JsonValueKind.String, path);
         Require(value.GetString()!.EnumerateRunes().Count() >= 1, path);
         Require(value.GetString()!.EnumerateRunes().Count() <= 128, path);
     }
 
-    private static void Rule196(JsonElement value, string path)
+    private static void Rule200(JsonElement value, string path)
     {
         Require(value.ValueKind == JsonValueKind.String, path);
         Require(value.GetString()!.EnumerateRunes().Count() >= 1, path);
         Require(value.GetString()!.EnumerateRunes().Count() <= 4096, path);
     }
 
-    private static void Rule198(JsonElement value, string path)
+    private static void Rule202(JsonElement value, string path)
     {
-        Rule104(value, path);
-    }
-
-    private static void Rule197(JsonElement value, string path)
-    {
-        Require(value.ValueKind == JsonValueKind.Array, path);
-        Require(value.GetArrayLength() >= 1, path);
-        for (int i = 0; i < value.GetArrayLength(); i++) { Rule198(value[i], path + "/" + i); }
+        Rule108(value, path);
     }
 
     private static void Rule201(JsonElement value, string path)
     {
-        Rule12(value, path);
+        Require(value.ValueKind == JsonValueKind.Array, path);
+        Require(value.GetArrayLength() >= 1, path);
+        for (int i = 0; i < value.GetArrayLength(); i++) { Rule202(value[i], path + "/" + i); }
     }
 
-    private static void Rule202(JsonElement value, string path)
+    private static void Rule205(JsonElement value, string path)
+    {
+        Rule15(value, path);
+    }
+
+    private static void Rule206(JsonElement value, string path)
     {
         Require(value.ValueKind == JsonValueKind.String, path);
         Require(value.GetString()!.EnumerateRunes().Count() >= 1, path);
         Require(value.GetString()!.EnumerateRunes().Count() <= 256, path);
     }
 
-    private static void Rule203(JsonElement value, string path)
+    private static void Rule207(JsonElement value, string path)
     {
         Require(value.ValueKind == JsonValueKind.String, path);
         Require(Matches(value.GetString()!, "^sections/[a-zA-Z0-9._-]+\\.ndjson(?![\\s\\S])"), path);
     }
 
-    private static void Rule204(JsonElement value, string path)
+    private static void Rule208(JsonElement value, string path)
     {
         Require(TryInteger(value, out _), path);
         Require(Integer(value) >= 0L, path);
         Require(Integer(value) <= 9007199254740991L, path);
     }
 
-    private static void Rule205(JsonElement value, string path)
+    private static void Rule209(JsonElement value, string path)
     {
         Require(TryInteger(value, out _), path);
         Require(Integer(value) >= 0L, path);
         Require(Integer(value) <= 268435456L, path);
     }
 
-    private static void Rule206(JsonElement value, string path)
+    private static void Rule210(JsonElement value, string path)
     {
-        Rule187(value, path);
+        Rule191(value, path);
     }
 
-    private static void Rule200(JsonElement value, string path)
+    private static void Rule204(JsonElement value, string path)
     {
         Require(value.ValueKind == JsonValueKind.Object, path);
         Require(value.TryGetProperty("id", out _), path);
@@ -1678,44 +1707,44 @@ public static class DocumentShape
         {
             switch (property.Name)
             {
-                case "id": Rule201(property.Value, path + "/id"); break;
-                case "title": Rule202(property.Value, path + "/title"); break;
-                case "path": Rule203(property.Value, path + "/path"); break;
-                case "recordCount": Rule204(property.Value, path + "/recordCount"); break;
-                case "bytes": Rule205(property.Value, path + "/bytes"); break;
-                case "sha256": Rule206(property.Value, path + "/sha256"); break;
+                case "id": Rule205(property.Value, path + "/id"); break;
+                case "title": Rule206(property.Value, path + "/title"); break;
+                case "path": Rule207(property.Value, path + "/path"); break;
+                case "recordCount": Rule208(property.Value, path + "/recordCount"); break;
+                case "bytes": Rule209(property.Value, path + "/bytes"); break;
+                case "sha256": Rule210(property.Value, path + "/sha256"); break;
                 default: throw new DocumentException(path + "/" + property.Name, "unknown-property");
             }
         }
     }
 
-    private static void Rule199(JsonElement value, string path)
+    private static void Rule203(JsonElement value, string path)
     {
         Require(value.ValueKind == JsonValueKind.Array, path);
         Require(value.GetArrayLength() >= 1, path);
         Require(value.GetArrayLength() <= 254, path);
-        for (int i = 0; i < value.GetArrayLength(); i++) { Rule200(value[i], path + "/" + i); }
+        for (int i = 0; i < value.GetArrayLength(); i++) { Rule204(value[i], path + "/" + i); }
     }
 
-    private static void Rule209(JsonElement value, string path)
+    private static void Rule213(JsonElement value, string path)
     {
         Require(value.ValueKind == JsonValueKind.String, path);
         Require(Matches(value.GetString()!, "^initializers/[a-zA-Z0-9._-]+\\.json(?![\\s\\S])"), path);
     }
 
-    private static void Rule210(JsonElement value, string path)
+    private static void Rule214(JsonElement value, string path)
     {
         Require(TryInteger(value, out _), path);
         Require(Integer(value) >= 1L, path);
         Require(Integer(value) <= 1048576L, path);
     }
 
-    private static void Rule211(JsonElement value, string path)
+    private static void Rule215(JsonElement value, string path)
     {
-        Rule187(value, path);
+        Rule191(value, path);
     }
 
-    private static void Rule208(JsonElement value, string path)
+    private static void Rule212(JsonElement value, string path)
     {
         Require(value.ValueKind == JsonValueKind.Object, path);
         Require(value.TryGetProperty("path", out _), path);
@@ -1725,27 +1754,27 @@ public static class DocumentShape
         {
             switch (property.Name)
             {
-                case "path": Rule209(property.Value, path + "/path"); break;
-                case "bytes": Rule210(property.Value, path + "/bytes"); break;
-                case "sha256": Rule211(property.Value, path + "/sha256"); break;
+                case "path": Rule213(property.Value, path + "/path"); break;
+                case "bytes": Rule214(property.Value, path + "/bytes"); break;
+                case "sha256": Rule215(property.Value, path + "/sha256"); break;
                 default: throw new DocumentException(path + "/" + property.Name, "unknown-property");
             }
         }
     }
 
-    private static void Rule207(JsonElement value, string path)
+    private static void Rule211(JsonElement value, string path)
     {
         Require(value.ValueKind == JsonValueKind.Array, path);
         Require(value.GetArrayLength() <= 254, path);
-        for (int i = 0; i < value.GetArrayLength(); i++) { Rule208(value[i], path + "/" + i); }
+        for (int i = 0; i < value.GetArrayLength(); i++) { Rule212(value[i], path + "/" + i); }
     }
 
-    private static void Rule212(JsonElement value, string path)
+    private static void Rule216(JsonElement value, string path)
     {
-        Rule187(value, path);
+        Rule191(value, path);
     }
 
-    private static void Rule189(JsonElement value, string path)
+    private static void Rule193(JsonElement value, string path)
     {
         Require(value.ValueKind == JsonValueKind.Object, path);
         Require(value.TryGetProperty("kind", out _), path);
@@ -1763,17 +1792,17 @@ public static class DocumentShape
         {
             switch (property.Name)
             {
-                case "kind": Rule190(property.Value, path + "/kind"); break;
-                case "schemaVersion": Rule191(property.Value, path + "/schemaVersion"); break;
-                case "id": Rule192(property.Value, path + "/id"); break;
-                case "version": Rule193(property.Value, path + "/version"); break;
-                case "title": Rule194(property.Value, path + "/title"); break;
-                case "theme": Rule195(property.Value, path + "/theme"); break;
-                case "purpose": Rule196(property.Value, path + "/purpose"); break;
-                case "compatibility": Rule197(property.Value, path + "/compatibility"); break;
-                case "sections": Rule199(property.Value, path + "/sections"); break;
-                case "initializers": Rule207(property.Value, path + "/initializers"); break;
-                case "contentHash": Rule212(property.Value, path + "/contentHash"); break;
+                case "kind": Rule194(property.Value, path + "/kind"); break;
+                case "schemaVersion": Rule195(property.Value, path + "/schemaVersion"); break;
+                case "id": Rule196(property.Value, path + "/id"); break;
+                case "version": Rule197(property.Value, path + "/version"); break;
+                case "title": Rule198(property.Value, path + "/title"); break;
+                case "theme": Rule199(property.Value, path + "/theme"); break;
+                case "purpose": Rule200(property.Value, path + "/purpose"); break;
+                case "compatibility": Rule201(property.Value, path + "/compatibility"); break;
+                case "sections": Rule203(property.Value, path + "/sections"); break;
+                case "initializers": Rule211(property.Value, path + "/initializers"); break;
+                case "contentHash": Rule216(property.Value, path + "/contentHash"); break;
                 default: throw new DocumentException(path + "/" + property.Name, "unknown-property");
             }
         }

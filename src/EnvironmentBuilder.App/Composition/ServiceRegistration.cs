@@ -37,6 +37,7 @@ public sealed class AppServices : IAsyncDisposable
             services.AddSingleton<IEnvironmentStore, EnvironmentStore>();
             services.AddSingleton<ComponentLibraryStore>();
             services.AddSingleton<IComponentLibrary, AuthoringLibrary>();
+            services.AddSingleton<IDockerHubCatalog>(_ => new DockerHubCatalog(new System.Net.Http.HttpClient { Timeout = TimeSpan.FromSeconds(15) }));
             services.AddSingleton<ILocalPathMappings, LocalPathMappings>();
             services.AddSingleton<IInitializationDocumentReader>(p => p.GetRequiredService<StrictDocumentReader>());
             services.AddSingleton<PreviewInputCapture>();
@@ -92,7 +93,7 @@ public sealed class AppServices : IAsyncDisposable
             services.AddSingleton<Features.SeedPacks.ISeedPackInteractions, SeedPackInteractions>();
             services.AddSingleton(p => new Features.SeedPacks.SeedPackLibraryViewModel(p.GetRequiredService<SeedPackStore>().ListMetadataAsync,
                 p.GetRequiredService<ISeedPackImporter>(), p.GetRequiredService<ISeedPackCatalog>(), p.GetRequiredService<ISeedPreviewReader>(), p.GetRequiredService<Features.SeedPacks.ISeedPackInteractions>()));
-            services.AddSingleton(p => new Features.Settings.SettingsViewModel(p.GetRequiredService<IComponentLibrary>(), p.GetRequiredService<ILocalPathMappings>(), p.GetRequiredService<IAuthoringInteractions>()));
+            services.AddSingleton(p => new Features.Settings.SettingsViewModel(p.GetRequiredService<IComponentLibrary>(), p.GetRequiredService<ILocalPathMappings>(), p.GetRequiredService<IAuthoringInteractions>(), p.GetRequiredService<IDockerHubCatalog>()));
             services.AddSingleton<ISecretVault, DpapiSecretVault>();
             services.AddSingleton<LocalPathResolver>();
             services.AddSingleton<IInputResolver, InputResolver>();

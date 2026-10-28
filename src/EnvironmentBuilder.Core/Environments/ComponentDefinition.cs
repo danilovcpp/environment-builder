@@ -11,4 +11,7 @@ public sealed record ComponentDefinition(string Kind, int SchemaVersion, Guid Id
     Readiness Readiness, ImmutableArray<DependencyRequirement> DependencyRequirements, InitializationDefinition? Initialization)
 {
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public string? Description { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public string? Icon { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public string? Color { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public string? LogoUrl { get; init; }
 }

@@ -33,8 +33,6 @@ public sealed class SettingsDockerWorkflowTests(ITestOutputHelper output)
         settings.AddTargetCommand.Execute(null);
         var image = settings.SelectedDefinition!;
         image.Name = "Image service"; image.Editor.ImageReference = "nginx:stable-alpine";
-        image.Editor.Variables.Add(new ValueEditor { Key = "CHECK_VALUE", Text = "library-default" });
-        image.Editor.Ports.Add(new PortEditor { Id = "http", ContainerPort = "80" });
         settings.AddTargetCommand.Execute(null);
         var build = settings.SelectedDefinition!;
         build.Name = "Built service"; build.Editor.SourceKind = "build";
@@ -42,7 +40,6 @@ public sealed class SettingsDockerWorkflowTests(ITestOutputHelper output)
         await File.WriteAllTextAsync(Path.Combine(source, "Dockerfile"), "FROM nginx:stable-alpine\nCOPY index.html /usr/share/nginx/html/index.html\n", TestContext.Current.CancellationToken);
         await File.WriteAllTextAsync(Path.Combine(source, "index.html"), "configured from settings", TestContext.Current.CancellationToken);
         build.Editor.LocalFolder = source;
-        build.Editor.Ports.Add(new PortEditor { Id = "http", ContainerPort = "80" });
         await settings.SaveCommand.ExecuteAsync(null);
         Assert.Empty(settings.Error);
 
@@ -54,7 +51,10 @@ public sealed class SettingsDockerWorkflowTests(ITestOutputHelper output)
         Assert.Equal(3, editor.Library.Count);
         editor.Name = "Settings workflow acceptance";
         foreach (var definition in editor.Library) { editor.AddDefinitionCommand.Execute(definition); }
-        editor.Components.Single(c => c.Definition.Id == image.Definition.Id).Variables.Single().Text = "environment-only";
+        var imageInstance = editor.Components.Single(c => c.Definition.Id == image.Definition.Id);
+        imageInstance.Variables.Add(new ValueEditor { Key = "CHECK_VALUE", Text = "environment-only" });
+        imageInstance.Ports.Add(new PortEditor { Id = "http", ContainerPort = "80" });
+        editor.Components.Single(c => c.Definition.Id == build.Definition.Id).Ports.Add(new PortEditor { Id = "http", ContainerPort = "80" });
         IsolatedEnvironment? saved = null;
         OperationHandle? handle = null;
         editor.StartSaved = async environment =>
