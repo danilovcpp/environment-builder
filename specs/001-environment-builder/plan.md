@@ -2,6 +2,8 @@
 
 **Branch**: `main` | **Date**: 2026-10-23 | **Spec**: [spec.md](spec.md)
 
+**Updated**: 2026-10-28 — следующий этап после US5: доработка UI по референсам, до начала US6.
+
 **Input**: `specs/001-environment-builder/spec.md`, [source.md](source.md), [конституция](../../.specify/memory/constitution.md) v1.0.0 и [style guide](../../docs/design/style-guide.md).
 
 `setup-plan.ps1 -Json` вернул `BRANCH=001-environment-builder`: это feature identifier из имени каталога. Фактическая Git-ветка — `main`; план не создаёт и не переключает ветки.
@@ -11,6 +13,32 @@
 Создать локальное WPF-приложение для описания, запуска, наблюдения и безопасного управления данными изолированных Linux-контейнерных окружений. Все US1–US10 входят в поставку; P1 определяет последовательность, а не сокращение объёма. Сохранение и preview работают без Docker. Любое изменение сохранённого окружения, включая имя, требует подтверждённой остановки и очистки прежних ресурсов перед новой ревизией.
 
 Подход: .NET 10 / WPF UI / MVVM; три производственных проекта с границами UI, правил приложения и внешних эффектов. Строгие JSON-документы v1 сохраняются вместе с журналом операций в SQLite. Один Docker CLI adapter выполняет Compose и адресные действия/наблюдение по проверенным ID. Универсальный интерпретатор декларативных HTTP-запросов применяет baseline без сервисных имён в коде. Изменяющие операции журналируются до внешнего эффекта, сериализуются по ID окружения и сверяются после прерывания.
+
+<a id="ui-refinement"></a>
+
+## Следующий этап — доработка UI по референсам (Phase 7a)
+
+**Порядок**: завершённая US5 / Phase 7 → **Phase 7a, T166–T177** в [tasks.md](tasks.md#phase-7a-ui-refinement) → US6 / Phase 8 → US7–US10 → итоговая приёмка. Phase 7a — обязательный ближайший этап; продолжение функциональных историй начинается после его checkpoint. Существующие ID задач и результаты проверок сохраняются.
+
+**Визуальный источник истины**: [seed_packs.png](../../docs/design/mockups/seed_packs.png). При расхождениях между референсами или с прежним style guide брать из него общую компоновку, оформление и цвета: пропорции shell/content/context, поверхности, заголовки, таблицы, отступы, типографическую иерархию, кнопки, иконки и бейджи. [environments.png](../../docs/design/mockups/environments.png), [create_edit.png](../../docs/design/mockups/create_edit.png), [inspect.png](../../docs/design/mockups/inspect.png) и [settings.png](../../docs/design/mockups/settings.png) определяют состав и назначение областей своих экранов; их визуальные расхождения нормализуются по `seed_packs.png`. Светлая тема воспроизводит этот эталон, тёмная сохраняет ту же геометрию и иерархию с semantic Dark tokens из style guide. Доступность по QR-002/003 обязательна; необходимые отклонения фиксируются с причиной.
+
+Спецификация определяет функции, данные и последствия действий: неизменяемые ID, сохранение без запуска, только внешний импорт SeedPack, контекстный Compose preview и подтверждения опасных операций. Изображённые создание/редактирование паков, произвольные метрики и демонстрационные записи не становятся функциями или данными приложения.
+
+### Объём этапа
+
+1. Зафиксировать в `docs/design/ui-reference.md` соответствие экранов референсам, общие размеры/цвета/состояния и перечень отличий текущего UI. Согласовать существующие `style-guide.md` и theme tokens с основным референсом; не ограничиваться сменой палитры.
+2. Переработать общие Shell, PageHeader, ContextPanel, StatusBar и стили: ведущие действия в заголовке, единая навигация, компактные таблицы, фильтры, иконки действий, сводки и читаемые статусы.
+3. Привести список окружений, create/edit, Inspect, Compose preview и все существующие диалоги к референсам. Сохранить виртуализацию, команды, контекст возврата, draft/selection/scroll/progress и результаты US1–US5.
+4. Заменить текстовые заглушки SeedPacks/Settings/Diagnostics структурой будущих экранов в общем визуальном языке. Использовать доступные production-данные; ещё не реализованные функции показывать недоступными с причиной. Полноценные сценарии US7/US8/US10 остаются задачами этих историй и подключаются к подготовленным представлениям. Наполненные test fixtures нужны для визуальной проверки; они не входят в пользовательское хранилище и не заменяют production-интеграцию.
+5. Проверить внешний вид на сопоставимых скриншотах каждого экрана, обе темы и состояния; устранить расхождения до закрытия этапа. Последующие UI задачи продолжают пользоваться этими компонентами и визуальной проверкой.
+
+### Приёмка Phase 7a
+
+- В `artifacts/ui-refinement/<runId>/` сохранены screenshots до/после, сравнения с референсами при одинаковом размере окна и фактическом DPI, `reference-review.md` с результатом по каждому экрану и `verification.md` с командами/исходами. Для экранов без собственного макета сравниваются общие паттерны `seed_packs.png`.
+- Проверено соответствие геометрии, плотности строк, иерархии, цветов, отступов, иконок, фильтров, команд и контекстных сводок; отклонения допускаются только для требований поведения, доступности и адаптации к размеру окна и явно объясняются. Большие вертикальные карточки вместо предусмотренных компактных таблиц не проходят приёмку.
+- Интерактивно проверены Light/Dark при 1280×720 DIP и размере основного референса, 100% и как минимум одном повышенном фактическом DPI из QR-003; keyboard/focus, длинные имена, empty/loading/error/unknown/offline/partial и состояния контролов. Полная release DPI-матрица по всем завершённым историям остаётся T158.
+- Release build, затронутые automated suites и UI smoke проходят без binding/resource errors; theme switch и операции сохраняют своё состояние. Одних зелёных тестов ресурсов или наличия PNG недостаточно: требуется просмотр и зафиксированное сравнение с референсами.
+- Checkpoint закрывается только после исправления визуальных расхождений и проверенного результата T177; отсутствующая интерактивная проверка остаётся Unverified. Новые задачи не отмечены выполненными на этапе планирования.
 
 ## Technical Context
 
@@ -73,7 +101,7 @@ specs/001-environment-builder/
     └── examples/
 ```
 
-`tasks.md` относится к следующему `$speckit-tasks`; этим workflow не создаётся.
+Исполнимый порядок поддерживается в существующем [tasks.md](tasks.md); обновление 2026-10-28 добавляет Phase 7a без перенумерации исторических задач.
 
 ### Source Code (repository root — planned)
 
@@ -140,11 +168,11 @@ scripts/powershell/         # demo fixtures and acceptance runner
 | FR-021–023, FR-030–033, FR-035 | SeedPack immutable import/preview, safe HTTP steps/retries, refs/export/redaction и deferred readiness checks |
 | FR-004–005, FR-039 | Shell/routes/list state, loading/empty/error/filter/keyboard states |
 | FR-041 | Три независимых .NET demo + RabbitMQ, четвёртый неизвестный сервис и duplicate-instance fixtures |
-| QR-001–006, SC-001–013 | Обе темы/DPI/contrast/focus, bounded streams, числовая и пользовательская приёмка по quickstart |
+| QR-001–006, SC-001–013 | Phase 7a: соответствие референсам с приоритетом seed_packs.png; обе темы/DPI/contrast/focus, bounded streams, числовая и пользовательская приёмка по quickstart |
 
 ### Последующая реализация
 
-Contracts/strict validation/persistence и fault harness → shell/editor/offline save/preview (US1) → Docker preflight/observations/Start/Stop (US2/3) → journaled edit/clear/refresh/delete (US4–6) → SeedPacks/HTTP initializer/custom components/defaults/import-export/recovery (US7–10). Baseline встраивается в Start до завершения соответствующего slice. Demo и failure/cancel/security tests растут вместе со slice. Завершение: полная SC/QR matrix, soak, accessibility и packaging. Все истории обязательны; подробные work items создаёт следующий workflow.
+Contracts/strict validation/persistence и fault harness → shell/editor/offline save/preview (US1) → Docker preflight/observations/Start/Stop (US2/3) → journaled edit/clear/refresh (US4/5) → **доработка UI по референсам (Phase 7a, следующий этап)** → delete (US6) → SeedPacks/HTTP initializer/custom components/defaults/import-export/recovery (US7–10). Baseline встраивается в Start до завершения соответствующего slice. Demo и failure/cancel/security tests растут вместе со slice. Новые экраны после Phase 7a используют утверждённые общие компоненты и сравниваются с референсами при реализации. Завершение: полная SC/QR matrix, soak, accessibility и packaging. Все истории обязательны; подробные work items и текущий порядок — в [tasks.md](tasks.md).
 
 ### Риски и закрытие
 

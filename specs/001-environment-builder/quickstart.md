@@ -1,6 +1,6 @@
 # Quickstart и acceptance validation
 
-**Status**: реализованы Setup, Foundation и пользовательские истории US1–US4. Проверки destructive edit / SC-005 описаны в [edit-verification.md](edit-verification.md). Команды build/test ниже доступны сейчас; acceptance scripts из раздела 3 относятся к последующим задачам. Автоматические проверки работают с Docker/HTTP doubles и не требуют запущенного Docker.
+**Status (2026-10-28)**: реализованы Setup, Foundation и пользовательские истории US1–US5; проверки US5 описаны в [data-reset-verification.md](data-reset-verification.md). Следующий этап — [Phase 7a / T166–T177: доработка UI по референсам](tasks.md#phase-7a-ui-refinement), до US6. Команды build/test ниже доступны сейчас; acceptance scripts из раздела 3 относятся к последующим задачам. Автоматические проверки работают с Docker/HTTP doubles и не требуют запущенного Docker.
 
 Контракты: [documents](contracts/documents.md), [runtime](contracts/runtime.md), [UI](contracts/ui.md), [data model](data-model.md). Все SC-001–SC-013 входят в приёмку, включая ручные пользовательские измерения.
 
@@ -132,6 +132,8 @@ Runtime-сценарии ниже проверяются с контролиру
 | **SC-013** | Полный demo cycle: create/start/message exchange/seed/Stop-Start/refresh/delete. Четвёртый неизвестный service импортируется без code changes; два instance одного definition сохраняют отдельные settings/data/dependencies, init success одного не засчитывается другому |
 
 ## 7. UI acceptance matrix
+
+Визуальная приёмка начинается на Phase 7a, до US6, и повторяется для новых экранов последующих историй. Основной эталон при неточностях layout, оформления и цветов — [seed_packs.png](../../docs/design/mockups/seed_packs.png); другие экранные макеты применяются в его визуальном языке. На Phase 7a сохранить в `artifacts/ui-refinement/<runId>/` screenshots до/после и сравнения при одинаковых window size/actual DPI, `reference-review.md` по всем экранам и `verification.md` с actual outcomes. Проверить Light/Dark при 1280×720 DIP и размере основного референса, 100% и хотя бы одном повышенном фактическом DPI из QR-003. Зелёные resource/smoke tests не заменяют просмотр и сравнение геометрии, плотности таблиц, цветов, типографики, иконок, команд и сводок. Допустимые отклонения для поведения, доступности и адаптации окна объясняются; остальные исправляются до checkpoint. Полная матрица ниже остаётся обязательной в T158 после завершения всех историй, включая визуальное сравнение новых экранов с тем же эталоном.
 
 На каждой комбинации **Light/Dark × 100/125/150/200% DPI** проверить окно от 1280×720 DIP: list, create/edit, Inspect, context Compose, SeedPacks, Settings, Diagnostics, dirty/destructive/input-delta/close dialogs. Изменение масштаба выполняет оператор/Windows test agent; test report фиксирует фактический DPI, а не только requested value.
 

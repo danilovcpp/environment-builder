@@ -2,7 +2,7 @@
 
 **Status**: проектный контракт основной версии; не результат проверки реализованного UI.
 
-Источники: [spec.md](../spec.md), [plan.md](../plan.md), [data model](../data-model.md), [runtime contract](runtime.md), [style guide](../../../docs/design/style-guide.md). Спецификация имеет приоритет над демонстрационными макетами.
+Источники: [spec.md](../spec.md), [plan.md](../plan.md), [data model](../data-model.md), [runtime contract](runtime.md), [style guide](../../../docs/design/style-guide.md). Спецификация определяет поведение; макеты обязательны как визуальные референсы. По уточнению пользователя от 2026-10-28 основной эталон при неточностях layout, оформления и цветов — [seed_packs.png](../../../docs/design/mockups/seed_packs.png), включая расхождения с прежними значениями style guide.
 
 ## 1. Shell и navigation
 
@@ -100,6 +100,10 @@ Preview/export используют dedicated sanitized representations со с�
 Если relevant secret set не подготовлен, affected observation не открывается и показывает причину. Начало tail не зависит от сохранения plaintext после Start; lifetime redaction context принадлежит observation. Errors показывают component/stage/actionable cause, но не secret values, request/response bodies или raw command environment. Проверка отсутствия секретов охватывает также dialogs, clipboard/export и сохранённые diagnostics.
 
 ## 9. Темы, accessibility и visual acceptance
+
+Следующий этап после US5 — Phase 7a / T166–T177 из [tasks.md](../tasks.md#phase-7a-ui-refinement), до реализации US6. Общая компоновка shell, поверхности, таблицы, фильтры, кнопки, иконки, бейджи и контекстные сводки нормализуются по `seed_packs.png`; остальные референсы задают области своих экранов. Светлая тема воспроизводит основной эталон; тёмная сохраняет его layout с semantic Dark tokens. Поведение по спецификации и доступность обязательны, обусловленные ими визуальные отклонения документируются.
+
+Приёмка требует просмотра и сравнения screenshots до/после с референсами при сопоставимых window size/DPI и отчёта по каждому экрану. Одного прохождения resource/binding/smoke tests недостаточно. Список окружений остаётся компактной таблицей с раскрываемым составом, editor — структурированными областями компонентов и сводкой, Inspect/Compose — читаемыми рабочими областями в общем shell. Для ещё не завершённых US7/US8/US10 на Phase 7a готовятся представления с реальными empty/unavailable states; их полноценные workflows подключаются в соответствующих историях без повторного изобретения оформления. Fixture-данные используются только в тестовых хранилищах.
 
 Shared Light/Dark token dictionaries реализуются до экранов. WPF UI resources загружаются перед repo overrides; system accent override отключён. Во Views/ControlTemplates нет собственных palette HEX. Theme switch не пересоздаёт route/VM и сохраняет layout, draft, selection, scroll, active operation/progress.
 

@@ -6,9 +6,11 @@ description: "Исполнимые задачи основной версии En
 
 **Input**: design artifacts из `specs/001-environment-builder/`: [plan.md](plan.md), [spec.md](spec.md), [research.md](research.md), [data-model.md](data-model.md), [quickstart.md](quickstart.md), [documents](contracts/documents.md), [runtime](contracts/runtime.md), [UI](contracts/ui.md), пять JSON schemas и примеры в `contracts/examples/`.
 
-**Prerequisites**: [конституция v1.0.0](../../.specify/memory/constitution.md) и [style guide](../../docs/design/style-guide.md). Исходная кодовая база отсутствует; пути ниже — создаваемые файлы. Фактическая Git-ветка `main`; этот workflow не меняет ветку.
+**Prerequisites**: [конституция v1.0.0](../../.specify/memory/constitution.md) и [style guide](../../docs/design/style-guide.md). На 2026-10-28 реализованы Setup, Foundation и US1–US5; последующие задачи дополняют существующую кодовую базу. Фактическая Git-ветка `main`; этот workflow не меняет ветку.
 
-**Scope**: US1–US10 обязательны для основной версии. P1/P2 задают порядок; MVP US1 — промежуточный offline increment, не сокращение полной поставки. Спецификация имеет приоритет над mockups.
+**Scope**: US1–US10 обязательны для основной версии. P1/P2 задают порядок; MVP US1 — промежуточный offline increment, не сокращение полной поставки. Спецификация определяет поведение; визуальное соответствие референсам обязательно, при неточностях layout, оформления и цветов приоритет имеет [seed_packs.png](../../docs/design/mockups/seed_packs.png).
+
+**Следующий этап (2026-10-28)**: **Phase 7a — доработка UI по референсам, T166–T177**, сразу после завершённой US5 / T102 и до начала US6 / T103. После checkpoint T177 продолжить Phase 8 и оставшиеся истории. UI-этап не переносится в финальную Polish-фазу.
 
 **Tests**: включены по spec A-002, конституции VI/VIII и testing contracts плана. Сначала написать failing tests на соответствующей границе, затем реализовать поведение. Core/VM без окна; integration использует изолированные stores, Docker/HTTP doubles и fault injection. Запуск Docker или внешних сервисов не входит в тестовые gates; UI suite проверяется отдельно.
 
@@ -18,8 +20,8 @@ description: "Исполнимые задачи основной версии En
 
 - Каждая задача: `- [ ] Tnnn [P?] [USn?] действие с точным путём файла`.
 - `[P]` означает допустимый параллельный запуск только после завершения перечисленных prerequisites и предыдущих обязательных checkpoints; разные файлы и независимые fixture stores обязательны.
-- `[US1]`–`[US10]` есть только у задач своей истории; Setup/Foundational/Polish не имеют story label.
-- Зависимости внутри описаний обязательны. Порядок ID — безопасный последовательный маршрут. Если пакет параллельных задач не указан, исполнять по порядку.
+- `[US1]`–`[US10]` есть только у задач своей истории; Setup/Foundational/UI refinement/Polish не имеют story label.
+- Зависимости внутри описаний обязательны. Порядок фаз и prerequisites задаёт маршрут. Вставленные T166–T177 выполняются между T102 и T103; исторические ID не перенумеровываются. Если пакет параллельных задач не указан, исполнять по порядку внутри фазы.
 - Сохранённое состояние, runtime observation и operation outcome различаются; неизвестный процент не вычисляется, unknown/stale не считаются stopped/ready.
 
 ## Path Conventions
@@ -33,6 +35,8 @@ description: "Исполнимые задачи основной версии En
 ## Execution Gates
 
 Не начинать user-story implementation до Foundational checkpoint. Каждый story checkpoint включает связанные unit/integration suites, targeted Release build/analyzers/format и соответствующую UI проверку. Все runtime-сценарии в Independent Test и задачах ниже выполняются с контролируемыми Docker/HTTP doubles и моделью ресурсов/данных. Перед UI изменением использовать общие tokens/components; после изменения проверить обе темы и binding/resource errors.
+
+После US5 следующий обязательный checkpoint — Phase 7a / T177. До его закрытия не начинать Phase 8–13; новые экраны после него используют установленные компоненты и проверяются сравнением с референсами в рамках своей истории. Одних theme/resource/smoke tests недостаточно для подтверждения визуального соответствия.
 
 Сбой обязательной автоматической или UI проверки фиксируется как Failed/Blocked/Unverified и оставляет зависимую приёмку незавершённой. Доступ к Docker и выпуск Windows не являются gates тестирования. До полной release приёмки внутренние checkpoints не означают готовность основной версии.
 ## Phase 1: Setup (Shared Infrastructure)
@@ -243,11 +247,40 @@ description: "Исполнимые задачи основной версии En
 
 **Checkpoint**: US5 функционально завершена; выполнить independent test на отдельном prepared fixture. Незавершённые обязательные gates не отмечать passed.
 
-**Проверено 2026-10-28 (только Phase 7 / US5, T094–T102)**: locked restore и Release build прошли (0 warnings/errors); unit 97/97, offline integration 217/217, UI/FlaUI 3/3, без skip. Подтверждены 10 независимых clear и 10 refresh с Docker/HTTP doubles: ожидаемые counts без дублей/остатков, прежняя revision/baseline, новая generation и проверенная остановка; missing inputs/apply contract блокируют удаление. Проверены partial/cancel/fault boundaries и отдельный явный Stop после неудачной инициализации. Light/Dark PNG Inspect и диалогов просмотрены, binding/resource errors отсутствуют. Format и diff check прошли. Evidence: `artifacts/us5/final/`, `artifacts/acceptance/us5-20261028/reports/data-reset.json`; детали и границы — [data-reset-verification.md](data-reset-verification.md). Следующая фаза — Phase 8; в этом запуске она не выполнялась.
+**Проверено 2026-10-28 (только Phase 7 / US5, T094–T102)**: locked restore и Release build прошли (0 warnings/errors); unit 97/97, offline integration 217/217, UI/FlaUI 3/3, без skip. Подтверждены 10 независимых clear и 10 refresh с Docker/HTTP doubles: ожидаемые counts без дублей/остатков, прежняя revision/baseline, новая generation и проверенная остановка; missing inputs/apply contract блокируют удаление. Проверены partial/cancel/fault boundaries и отдельный явный Stop после неудачной инициализации. Light/Dark PNG Inspect и диалогов просмотрены, binding/resource errors отсутствуют. Format и diff check прошли. Evidence: `artifacts/us5/final/`, `artifacts/acceptance/us5-20261028/reports/data-reset.json`; детали и границы — [data-reset-verification.md](data-reset-verification.md). Phase 8 в том запуске не выполнялась. Обновлённый следующий этап — Phase 7a ниже.
+
+---
+
+<a id="phase-7a-ui-refinement"></a>
+
+## Phase 7a: Доработка UI для соответствия референсам (обязательный следующий этап)
+
+**Purpose / Goal**: Привести композицию и оформление приложения к референсам до продолжения функциональной разработки. При неточностях layout, оформления и цветов использовать `docs/design/mockups/seed_packs.png`, включая расхождения с другими макетами и прежними значениями style guide. Экранные референсы задают назначение областей; поведение, данные и safety contracts остаются по спецификации. Подробности — [plan.md](plan.md#ui-refinement).
+
+**Scope**: Общий shell/resources/components; list/create/edit/Inspect/Compose и существующие dialogs; визуальная структура SeedPacks/Settings/Diagnostics с реальными empty/unavailable states до функционального завершения US7/US8/US10. Никаких фиктивных метрик/успехов, встроенных демонстрационных записей или неподключённых кнопок, выглядящих доступными. Визуальные fixtures размещаются только в изолированных test stores. Эти задачи не закрывают будущие user stories.
+
+**Independent Test**: На подготовленном изолированном store открыть каждый экран в Light/Dark, сравнить screenshots с его референсом и общим эталоном `seed_packs.png`. Пройти keyboard create/edit/preview/save, Inspect и безопасную отмену подтверждений; проверить сохранение route/draft/selection/scroll/progress, честные empty/error/unknown/offline/partial states и отсутствие binding/resource errors. Реальные Docker/HTTP effects не нужны.
+
+- [ ] T166 Зафиксировать в `docs/design/ui-reference.md` карту экран→референс, inventory расхождений текущего UI, нормализованные размеры/цвета/типографику/состояния из `docs/design/mockups/seed_packs.png` и допустимые адаптации для поведения/доступности/ресайза; обновить `docs/design/style-guide.md` по эталону. Для Dark сохранить ту же геометрию и semantic contrast; разницу между подготовленной presentation и будущими US7/US8/US10 workflows перечислить явно (после T102).
+- [ ] T167 Подготовить `tests/EnvironmentBuilder.UiTests/UiReferenceFixture.cs`, `UiReferenceTests.cs` и изолированные fixtures в `demos/fixtures/ui-reference/`: populated/empty/loading/error/unknown/offline/partial/long-name states всех экранов, безопасные operation doubles; сохранить screenshots текущего UI в `artifacts/ui-refinement/<runId>/before/`. Сначала добавить проверки существенных layout/state regressions с ожидаемым red и сценарий сравнения с референсами; не подменять визуальную приёмку проверкой наличия ресурсов (после T166).
+- [ ] T168 Переработать `src/EnvironmentBuilder.App/Themes/Light.xaml`, `Dark.xaml`, `Typography.xaml` и `Components.xaml` по `docs/design/ui-reference.md`: поверхности/синий акцент/semantic badges, компактные table rows/headers, фильтры, search, buttons/icon buttons, inputs/tabs и все interaction states. Общие размеры и цвета централизованы, no local HEX; проверить контраст на фактических фонах и одинаковый layout тем (после T167).
+- [ ] T169 Переработать `src/EnvironmentBuilder.App/Shell/MainWindow.xaml`, `Components/PageHeader.xaml`, `ContextPanel.xaml` и `StatusBar.xaml`: пропорции/навигация/selected indicator, иконка+заголовок+описание+ведущие команды, полезная сводка выбранного контекста, сворачивание правой панели и нижний статус по `seed_packs.png`; четыре основных маршрута и вложенные editor/Inspect/Compose сохранить по UI contract (после T168).
+- [ ] T170 Переработать `src/EnvironmentBuilder.App/Features/Environments/EnvironmentListPage.xaml`, `EnvironmentRow.xaml` и необходимый presentation state в `EnvironmentListViewModel.cs`: компактная таблица вместо высоких вертикальных карточек, filter chips/search, согласованные колонки имени/состава/статуса/доступных ресурсов/иконок команд, раскрываемая таблица компонентов по `docs/design/mockups/environments.png` в оформлении `seed_packs.png`; сохранить recycling virtualization, selection/scroll/filter и различимость unknown/stale/missing (после T169).
+- [ ] T171 Переработать `src/EnvironmentBuilder.App/Features/Environments/EnvironmentEditorPage.xaml`, `ComponentEditor.xaml` и presentation state в `EnvironmentEditorViewModel.cs`: структурированные панели имени/состава target+infrastructure/параметров, компактные списки выбора, сводка и validation, иерархия действий по `docs/design/mockups/create_edit.png` с общим layout/оформлением `seed_packs.png`; immutable IDs, multiple instances, dependency reasons, dirty guard и Save без запуска сохранить (после T170).
+- [ ] T172 Переработать `src/EnvironmentBuilder.App/Features/Environments/InspectPage.xaml`, `ComposePreviewPage.xaml` и `Components/OperationProgress.xaml`: табличный состав/статусы, доступные метрики/логи/адреса, аккуратные tabs и контекстные сводки по `docs/design/mockups/inspect.png` в оформлении `seed_packs.png`; Compose — контекстный sanitized preview с возвратом, progress/retention/partial outcomes не теряются (после T171).
+- [ ] T173 Привести `src/EnvironmentBuilder.App/Components/DirtyDraftDialog.xaml`, `DestructivePlanDialog.xaml`, `CloseOperationsDialog.xaml` и `Features/Environments/InputDeltaDialog.xaml` к общим поверхностям/отступам/типографике/иконкам и иерархии действий; сохранить точные последствия/plan details/disabled reasons, безопасный фокус, Escape/cancel и возврат focus. Адаптацию к плотности текста описать в `docs/design/ui-reference.md` (после T172).
+- [ ] T174 Заменить заглушки в `src/EnvironmentBuilder.App/Shell/MainWindow.xaml` представлениями `Features/SeedPacks/SeedPackLibraryPage.xaml`, `Features/Settings/SettingsPage.xaml` и `Features/Diagnostics/DiagnosticsPage.xaml`: библиотека с областью filters/table/details/preview по `seed_packs.png`, settings по `docs/design/mockups/settings.png`, diagnostics в общих паттернах. Подключить уже доступные данные через presentation VMs и `Composition/ServiceRegistration.cs`; отсутствующие workflows явно недоступны с причиной. Зафиксировать подключение оставшихся возможностей в T118/T127/T148, не засчитывать US7/US8/US10 выполненными (после T173).
+- [ ] T175 Выполнить интерактивную визуальную проверку `tests/EnvironmentBuilder.UiTests/UiReferenceTests.cs`: Light/Dark, 1280×720 DIP и размер `seed_packs.png`, 100% и минимум один повышенный actual DPI из QR-003, все экраны/ключевые states/длинные имена/keyboard/focus. Сохранить `artifacts/ui-refinement/<runId>/after/`, сравнения с референсами и `reference-review.md` по каждому экрану: геометрия/плотность/иерархия/цвета/отступы/команды/иконки/сводки, результат и обоснованные отклонения. Просмотреть изображения и исправить обычные визуальные расхождения в соответствующих XAML/resources; одних PNG или resource assertions недостаточно (после T174).
+- [ ] T176 Выполнить locked restore/Release build с warnings as errors, unit/integration suites и затронутые UI/FlaUI сценарии US1–US5 вместе с `tests/EnvironmentBuilder.UiTests/UiReferenceTests.cs`; проверить theme switch без потери VM/route/draft/selection/scroll/progress, no binding/resource errors, format и diff check. Исправить failures и повторить затронутые проверки; TRX/commands/actual DPI сохранить в `artifacts/ui-refinement/<runId>/` (после T175).
+- [ ] T177 Проверить полный scope Phase 7a и оформить `artifacts/ui-refinement/<runId>/verification.md`: сравнение каждого экрана с референсом просмотрено, расхождения исправлены либо обусловлены требованиями поведения/доступности/ресайза и объяснены; перечислены подготовленные представления и оставшиеся workflows US7/US8/US10. Обновить `docs/design/ui-reference.md` и `specs/001-environment-builder/quickstart.md` по фактическому результату; при отсутствии interactive evidence оставить checkpoint Unverified. Только после пройденной визуальной и функциональной проверки разрешён переход к T103 / Phase 8 (после T176).
+
+**Checkpoint**: Пройдено сравнение UI с референсами и сохранён `verification.md`; layout, оформление и цвета согласованы с `seed_packs.png`, существующие сценарии US1–US5 работают. Полная release DPI/accessibility matrix T158 не заменяет этот ближайший checkpoint и остаётся обязательной для завершённых US1–US10. Все T166–T177 пока запланированы, не выполнены.
 
 ---
 
 ## Phase 8: User Story 6 — Удалить окружение с контролем остатков (P1)
+
+**Prerequisite**: Phase 7a / T177 завершена; это следующая функциональная история после UI-этапа.
 
 **Purpose / Goal**: Удалить только подтверждённые owned ресурсы и описание после полного успеха; partial delete оставляет видимую tombstone с безопасным повтором.
 
@@ -287,7 +320,7 @@ description: "Исполнимые задачи основной версии En
 - [ ] T115 [US7] Реализовать `src/EnvironmentBuilder.Core/SeedPacks/BaselineSelectionService.cs`: exact compatible pack+initializer snapshot по instance ID, declared section/target compatibility, mandatory init сохраняется, unavailable apply contract блокирует выбор/refresh, новая версия не заменяет выбор; сохранённое окружение меняется только через EditEnvironmentService (после T114, T091).
 - [ ] T116 [US7] Реализовать `src/EnvironmentBuilder.Core/SeedPacks/ResolveUnknownInitializationService.cs`: после read-only verification явные решения признать проверенный результат/повторить с последствиями/начать новый confirmed refresh; unsafe step без safety не переигрывается, stable key tuple прежний при retry, dependent steps ждут durable success (после T068, T111).
 - [ ] T117 [US7] Реализовать `src/EnvironmentBuilder.App/Features/SeedPacks/SeedPackLibraryViewModel.cs` и `SeedPackPreviewViewModel.cs`: async import/list/remove/owners, measured metadata/theme/purpose/version/compatibility, dynamic sections/bounded paging и UI progress без fake percentage, no Docker dependency (после T113, T114).
-- [ ] T118 [US7] Создать `src/EnvironmentBuilder.App/Features/SeedPacks/SeedPackLibraryPage.xaml` и `SeedPackPreview.xaml`: только import внешнего ZIP, readable empty/error/no-section/large/truncated states, keyboard paging и owner links; добавить selector в `Features/Environments/EnvironmentEditorPage.xaml`, unknown-step dialog в `Components/UnknownInitializationDialog.xaml`, register services (после T117, T115, T116).
+- [ ] T118 [US7] Дополнить подготовленную в T174 `src/EnvironmentBuilder.App/Features/SeedPacks/SeedPackLibraryPage.xaml` и создать `SeedPackPreview.xaml`: только import внешнего ZIP, readable empty/error/no-section/large/truncated states, keyboard paging и owner links; добавить selector в `Features/Environments/EnvironmentEditorPage.xaml`, unknown-step dialog в `Components/UnknownInitializationDialog.xaml`, register services. Переиспользовать компоненты Phase 7a и повторить сравнение с `docs/design/mockups/seed_packs.png` на полноценных production workflows (после T117, T115, T116, T177).
 - [ ] T119 [US7] Добавить и выполнить `tests/EnvironmentBuilder.IntegrationTests/Docker/SeedPackApplicationTests.cs` и `tests/EnvironmentBuilder.UiTests/SeedPackSmokeTests.cs`: два pack applications с одним initializer не делят success, два instances не делят успех, lost response safe vs unsafe, offline UI preview и delete refs; записать SC-009/011 evidence в `artifacts/acceptance/<runId>/reports/seedpacks.json` (после T118).
 
 **Checkpoint**: US7 функционально завершена; выполнить independent test на отдельном prepared fixture. Незавершённые обязательные gates не отмечать passed.
@@ -311,7 +344,7 @@ description: "Исполнимые задачи основной версии En
 - [ ] T124 [P] [US8] Реализовать `src/EnvironmentBuilder.App/Features/Settings/ComponentDefinitionEditorViewModel.cs`: source/parameter type+required+secret+nullable default/environment binding/ports/storage/endpoints/readiness/requirements/init fields, strict import diagnostics и new-version conflict handling без service-name веток (после T122, T121).
 - [ ] T125 [US8] Реализовать `src/EnvironmentBuilder.App/Features/Settings/SettingsViewModel.cs`: defaults/theme/library/alias mapping/secret reference management, plaintext не bound/persisted вне краткого ввода vault, explicit snapshot update selection в editor сохраняет old settings до confirmed edit; theme choice не пересоздаёт route/VM (после T123).
 - [ ] T126 [US8] Дополнить `src/EnvironmentBuilder.Core/Environments/EnvironmentDraft.cs` и `src/EnvironmentBuilder.App/Features/Environments/EnvironmentEditorViewModel.cs`: второй instance всегда new UUID, отдельные effective fields/managed storage, exact requirement bindings и baseline target, неоднозначность требует выбора; explicit defaults/definition update создаёт draft diff и использует обычный edit protocol (после T125, T124, T091).
-- [ ] T127 [US8] Создать `src/EnvironmentBuilder.App/Features/Settings/SettingsPage.xaml` и `ComponentDefinitionEditor.xaml`, source/default/alias/vault dialogs и register services в `Composition/ServiceRegistration.cs`; keyboard error navigation, secrets только refs в отображаемых списках, local build option не предлагается infrastructure (после T126).
+- [ ] T127 [US8] Дополнить подготовленную в T174 `src/EnvironmentBuilder.App/Features/Settings/SettingsPage.xaml` и создать `ComponentDefinitionEditor.xaml`, source/default/alias/vault dialogs и register services в `Composition/ServiceRegistration.cs`; keyboard error navigation, secrets только refs в отображаемых списках, local build option не предлагается infrastructure. Переиспользовать компоненты Phase 7a и проверить по `docs/design/mockups/settings.png`, разрешая визуальные расхождения по `seed_packs.png` (после T126, T177).
 - [ ] T128 [P] [US8] Создать `demos/fixtures/fourth-service/Program.cs`, `Dockerfile`, `component.json`, `initialization.json` и `seedpack/manifest.json` с независимым generic HTTP service fixture и пользовательскими descriptor/init/SeedPack, а также `demos/fixtures/two-instances/environment.json` с разными settings/dependencies/storage; fixtures не require изменения app assemblies и проверяют разные application success keys (после T122, T058).
 - [ ] T129 [US8] Добавить и выполнить `tests/EnvironmentBuilder.IntegrationTests/Docker/UnknownComponentTests.cs` и `tests/EnvironmentBuilder.UiTests/SettingsSmokeTests.cs`: unknown-service import/form, multiple instances isolation/baseline/dependency behavior, defaults preservation и explicit destructive update; записать FR-019/SC-013 evidence в `artifacts/acceptance/<runId>/reports/custom-components.json` (после T127, T128).
 
@@ -362,7 +395,7 @@ description: "Исполнимые задачи основной версии En
 - [ ] T145 [US10] Реализовать `src/EnvironmentBuilder.Core/Operations/DiagnosticActions.cs`: только описанные explicit действия resolve local alias/secret refs/open editor/refresh observation/review recovery/launch preflight, с понятными последствиями и reuse существующих guards/confirmation, no silent repair; результаты состояния обновляются фактически (после T143, T141).
 - [ ] T146 [US10] Реализовать `src/EnvironmentBuilder.App/Features/Diagnostics/DiagnosticsViewModel.cs` и `RecoveryViewModel.cs`: per-check progress/time/error/unsupported/unknown, незавершённые operation ID/stages/deleted/remnants/candidate, отдельные доступные fix/recovery commands, navigation не теряет progress (после T144, T145).
 - [ ] T147 [P] [US10] Дополнить `src/EnvironmentBuilder.App/Shell/ShutdownCoordinator.cs` для recovery/unknown/result-write-failure scenarios: pending close не завершается при непроверенном результате, Wait/Cancel охватывают все active operations и освобождают scopes/subscriptions только после durable outcomes, dirty modal/Return не теряют решения; проверить headless ShutdownTests без arbitrary sleeps (после T138, T141, T076).
-- [ ] T148 [US10] Создать `src/EnvironmentBuilder.App/Features/Diagnostics/DiagnosticsPage.xaml`, `RecoveryPanel.xaml`, переиспользовать `Components/CloseOperationsDialog.xaml` и Closing bridge в `Shell/MainWindow.xaml.cs`, register startup/recovery/close services в `Composition/ServiceRegistration.cs`; всем unknown/partial states доступны reasons/next actions без false success (после T146, T147).
+- [ ] T148 [US10] Дополнить подготовленную в T174 `src/EnvironmentBuilder.App/Features/Diagnostics/DiagnosticsPage.xaml` и создать `RecoveryPanel.xaml`, переиспользовать `Components/CloseOperationsDialog.xaml` и Closing bridge в `Shell/MainWindow.xaml.cs`, register startup/recovery/close services в `Composition/ServiceRegistration.cs`; всем unknown/partial states доступны reasons/next actions без false success. Переиспользовать компоненты Phase 7a и сравнить новые состояния с общими паттернами `docs/design/mockups/seed_packs.png` (после T146, T147, T177).
 - [ ] T149 [P] [US10] Реализовать `src/EnvironmentBuilder.Infrastructure/Persistence/HistoryRetention.cs`: «Новейшие 1 000 globally; unresolved operations, tombstones и successes active generation не удаляются этой политикой», references/leases/candidate сохранены до recovery, retired generation history сворачивается только когда не нужна safety evidence; terminal history не удерживает payload бесконечно (после T141).
 - [ ] T150 [US10] Добавить и выполнить `tests/EnvironmentBuilder.UiTests/RecoveryCloseSmokeTests.cs` и recovery/fault suites: ordinary close during10min operation/dirty modal/safe cancel, disconnect+reconnect/external drift и forced restart matrix; сохранить sanitized unknown/partial/blocked evidence в `artifacts/acceptance/<runId>/reports/recovery.json`, не отмечать неподтверждённый runtime passed (после T148, T149, T139).
 
@@ -381,7 +414,7 @@ description: "Исполнимые задачи основной версии En
 - [ ] T155 Создать `scripts/powershell/Assert-ValidationResults.ps1` и regression cases в `tests/EnvironmentBuilder.IntegrationTests/Acceptance/ValidationResultsTests.cs`: exact RequiredSuite interface, missing/zero-executed/all-skipped/required-skipped TRX/blocked/manual/unverified report→nonzero; dotnet test exit0 не достаточен, SC-001/012 без5 human outcomes остаются ManualPending (после T154).
 - [ ] T156 Выполнить SC-007/008/011 isolation/fault/security matrix через `scripts/powershell/Invoke-Acceptance.ps1`, сохранить `artifacts/acceptance/<runId>/reports/security-isolation.json`: all secret channels/chunk boundaries/escaped process output/HTTP errors/export/clipboard/diagnostics, import-preview zero effects, stale confirmations/copied labels/incarnations/shared consumers, runtime mutations только scoped test IDs (после T155).
 - [ ] T157 Выполнить SC-002/003/009/010 через `scripts/powershell/Invoke-Acceptance.ps1`, сохранить100 raw timings/count percentiles/retained byte and subscription counts в `artifacts/acceptance/<runId>/reports/performance.json`:1000 list≤3s,≥95/100 search/filter/ack≤1s,10min operation navigation≤1s,100k first preview≤2s,60min logs≥100lines/s+100 switches и все retention budgets (после T155).
-- [ ] T158 Создать/выполнить `tests/EnvironmentBuilder.UiTests/VisualAccessibilityTests.cs` и зафиксировать `artifacts/acceptance/<runId>/reports/ui-matrix.json`: Light/Dark×100/125/150/200% actual DPI,1280×720 DIP/long names/all screens/dialogs/states, keyboard/focus/accessible names, theme сохраняет route/draft/selection/scroll/progress, contrast≥4.5:1/3:1, screenshots/automation tree/binding-resource diagnostics; interactive run обязателен (после T155).
+- [ ] T158 Создать/выполнить `tests/EnvironmentBuilder.UiTests/VisualAccessibilityTests.cs` и зафиксировать `artifacts/acceptance/<runId>/reports/ui-matrix.json`: Light/Dark×100/125/150/200% actual DPI,1280×720 DIP/long names/all screens/dialogs/states, keyboard/focus/accessible names, theme сохраняет route/draft/selection/scroll/progress, contrast≥4.5:1/3:1, screenshots/automation tree/binding-resource diagnostics; повторить сравнение всех завершённых экранов с референсами по правилам Phase 7a, основной эталон layout/оформления/цветов — `docs/design/mockups/seed_packs.png`. Interactive run и просмотр сравнений обязательны; приёмка не заменяет ранний UI checkpoint (после T155, T177).
 - [ ] T159 Проверить Docker capability fixtures для Engine28/API1.48/Compose2.24.6 и других известных поддерживаемых версий, unknown output и unsupported modes; проверить Compose/port contracts: default loopback и explicit network binding только выбранного порта. Без подключения к Engine или LAN peer; результаты записать в `artifacts/acceptance/<runId>/reports/compatibility-network.json` (после T155).
 - [ ] T160 Выполнить SC-004/005/006/013 с Docker/HTTP doubles через `scripts/powershell/Invoke-Acceptance.ps1`: внешние demo descriptors, 20 Stop-Start, 10 clear+10 refresh, edits/no-op/partial/delete, unknown service и два definition instances; expected counts/attempts/resource isolation моделируются и записываются в `artifacts/acceptance/<runId>/reports/demo-cycle.json` (после T155).
 - [ ] T161 Подготовить и провести SC-001/SC-012 с5 представителями аудитории, заполнить формы из acceptance runner в `artifacts/acceptance/<runId>/reports/usability.json`:≥4/5 authoring≤10min и explanation/failure discovery≤2min, zero-effect evidence и keyboard matrix; без участников/human evidence gate остаётся ManualPending, automated часть его не заменяет (после T158, T160).
@@ -399,8 +432,9 @@ description: "Исполнимые задачи основной версии En
 ### Phase Dependencies
 
 1. Setup (T001–T007) → Foundation (T008–T036) → истории.
-2. Соблюдать prerequisites в таблице и конкретных задачах. Порядок фаз — допустимый последовательный маршрут; параллельные backend/test ветки разрешены после своих prerequisites.
-3. Polish следует за всеми десятью историями. Только подготовку baseline/fixtures можно начать раньше по явно указанным зависимостям; acceptance требует законченных production boundaries.
+2. US1–US5 → **Phase 7a (T166–T177, следующий этап)** → US6 → оставшиеся истории. T177 — обязательный checkpoint перед Phase 8–13; вставленные задачи выполняются до T103 независимо от их числового ID.
+3. Соблюдать prerequisites в таблице и конкретных задачах. Порядок фаз — допустимый последовательный маршрут; параллельные backend/test ветки разрешены после своих prerequisites и обязательного UI checkpoint.
+4. Polish следует за всеми десятью историями и Phase 7a. После T177 только подготовку baseline/fixtures можно начать раньше по явно указанным зависимостям; acceptance требует законченных production boundaries.
 
 ### User Story Dependencies
 
@@ -411,7 +445,8 @@ description: "Исполнимые задачи основной версии En
 | US3 | US2 | Фактический runtime и durable initialization records. |
 | US4 | US1 + US2 + US3 | Editor, ledger/observation и ConfirmedQuiescent; shared ownership verifier из US2 и reusable guarded cleanup для следующих lifecycle историй. |
 | US5 | US2 + US3 + US4 | Initializer, verified Stop и shared cleanup. SeedPack backend уже готов. |
-| US6 | US3 + US4 | Verified Stop/ownership/cleanup; не требует UI-библиотек US7/US8. |
+| UI / Phase 7a | US1–US5, T102 | Визуальная доработка и сравнение на изолированных fixtures без будущих backend workflows; checkpoint T177 блокирует Phase 8–13. |
+| US6 | US3 + US4 + Phase 7a | Verified Stop/ownership/cleanup; не требует UI-библиотек US7/US8. |
 | US7 | US1 + US2 + US4 + US5 | Editor integration, execution/unknown outcomes и confirmed refresh; backend импорта не реализуется повторно. |
 | US8 | US1 + US4 | Existing snapshot update проходит edit protocol; custom-component contract tests дополнительно используют US2 fixtures и doubles. |
 | US9 | US1 | Portable transfer использует Foundation readers/store; не требует US7/US8 экранов. |
@@ -426,6 +461,11 @@ flowchart TD
     US1 --> US4
     US3 --> US4
     US4 --> US5
+    US5 --> UI["Phase 7a: UI refinement"]
+    UI --> US6
+    UI --> US7
+    UI --> US8
+    UI --> US9
     US4 --> US6
     US3 --> US6
     US5 --> US7
@@ -438,7 +478,7 @@ flowchart TD
     US9 --> Polish
 ```
 
-Граф показывает completion prerequisites без всех транзитивных рёбер. Все истории входят в Polish; US2/3/4/5 покрыты путями к US10. Story independence означает независимую проверку на seeded store, а не дублирование общих production capabilities.
+Граф показывает completion prerequisites и обязательный checkpoint Phase 7a без всех транзитивных рёбер. Все истории входят в Polish; US2/3/4/5 и UI checkpoint покрыты путями к US10. Story independence означает независимую проверку на seeded store, а не дублирование общих production capabilities.
 
 ### Within Each Story
 
@@ -562,7 +602,7 @@ Implementation package: T142, T143. После T140; T149 отдельно по�
 
 | Criteria | Задачи / обязательное evidence |
 | --- | --- |
-| QR-001–004 | T006, T007, T034, T038, T158; обе темы, все states, keyboard, DPI, screenshots и bindings |
+| QR-001–004 | T006, T007, T034, T038, T166–T177, T158; ранняя доработка и сравнение с референсами по seed_packs.png, обе темы, все states, keyboard, DPI, screenshots и bindings |
 | QR-005–006 | T072, T073, T113, T157; retention/drop counters/session disposal и raw timing data |
 | SC-001 | T050, T154, T161; 5-person forms, ≥4/5 ≤10min, zero runtime effects |
 | SC-002 | T043, T045, T152, T157; 1000 rows и100 raw timings/thresholds |
@@ -588,10 +628,11 @@ Implementation package: T142, T143. После T140; T149 отдельно по�
 
 1. US1 → US2: runtime строится поверх durable journal/ownership ledger/secret boundaries; initialization уже входит в Start. Safe Close T076 предшествует runtime validation.
 2. US3 → US4: подтвердить сохранность Stop/Start, затем общий guarded cleanup и atomic candidate revision commit.
-3. US5/US6: переиспользовать cleanup для clear/refresh/delete, без копирования алгоритмов владения/подтверждения.
-4. US7/US8/US9: открыть библиотеки/параметры/transfer, сохраняя exact snapshots и refs; разделять backend работу и последовательную shared UI integration.
-5. US10: полная startup reconciliation/recovery/diagnostics, targeted close/fault regressions и safety retention.
-6. T151–T165: единый acceptance runner, полная compatibility/SC/QR/manual/performance matrix, locked Release tooling, published folder и evidence-based handoff.
+3. US5: clear/refresh через общий cleanup; завершена. **Далее Phase 7a / T166–T177: UI по референсам с приоритетом seed_packs.png, сравнением screenshots и обязательным checkpoint до продолжения историй.**
+4. US6: delete переиспользует cleanup и визуальные компоненты Phase 7a.
+5. US7/US8/US9: открыть библиотеки/параметры/transfer, сохраняя exact snapshots и refs; подключить workflows к подготовленным представлениям и проверять новые состояния по референсам в рамках историй.
+6. US10: полная startup reconciliation/recovery/diagnostics, targeted close/fault regressions и safety retention; оформление продолжает Phase 7a.
+7. T151–T165: единый acceptance runner, полная compatibility/SC/QR/manual/performance matrix с повторным сравнением новых экранов, locked Release tooling, published folder и evidence-based handoff.
 
 ### Parallel Team Strategy
 
@@ -605,18 +646,19 @@ Implementation package: T142, T143. После T140; T149 отдельно по�
 | foundation | 29 | 8 |
 | US1 | 14 | 7 |
 | US2 | 27 | 10 |
-| US3 | 7 | 3 |
+| US3 | 6 | 2 |
 | US4 | 9 | 5 |
 | US5 | 9 | 5 |
+| UI refinement / Phase 7a | 12 | 0 |
 | US6 | 7 | 3 |
 | US7 | 10 | 5 |
 | US8 | 10 | 5 |
 | US9 | 7 | 2 |
 | US10 | 14 | 7 |
 | polish | 15 | 2 |
-| **Total** | **165** | **63** |
+| **Total** | **176** | **62** |
 
-Все 165 задач используют checkbox/последовательный ID; user-story tasks имеют ровно свой [USn], остальные story label не имеют; описания содержат файловые пути. Прямые prerequisite ID разрешаются в этом документе и не указывают вперёд. Data-model constraints процитированы в относящихся к ним model/storage/service tasks; все дополнительные schema bounds остаются обязательны по указанным schemas, не выбираются при реализации заново.
+Все 176 задач используют checkbox и уникальный стабильный ID; user-story tasks имеют ровно свой [USn], остальные story label не имеют; описания содержат файловые пути. Исторический пропуск T080 сохранён; T166–T177 вставлены после T102 без перенумерации T103–T165. Прямые prerequisites разрешаются в документе и предшествуют зависимой реализации в порядке фаз; числовой ID не определяет порядок между Phase 7a и Phase 8–13. Data-model constraints процитированы в относящихся к ним model/storage/service tasks; все дополнительные schema bounds остаются обязательны по указанным schemas, не выбираются при реализации заново.
 
 ## Notes
 
