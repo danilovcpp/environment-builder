@@ -137,15 +137,4 @@ public sealed partial class ShellViewModel : ObservableObject
         NotifyContext();
     }
     [RelayCommand] private void ToggleTheme() => themes.Apply(!themes.IsDark);
-    [RelayCommand]
-    private async Task OpenComposeAsync()
-    {
-        if (Authoring?.Current is EnvironmentEditorViewModel editor) { await editor.ShowPreviewCommand.ExecuteAsync(null); }
-        else if (Authoring?.List.SelectedItem is { } selected)
-        {
-            ShowEnvironments = true; ShowSeedPacks = false; ShowSettings = false; ShowDiagnostics = false;
-            await Authoring.List.ComposeItemCommand.ExecuteAsync(selected);
-        }
-        else { Components.PlaceholderActions.Explain.Execute(null); }
-    }
 }

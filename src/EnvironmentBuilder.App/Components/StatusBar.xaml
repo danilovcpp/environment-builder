@@ -2,10 +2,10 @@
     <Border Background="{DynamicResource Brush.StatusBar}" BorderBrush="{DynamicResource Brush.Divider}" BorderThickness="0,1,0,0" Padding="16,4" Height="{DynamicResource Size.StatusBar}">
         <DockPanel>
             <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
-                <Ellipse Width="7" Height="7" Fill="#2EAE25" Margin="0,0,6,0" />
-                <TextBlock Text="Готово" Style="{DynamicResource Text.Metadata}" FontSize="11" VerticalAlignment="Center" />
+                <Ellipse Width="7" Height="7" Fill="{DynamicResource Brush.SuccessForeground}" Margin="0,0,6,0" />
+                <TextBlock Text="Готово" Style="{DynamicResource Text.Metadata}" FontSize="{DynamicResource FontSize.Small}" VerticalAlignment="Center" />
             </StackPanel>
-            <TextBlock Text="{Binding Text, ElementName=Root}" FontSize="11" Foreground="{DynamicResource Brush.TextSecondary}" VerticalAlignment="Center" AutomationProperties.LiveSetting="Polite" ToolTip="{Binding Text, ElementName=Root}" />
+            <TextBlock Text="{Binding Text, ElementName=Root}" FontSize="{DynamicResource FontSize.Small}" Foreground="{DynamicResource Brush.TextSecondary}" VerticalAlignment="Center" AutomationProperties.LiveSetting="Polite" ToolTip="{Binding Text, ElementName=Root}" />
         </DockPanel>
     </Border>
 </UserControl>

@@ -1,14 +1,10 @@
-<Window x:Class="EnvironmentBuilder.App.Components.DirtyDraftDialog"
-        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:icons="http://metro.mahapps.com/winfx/xaml/iconpacks"
-        Title="Несохранённые изменения" Width="500" SizeToContent="Height" ResizeMode="NoResize"
-        WindowStartupLocation="CenterOwner" Background="{DynamicResource Brush.Canvas}" Foreground="{DynamicResource Brush.TextPrimary}">
-    <Border Background="{DynamicResource Brush.Canvas}" Padding="24"><StackPanel><icons:PackIconLucide Kind="FileText" Width="28" Height="28" Foreground="{DynamicResource Brush.AccentText}" HorizontalAlignment="Left" Margin="0,0,0,12"/>
+<Window x:Class="EnvironmentBuilder.App.Components.DirtyDraftDialog" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:icons="http://metro.mahapps.com/winfx/xaml/iconpacks" Title="Несохранённые изменения" Width="500" SizeToContent="Height" ResizeMode="NoResize" WindowStartupLocation="CenterOwner" Background="{DynamicResource Brush.Canvas}" Foreground="{DynamicResource Brush.TextPrimary}" xmlns:components="clr-namespace:EnvironmentBuilder.App.Components">
+    <Border Background="{DynamicResource Brush.Canvas}" Padding="{DynamicResource Padding.Dialog}"><StackPanel><icons:PackIconLucide Kind="FileText" Width="28" Height="28" Foreground="{DynamicResource Brush.AccentText}" HorizontalAlignment="Left" Margin="{DynamicResource Margin.Field}" />
         <TextBlock Text="Сохранить изменения перед выходом?" Style="{DynamicResource Text.SectionTitle}" TextWrapping="Wrap" />
         <TextBlock Text="При выборе «Остаться» введённые данные сохранятся в редакторе." TextWrapping="Wrap" Margin="0,12,0,24" Foreground="{DynamicResource Brush.TextSecondary}" />
-        <WrapPanel HorizontalAlignment="Right">
-            <Button Content="Сохранить" x:Name="SaveButton" Click="SaveClick" Style="{DynamicResource Button.Primary}" Margin="0,0,8,8" AutomationProperties.AutomationId="DirtySave" />
-            <Button Content="Не сохранять" Click="DiscardClick" Margin="0,0,8,8" AutomationProperties.AutomationId="DirtyDiscard" />
-            <Button x:Name="StayButton" Content="Остаться" IsCancel="True" IsDefault="True" Click="StayClick" Margin="0,0,0,8" AutomationProperties.AutomationId="DirtyStay" />
-        </WrapPanel>
+        <components:SpacedWrapPanel HorizontalAlignment="Right">
+            <Button Content="Сохранить" x:Name="SaveButton" Click="SaveClick" Style="{DynamicResource Button.Primary}" AutomationProperties.AutomationId="DirtySave" />
+            <Button Content="Не сохранять" Click="DiscardClick" AutomationProperties.AutomationId="DirtyDiscard" />
+            <Button x:Name="StayButton" Content="Остаться" IsCancel="True" IsDefault="True" Click="StayClick" AutomationProperties.AutomationId="DirtyStay" />
+        </components:SpacedWrapPanel>
     </StackPanel></Border></Window>

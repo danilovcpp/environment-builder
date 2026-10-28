@@ -14,11 +14,11 @@
             <Setter Property="IsEnabled" Value="{Binding DataContext.CanEdit, RelativeSource={RelativeSource AncestorType=local:ComponentEditor}}" />
         </Style>
     </UserControl.Resources>
-    <Border Background="{DynamicResource Brush.Panel}" BorderBrush="{DynamicResource Brush.Border}" BorderThickness="1" CornerRadius="{DynamicResource Radius.Panel}" Padding="12" Margin="0,0,0,8">
+    <Border Style="{DynamicResource Panel.Card}" Padding="{DynamicResource Padding.Dense}" Margin="{DynamicResource Margin.Field}">
         <Expander x:Name="SettingsExpander" IsExpanded="{Binding IsExpanded}" HorizontalContentAlignment="Stretch">
             <Expander.Header>
                 <DockPanel>
-                    <Button DockPanel.Dock="Right" Content="Удалить" Visibility="{Binding CanRemove, Converter={StaticResource Visible}}" VerticalAlignment="Center" Height="28" MinHeight="28" Padding="10,4" FontSize="11" Command="{Binding RemoveCommand}" CommandParameter="{Binding}" />
+                    <Button DockPanel.Dock="Right" Content="Удалить" Visibility="{Binding CanRemove, Converter={StaticResource Visible}}" VerticalAlignment="Center" Height="28" MinHeight="28" Padding="10,4" FontSize="{DynamicResource FontSize.Small}" Command="{Binding RemoveCommand}" CommandParameter="{Binding}" />
                     <StackPanel>
                         <TextBlock Text="{Binding Label}" Style="{DynamicResource Text.GroupTitle}" ToolTip="{Binding Id}" />
                         <TextBlock Text="{Binding DefinitionDetails}" Style="{DynamicResource Text.Metadata}" Margin="0,3,0,0" />
@@ -27,59 +27,66 @@
             </Expander.Header>
             <TabControl x:Name="ComponentTabs" Margin="0,12,0,0">
                 <TabItem Header="Источник">
-                    <StackPanel Margin="0,12">
-                        <Label Content="Тип источника" />
-                        <ComboBox ItemsSource="{Binding SourceKinds}" SelectedItem="{Binding SourceKind}" AutomationProperties.Name="Тип источника" />
-                        <Label Content="Образ (имя, tag или digest)" Visibility="{Binding IsImage, Converter={StaticResource Visible}}" />
-                        <TextBox Text="{Binding ImageReference, UpdateSourceTrigger=PropertyChanged}" Visibility="{Binding IsImage, Converter={StaticResource Visible}}" AutomationProperties.Name="Образ компонента" Tag="source" x:Name="SourceInput" />
+                    <StackPanel Margin="{DynamicResource Margin.SectionVertical}">
+                        <HeaderedContentControl Header="Тип источника" Style="{DynamicResource Form.Field}">
+                            <ComboBox ItemsSource="{Binding SourceKinds}" SelectedItem="{Binding SourceKind}" AutomationProperties.Name="Тип источника" />
+                        </HeaderedContentControl>
+                        <HeaderedContentControl Header="Образ (имя, tag или digest)" Style="{DynamicResource Form.Field}" Visibility="{Binding IsImage, Converter={StaticResource Visible}}">
+                            <TextBox Text="{Binding ImageReference, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Образ компонента" Tag="source" x:Name="SourceInput" />
+                        </HeaderedContentControl>
                         <StackPanel Visibility="{Binding IsBuild, Converter={StaticResource Visible}}">
-                            <Label Content="Папка исходников" />
+                            <HeaderedContentControl Header="Папка исходников" Style="{DynamicResource Form.Field}">
                             <DockPanel>
-                                <Button DockPanel.Dock="Right" Content="Выбрать…" Command="{Binding ChooseSourceFolderCommand}" IsEnabled="{Binding CanChooseFolder}" Margin="8,0,0,0" />
+                                <Button DockPanel.Dock="Right" Content="Выбрать…" Command="{Binding ChooseSourceFolderCommand}" IsEnabled="{Binding CanChooseFolder}" Margin="{DynamicResource Margin.ScrollbarVertical}" />
                                 <TextBox x:Name="FolderInput" Text="{Binding LocalFolder, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Папка исходников" />
                             </DockPanel>
+                            </HeaderedContentControl>
                             <TextBlock Text="{Binding FolderError}" Style="{DynamicResource Text.Optional}" Foreground="{DynamicResource Brush.ErrorForeground}" TextWrapping="Wrap" />
-                            <Label Content="Подкаталог контекста" />
-                            <TextBox Text="{Binding ContextSubdirectory, UpdateSourceTrigger=PropertyChanged}" />
-                            <Label Content="Dockerfile относительно контекста" />
-                            <TextBox Text="{Binding Dockerfile, UpdateSourceTrigger=PropertyChanged}" />
-                            <Label Content="Build arguments: JSON map строк" />
-                            <TextBox Text="{Binding BuildArguments, UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True" MinHeight="56" />
-                            <Label Content="Build secrets: JSON map secret:// ссылок" />
-                            <TextBox Text="{Binding BuildSecrets, UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True" MinHeight="56" />
+                            <HeaderedContentControl Header="Подкаталог контекста" Style="{DynamicResource Form.Field}">
+                                <TextBox Text="{Binding ContextSubdirectory, UpdateSourceTrigger=PropertyChanged}" />
+                            </HeaderedContentControl>
+                            <HeaderedContentControl Header="Dockerfile относительно контекста" Style="{DynamicResource Form.Field}">
+                                <TextBox Text="{Binding Dockerfile, UpdateSourceTrigger=PropertyChanged}" />
+                            </HeaderedContentControl>
+                            <HeaderedContentControl Header="Build arguments: JSON map строк" Style="{DynamicResource Form.Field}">
+                                <TextBox Text="{Binding BuildArguments, UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True" MinHeight="{DynamicResource Size.MultilineInput}" />
+                            </HeaderedContentControl>
+                            <HeaderedContentControl Header="Build secrets: JSON map secret:// ссылок" Style="{DynamicResource Form.Field}">
+                                <TextBox Text="{Binding BuildSecrets, UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True" MinHeight="{DynamicResource Size.MultilineInput}" />
+                            </HeaderedContentControl>
                         </StackPanel>
                     </StackPanel>
                 </TabItem>
                 <TabItem Header="Параметры" Visibility="{Binding HasParameters, Converter={StaticResource Visible}}">
-                    <StackPanel Margin="0,12">
+                    <StackPanel Margin="{DynamicResource Margin.SectionVertical}">
                         <TextBlock Text="Отметьте включённые параметры. Секретные значения задаются только ссылкой secret://UUID." TextWrapping="Wrap" Style="{DynamicResource Text.Metadata}" />
-                        <DataGrid ItemsSource="{Binding Parameters}" AutoGenerateColumns="False" Margin="0,8" MinHeight="100" Tag="parameters" x:Name="ParametersTable" AutomationProperties.Name="Параметры компонента">
+                        <DataGrid ItemsSource="{Binding Parameters}" AutoGenerateColumns="False" Margin="{DynamicResource Margin.Block}" MinHeight="100" Tag="parameters" x:Name="ParametersTable" AutomationProperties.Name="Параметры компонента">
                             <DataGrid.Columns>
-                                <DataGridCheckBoxColumn Header="Вкл." Binding="{Binding Included, UpdateSourceTrigger=PropertyChanged}" Width="48" />
-                                <DataGridTextColumn Header="Имя" Binding="{Binding Key}" IsReadOnly="True" Width="120" />
-                                <DataGridTextColumn Header="Тип" Binding="{Binding TypeHint}" IsReadOnly="True" Width="70" />
-                                <DataGridTextColumn Header="Значение / ссылка" Binding="{Binding Text, UpdateSourceTrigger=PropertyChanged}" Width="*" />
-                                <DataGridCheckBoxColumn Header="Secret ref" Binding="{Binding UseSecret, UpdateSourceTrigger=PropertyChanged}" Width="80" />
+                                <DataGridCheckBoxColumn Header="Вкл." Binding="{Binding Included, UpdateSourceTrigger=PropertyChanged}" Width="48" ElementStyle="{StaticResource CheckBox.TableDisplay}" EditingElementStyle="{StaticResource CheckBox.Table}" />
+                                <DataGridTextColumn Header="Имя" Binding="{Binding Key}" IsReadOnly="True" Width="120" ElementStyle="{StaticResource Text.Table}" EditingElementStyle="{StaticResource Input.Table}" />
+                                <DataGridTextColumn Header="Тип" Binding="{Binding TypeHint}" IsReadOnly="True" Width="70" ElementStyle="{StaticResource Text.Table}" EditingElementStyle="{StaticResource Input.Table}" />
+                                <DataGridTextColumn Header="Значение / ссылка" Binding="{Binding Text, UpdateSourceTrigger=PropertyChanged}" Width="*" ElementStyle="{StaticResource Text.Table}" EditingElementStyle="{StaticResource Input.Table}" />
+                                <DataGridCheckBoxColumn Header="Secret ref" Binding="{Binding UseSecret, UpdateSourceTrigger=PropertyChanged}" Width="80" ElementStyle="{StaticResource CheckBox.TableDisplay}" EditingElementStyle="{StaticResource CheckBox.Table}" />
                             </DataGrid.Columns>
                         </DataGrid>
                     </StackPanel>
                 </TabItem>
                 <TabItem Header="Переменные">
-                    <StackPanel Margin="0,12">
+                    <StackPanel Margin="{DynamicResource Margin.SectionVertical}">
                         <StackPanel Visibility="{Binding CanRemove, Converter={StaticResource Visible}}">
                             <TextBlock Text="Имя этого сервиса внутри сети окружения" Style="{DynamicResource Text.Metadata}" />
                             <TextBox Text="{Binding NetworkHost, Mode=OneWay}" IsReadOnly="True" Margin="0,4,0,10" />
                         </StackPanel>
                         <Button Content="Добавить переменную" Command="{Binding AddVariableCommand}" HorizontalAlignment="Left" />
-                        <DataGrid ItemsSource="{Binding Variables}" AutoGenerateColumns="False" Margin="0,8" MinHeight="100" Tag="environment" x:Name="VariablesTable" AutomationProperties.Name="Переменные окружения">
+                        <DataGrid ItemsSource="{Binding Variables}" AutoGenerateColumns="False" Margin="{DynamicResource Margin.Block}" MinHeight="100" Tag="environment" x:Name="VariablesTable" AutomationProperties.Name="Переменные окружения">
                             <DataGrid.Columns>
-                                <DataGridTextColumn Header="Имя" Binding="{Binding Key, UpdateSourceTrigger=PropertyChanged}" Width="140" />
-                                <DataGridTextColumn Header="Значение / ссылка" Binding="{Binding Text, UpdateSourceTrigger=PropertyChanged}" Width="*" />
-                                <DataGridCheckBoxColumn Header="Secret ref" Binding="{Binding UseSecret, UpdateSourceTrigger=PropertyChanged}" Width="80" />
+                                <DataGridTextColumn Header="Имя" Binding="{Binding Key, UpdateSourceTrigger=PropertyChanged}" Width="140" ElementStyle="{StaticResource Text.Table}" EditingElementStyle="{StaticResource Input.Table}" />
+                                <DataGridTextColumn Header="Значение / ссылка" Binding="{Binding Text, UpdateSourceTrigger=PropertyChanged}" Width="*" ElementStyle="{StaticResource Text.Table}" EditingElementStyle="{StaticResource Input.Table}" />
+                                <DataGridCheckBoxColumn Header="Secret ref" Binding="{Binding UseSecret, UpdateSourceTrigger=PropertyChanged}" Width="80" ElementStyle="{StaticResource CheckBox.TableDisplay}" EditingElementStyle="{StaticResource CheckBox.Table}" />
                                 <DataGridTemplateColumn Width="48">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
-                                            <Button Content="×" Command="{Binding DataContext.RemoveVariableCommand, RelativeSource={RelativeSource AncestorType=local:ComponentEditor}}" CommandParameter="{Binding}" AutomationProperties.Name="Удалить переменную" />
+                                            <Button Content="×" Style="{DynamicResource Button.Icon}" Command="{Binding DataContext.RemoveVariableCommand, RelativeSource={RelativeSource AncestorType=local:ComponentEditor}}" CommandParameter="{Binding}" AutomationProperties.Name="Удалить переменную" IsEnabled="{Binding DataContext.CanEdit, RelativeSource={RelativeSource AncestorType=local:ComponentEditor}}" />
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
@@ -88,21 +95,21 @@
                     </StackPanel>
                 </TabItem>
                 <TabItem Header="Порты">
-                    <StackPanel Margin="0,12">
+                    <StackPanel Margin="{DynamicResource Margin.SectionVertical}">
                         <TextBlock Text="loopback — только этот компьютер; network — явное открытие выбранного порта для сети. Пустой host port назначается Docker." TextWrapping="Wrap" Style="{DynamicResource Text.Metadata}" />
-                        <Button Content="Добавить порт" Command="{Binding AddPortCommand}" HorizontalAlignment="Left" Margin="0,8" />
+                        <Button Content="Добавить порт" Command="{Binding AddPortCommand}" HorizontalAlignment="Left" Margin="{DynamicResource Margin.Block}" />
                         <DataGrid ItemsSource="{Binding Ports}" AutoGenerateColumns="False" MinHeight="100" Tag="ports" x:Name="PortsTable" AutomationProperties.Name="Порты компонента">
                             <DataGrid.Columns>
-                                <DataGridTextColumn Header="ID" Binding="{Binding Id, UpdateSourceTrigger=PropertyChanged}" Width="90" />
-                                <DataGridTextColumn Header="Container" Binding="{Binding ContainerPort, UpdateSourceTrigger=PropertyChanged}" Width="75" />
-                                <DataGridTextColumn Header="Host" Binding="{Binding HostPort, UpdateSourceTrigger=PropertyChanged}" Width="70" />
-                                <DataGridComboBoxColumn Header="Protocol" ItemsSource="{x:Static local:PortEditor.Protocols}" SelectedItemBinding="{Binding Protocol, UpdateSourceTrigger=PropertyChanged}" Width="75" />
-                                <DataGridComboBoxColumn Header="Доступ" ItemsSource="{x:Static local:PortEditor.AccessScopes}" SelectedItemBinding="{Binding Access, UpdateSourceTrigger=PropertyChanged}" Width="100" />
-                                <DataGridComboBoxColumn Header="Назначение" ItemsSource="{x:Static local:PortEditor.Purposes}" SelectedItemBinding="{Binding Purpose, UpdateSourceTrigger=PropertyChanged}" Width="110" />
+                                <DataGridTextColumn Header="ID" Binding="{Binding Id, UpdateSourceTrigger=PropertyChanged}" Width="90" ElementStyle="{StaticResource Text.Table}" EditingElementStyle="{StaticResource Input.Table}" />
+                                <DataGridTextColumn Header="Container" Binding="{Binding ContainerPort, UpdateSourceTrigger=PropertyChanged}" Width="75" ElementStyle="{StaticResource Text.Table}" EditingElementStyle="{StaticResource Input.Table}" />
+                                <DataGridTextColumn Header="Host" Binding="{Binding HostPort, UpdateSourceTrigger=PropertyChanged}" Width="70" ElementStyle="{StaticResource Text.Table}" EditingElementStyle="{StaticResource Input.Table}" />
+                                <DataGridComboBoxColumn Header="Protocol" ItemsSource="{x:Static local:PortEditor.Protocols}" SelectedItemBinding="{Binding Protocol, UpdateSourceTrigger=PropertyChanged}" Width="75" ElementStyle="{StaticResource Select.TableDisplay}" EditingElementStyle="{StaticResource Select.Table}" />
+                                <DataGridComboBoxColumn Header="Доступ" ItemsSource="{x:Static local:PortEditor.AccessScopes}" SelectedItemBinding="{Binding Access, UpdateSourceTrigger=PropertyChanged}" Width="100" ElementStyle="{StaticResource Select.TableDisplay}" EditingElementStyle="{StaticResource Select.Table}" />
+                                <DataGridComboBoxColumn Header="Назначение" ItemsSource="{x:Static local:PortEditor.Purposes}" SelectedItemBinding="{Binding Purpose, UpdateSourceTrigger=PropertyChanged}" Width="110" ElementStyle="{StaticResource Select.TableDisplay}" EditingElementStyle="{StaticResource Select.Table}" />
                                 <DataGridTemplateColumn Width="48">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
-                                            <Button Content="×" Command="{Binding DataContext.RemovePortCommand, RelativeSource={RelativeSource AncestorType=local:ComponentEditor}}" CommandParameter="{Binding}" AutomationProperties.Name="Удалить порт" />
+                                            <Button Content="×" Style="{DynamicResource Button.Icon}" Command="{Binding DataContext.RemovePortCommand, RelativeSource={RelativeSource AncestorType=local:ComponentEditor}}" CommandParameter="{Binding}" AutomationProperties.Name="Удалить порт" IsEnabled="{Binding DataContext.CanEdit, RelativeSource={RelativeSource AncestorType=local:ComponentEditor}}" />
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
@@ -111,19 +118,19 @@
                     </StackPanel>
                 </TabItem>
                 <TabItem Header="Хранилища">
-                    <StackPanel Margin="0,12">
+                    <StackPanel Margin="{DynamicResource Margin.SectionVertical}">
                         <TextBlock Text="managed — отдельный том; readOnlyInput — внешний вход только для чтения. Введите local-path:// ссылку для внешнего входа." TextWrapping="Wrap" Style="{DynamicResource Text.Metadata}" />
-                        <Button Content="Добавить хранилище" Command="{Binding AddStorageCommand}" HorizontalAlignment="Left" Margin="0,8" />
+                        <Button Content="Добавить хранилище" Command="{Binding AddStorageCommand}" HorizontalAlignment="Left" Margin="{DynamicResource Margin.Block}" />
                         <DataGrid ItemsSource="{Binding Storage}" AutoGenerateColumns="False" MinHeight="100" Tag="storage" x:Name="StorageTable" AutomationProperties.Name="Хранилища компонента">
                             <DataGrid.Columns>
-                                <DataGridTextColumn Header="ID" Binding="{Binding Id, UpdateSourceTrigger=PropertyChanged}" Width="80" />
-                                <DataGridComboBoxColumn Header="Тип" ItemsSource="{x:Static local:StorageEditor.Kinds}" SelectedItemBinding="{Binding Kind, UpdateSourceTrigger=PropertyChanged}" Width="120" />
-                                <DataGridTextColumn Header="Target path" Binding="{Binding TargetPath, UpdateSourceTrigger=PropertyChanged}" Width="*" />
-                                <DataGridTextColumn Header="Path ref" Binding="{Binding PathRef, UpdateSourceTrigger=PropertyChanged}" Width="*" />
+                                <DataGridTextColumn Header="ID" Binding="{Binding Id, UpdateSourceTrigger=PropertyChanged}" Width="80" ElementStyle="{StaticResource Text.Table}" EditingElementStyle="{StaticResource Input.Table}" />
+                                <DataGridComboBoxColumn Header="Тип" ItemsSource="{x:Static local:StorageEditor.Kinds}" SelectedItemBinding="{Binding Kind, UpdateSourceTrigger=PropertyChanged}" Width="120" ElementStyle="{StaticResource Select.TableDisplay}" EditingElementStyle="{StaticResource Select.Table}" />
+                                <DataGridTextColumn Header="Target path" Binding="{Binding TargetPath, UpdateSourceTrigger=PropertyChanged}" Width="*" ElementStyle="{StaticResource Text.Table}" EditingElementStyle="{StaticResource Input.Table}" />
+                                <DataGridTextColumn Header="Path ref" Binding="{Binding PathRef, UpdateSourceTrigger=PropertyChanged}" Width="*" ElementStyle="{StaticResource Text.Table}" EditingElementStyle="{StaticResource Input.Table}" />
                                 <DataGridTemplateColumn Width="48">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
-                                            <Button Content="×" Command="{Binding DataContext.RemoveStorageCommand, RelativeSource={RelativeSource AncestorType=local:ComponentEditor}}" CommandParameter="{Binding}" AutomationProperties.Name="Удалить хранилище" />
+                                            <Button Content="×" Style="{DynamicResource Button.Icon}" Command="{Binding DataContext.RemoveStorageCommand, RelativeSource={RelativeSource AncestorType=local:ComponentEditor}}" CommandParameter="{Binding}" AutomationProperties.Name="Удалить хранилище" IsEnabled="{Binding DataContext.CanEdit, RelativeSource={RelativeSource AncestorType=local:ComponentEditor}}" />
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>

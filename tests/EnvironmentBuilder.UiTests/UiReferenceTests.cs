@@ -21,15 +21,24 @@ internal static class UiReferenceTests
         Assert.True(fixture.Shell.Authoring!.List.LoadAsync(CancellationToken.None).IsCompletedSuccessfully);
         var window = new MainWindow(fixture.Shell) { Width = 1280, Height = 720, Left = 40, Top = 40, ShowInTaskbar = false };
         window.Show();
+        Assert.Equal(WindowStyle.SingleBorderWindow, window.WindowStyle);
+        Assert.Null(System.Windows.Shell.WindowChrome.GetWindowChrome(window));
+        Assert.DoesNotContain(Descendants(window).OfType<Button>(), button =>
+            button.Style == Application.Current.FindResource("Button.Navigation") &&
+            System.Windows.Automation.AutomationProperties.GetName(button) == "Compose preview");
         try
         {
-            foreach (var size in new[] { new Size(1280, 720), new Size(1672, 941) })
+            foreach (var size in new[] { new Size(1280, 720), new Size(1672, 941), new Size(960, 600) })
             {
                 window.Width = size.Width; window.Height = size.Height;
                 foreach (bool dark in new[] { false, true })
                 {
                     string suffix = $"-{size.Width}-" + (dark ? "dark" : "light");
                     fixture.Themes.Apply(dark);
+                    Layout(window);
+                    bool compact = size.Width < (double)Application.Current.FindResource("Breakpoint.Compact");
+                    var header = Descendants(window).OfType<PageHeader>().Single();
+                    Assert.Equal(compact, header.IsCompact);
                     VerifyContrast();
                     Assert.True(fixture.Shell.NavigateCommand.ExecuteAsync("environments").IsCompletedSuccessfully);
                     fixture.Shell.Authoring.List.SelectSaved(fixture.Store.Items[0].Id);
@@ -37,6 +46,12 @@ internal static class UiReferenceTests
                     Capture(window, "environments" + suffix);
                     var row = Descendants(window).OfType<EnvironmentRow>().First();
                     Assert.InRange(row.ActualHeight, 38, 56);
+                    var actions = Descendants(row).OfType<SpacedWrapPanel>().Single();
+                    Assert.All(actions.Children.OfType<Button>(), button =>
+                    {
+                        Rect bounds = button.TransformToAncestor(row).TransformBounds(new Rect(button.RenderSize));
+                        Assert.True(bounds.Top >= 0 && bounds.Bottom <= row.ActualHeight, "Row actions must fit on one line inside the row.");
+                    });
                     var selected = fixture.Shell.Authoring.List.SelectedItem!;
                     selected.IsExpanded = true; Layout(window); Capture(window, "environments-expanded" + suffix); selected.IsExpanded = false;
                     var rows = Descendants(window).OfType<ListBox>().Single(list => list.Name == "Rows");
@@ -53,6 +68,16 @@ internal static class UiReferenceTests
                     {
                         Assert.True(fixture.Shell.NavigateCommand.ExecuteAsync(route).IsCompletedSuccessfully);
                         Layout(window); Capture(window, route + suffix);
+                        if (route == "settings") { VerifyComponentTabs(window, suffix); }
+                        if (route == "seedpacks")
+                        {
+                            var page = Descendants(window).OfType<SeedPackLibraryPage>().Single();
+                            var pageScroll = Descendants(page).OfType<ScrollViewer>().First();
+                            pageScroll.ScrollToEnd(); Layout(window);
+                            Assert.Equal(pageScroll.ScrollableHeight, pageScroll.VerticalOffset);
+                            Capture(window, "seedpacks-bottom" + suffix);
+                            pageScroll.ScrollToHome();
+                        }
                     }
                     var savedPacks = fixture.Shell.SeedPacks;
                     var savedSettings = fixture.Shell.Settings;
@@ -72,12 +97,16 @@ internal static class UiReferenceTests
                     editor.AddComponentCommand.Execute(null);
                     Layout(window); Capture(window, "editor" + suffix);
                     var context = Descendants(window).OfType<ContextPanel>().Single();
+                    Assert.Equal(!compact, context.IsExpanded);
                     var input = Descendants(window).OfType<TextBox>().Single(text => text.Name == "NameInput");
+                    var footerAction = Descendants(window).OfType<Button>().Single(button => System.Windows.Automation.AutomationProperties.GetAutomationId(button) == "SaveAndStartEnvironment");
+                    Rect footerBounds = footerAction.TransformToAncestor(window).TransformBounds(new Rect(footerAction.RenderSize));
+                    Assert.True(footerBounds.Bottom < window.ActualHeight && footerBounds.Right < window.ActualWidth, "Footer actions must fit inside the compact window.");
                     Assert.True(input.TransformToAncestor(window).Transform(new Point(input.ActualWidth, 0)).X <= window.ActualWidth - context.ActualWidth,
                         "Editor fields must fit before the context panel; long names scroll inside the input.");
                     context.IsExpanded = false; Layout(window); Assert.Equal(48, context.ActualWidth);
                     Capture(window, "editor-context-collapsed" + suffix);
-                    context.IsExpanded = true;
+                    context.IsExpanded = size.Width >= (double)Application.Current.FindResource("Breakpoint.Compact");
                     Assert.True(editor.ShowPreviewCommand.ExecuteAsync(null).IsCompletedSuccessfully);
                     Layout(window); Capture(window, "compose" + suffix);
                     var preview = Assert.IsType<ComposePreviewViewModel>(fixture.Shell.Authoring.Current);
@@ -92,6 +121,35 @@ internal static class UiReferenceTests
             VerifyStates(fixture, window);
         }
         finally { window.Close(); }
+    }
+
+    private static void VerifyComponentTabs(Window window, string suffix)
+    {
+        var component = Descendants(window).OfType<ComponentEditor>().First();
+        var model = Assert.IsType<ComponentEditorViewModel>(component.DataContext);
+        if (model.Variables.Count == 0) { model.AddVariableCommand.Execute(null); }
+        if (model.Ports.Count == 0) { model.AddPortCommand.Execute(null); }
+        if (model.Storage.Count == 0) { model.AddStorageCommand.Execute(null); }
+        var tabs = Descendants(component).OfType<TabControl>().Single();
+        foreach (TabItem tab in tabs.Items.OfType<TabItem>().Where(tab => tab.Visibility == Visibility.Visible))
+        {
+            tab.IsSelected = true;
+            Layout(window);
+            tab.BringIntoView();
+            Layout(window);
+            if (tab.Content is FrameworkElement content)
+            {
+                content.BringIntoView();
+                Layout(window);
+            }
+            foreach (TextBox input in Descendants(component).OfType<TextBox>().Where(text => text.IsVisible && !text.AcceptsReturn && text.Text.Length > 0))
+            {
+                Rect glyph = input.GetRectFromCharacterIndex(0);
+                Assert.True(glyph.IsEmpty || glyph.Bottom <= input.ActualHeight, "Visible component input must retain its full line height.");
+            }
+            Capture(window, "settings-tab-" + tab.Header + suffix);
+        }
+        tabs.SelectedIndex = 0;
     }
 
     private static void VerifyStates(UiReferenceFixture fixture, Window window)

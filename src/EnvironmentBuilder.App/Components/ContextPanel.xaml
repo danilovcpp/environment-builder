@@ -34,7 +34,7 @@
             <ContentControl Content="{Binding Detail, ElementName=Root}" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" />
             <ScrollViewer VerticalScrollBarVisibility="Auto">
                 <ScrollViewer.Style>
-                    <Style TargetType="ScrollViewer">
+                    <Style TargetType="ScrollViewer" BasedOn="{StaticResource {x:Type ScrollViewer}}">
                         <Setter Property="Visibility" Value="Collapsed" />
                         <Style.Triggers>
                             <DataTrigger Binding="{Binding Detail, ElementName=Root}" Value="{x:Null}">
@@ -46,9 +46,9 @@
                 <StackPanel>
                     <Border Style="{DynamicResource Panel.Card}" Padding="0">
                         <DockPanel>
-                            <Border DockPanel.Dock="Top" Style="{DynamicResource Reference.Heading}">
+                            <Border DockPanel.Dock="Top" Style="{DynamicResource Panel.Heading}">
                                 <StackPanel Orientation="Horizontal">
-                                    <icons:PackIconLucide Kind="FileText" Style="{DynamicResource Reference.Icon}" />
+                                    <icons:PackIconLucide Kind="FileText" Style="{DynamicResource Icon.Section}" />
                                     <TextBlock Text="{Binding Heading, ElementName=Root}" Style="{DynamicResource Text.GroupTitle}" />
                                 </StackPanel>
                             </Border>
@@ -57,10 +57,10 @@
                             </StackPanel>
                         </DockPanel>
                     </Border>
-                    <Border Style="{DynamicResource Panel.Card}" Padding="16" Margin="0,12,0,0">
+                    <Border Style="{DynamicResource Panel.Card}" Padding="{DynamicResource Padding.Panel}" Margin="0,12,0,0">
                         <StackPanel>
-                            <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
-                                <icons:PackIconLucide Kind="CircleCheck" Style="{DynamicResource Reference.Icon}" Foreground="{DynamicResource Brush.SuccessForeground}" />
+                            <StackPanel Orientation="Horizontal" Margin="{DynamicResource Margin.Field}">
+                                <icons:PackIconLucide Kind="CircleCheck" Style="{DynamicResource Icon.Section}" Foreground="{DynamicResource Brush.SuccessForeground}" />
                                 <TextBlock Text="Проверьте перед сохранением" FontWeight="SemiBold" VerticalAlignment="Center" />
                             </StackPanel>
                             <TextBlock Text="{Binding SupportingText, ElementName=Root}" Style="{DynamicResource Text.Optional}" Focusable="True" />

@@ -15,13 +15,13 @@ public partial class EnvironmentEditorPage : UserControl
     private void CatalogSizeChanged(object sender, SizeChangedEventArgs e)
     {
         if (TargetCatalog is null || InfrastructureCatalog is null) { return; }
-        bool stacked = CatalogGrid.ActualWidth < 920;
+        bool stacked = CatalogGrid.ActualWidth < (double)FindResource("Breakpoint.CatalogColumns");
         Grid.SetColumnSpan(TargetCatalog, stacked ? 2 : 1);
         Grid.SetColumn(InfrastructureCatalog, stacked ? 0 : 1);
         Grid.SetRow(InfrastructureCatalog, stacked ? 1 : 0);
         Grid.SetColumnSpan(InfrastructureCatalog, stacked ? 2 : 1);
-        TargetCatalog.Margin = stacked ? new Thickness(0, 0, 0, 12) : new Thickness(0, 0, 6, 0);
-        InfrastructureCatalog.Margin = stacked ? new Thickness(0) : new Thickness(6, 0, 0, 0);
+        TargetCatalog.Margin = (Thickness)FindResource(stacked ? "Margin.Field" : "Margin.ColumnFirst");
+        InfrastructureCatalog.Margin = stacked ? new Thickness(0) : (Thickness)FindResource("Margin.ColumnSecond");
     }
     private void PageLoaded(object sender, RoutedEventArgs e)
     {

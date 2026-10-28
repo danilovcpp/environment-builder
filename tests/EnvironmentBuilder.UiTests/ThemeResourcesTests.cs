@@ -132,6 +132,8 @@ public sealed class ThemeResourcesTests
 
             Assert.Empty(diagnostics.Errors);
             window.Close();
+            ControlVisualRegressionTests.Verify();
+            ActiveControlStatesTests.Verify();
             UiReferenceTests.Verify();
             VerifyShell(diagnostics);
             VerifyAuthoring(diagnostics);
@@ -420,7 +422,7 @@ public sealed class ThemeResourcesTests
             // Load the production dictionaries without executing App.OnStartup against a user's data.
             Resources.MergedDictionaries.Add(new Wpf.Ui.Markup.ThemesDictionary { Theme = ApplicationTheme.Light });
             Resources.MergedDictionaries.Add(new Wpf.Ui.Markup.ControlsDictionary());
-            foreach (string name in new[] { "Light", "Typography", "Components", "Reference" })
+            foreach (string name in new[] { "Light", "Tokens", "Typography", "Components", "Surfaces" })
             { Resources.MergedDictionaries.Add(new ResourceDictionary { Source = new Uri($"pack://application:,,,/EnvironmentBuilder.App;component/Themes/{name}.xaml") }); }
         }
     }

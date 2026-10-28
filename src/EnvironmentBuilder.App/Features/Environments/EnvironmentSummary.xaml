@@ -7,16 +7,16 @@
         </Grid.RowDefinitions>
         <Border Style="{DynamicResource Panel.Card}" Padding="0">
             <DockPanel>
-                <Border DockPanel.Dock="Top" Style="{DynamicResource Reference.Heading}">
+                <Border DockPanel.Dock="Top" Style="{DynamicResource Panel.Heading}">
                     <StackPanel Orientation="Horizontal">
-                        <icons:PackIconLucide Kind="FileText" Style="{DynamicResource Reference.Icon}" />
+                        <icons:PackIconLucide Kind="FileText" Style="{DynamicResource Icon.Section}" />
                         <TextBlock Text="Сводка конфигурации" Style="{DynamicResource Text.GroupTitle}" />
                     </StackPanel>
                 </Border>
                 <StackPanel Margin="16">
-                    <DockPanel Margin="0,0,0,16">
-                        <Border DockPanel.Dock="Right" Style="{DynamicResource Reference.Badge}" CornerRadius="3" Padding="6,3" Margin="12,0,0,0">
-                            <TextBlock FontSize="9">
+                    <DockPanel Margin="{DynamicResource Margin.Section}">
+                        <Border DockPanel.Dock="Right" Style="{DynamicResource Badge.Info}" CornerRadius="{DynamicResource Radius.Small}" Padding="6,3" Margin="12,0,0,0">
+                            <TextBlock FontSize="{DynamicResource FontSize.Caption}">
                                 <TextBlock.Style>
                                     <Style TargetType="TextBlock">
                                         <Setter Property="Text" Value="ЧЕРНОВИК" />
@@ -29,70 +29,70 @@
                                 </TextBlock.Style>
                             </TextBlock>
                         </Border>
-                        <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="14" VerticalAlignment="Center" ToolTip="{Binding Name}" />
+                        <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="{DynamicResource FontSize.GroupTitle}" VerticalAlignment="Center" ToolTip="{Binding Name}" />
                     </DockPanel>
                     <DockPanel Margin="0,10">
                         <icons:PackIconLucide Kind="Box" Foreground="{DynamicResource Brush.IconMuted}" Width="17" Height="17" Margin="0,0,14,0" />
-                        <TextBlock DockPanel.Dock="Right" Text="{Binding ServiceCount}" FontSize="12" FontWeight="SemiBold" />
-                        <TextBlock Text="Сервисов выбрано" FontSize="12" Foreground="{DynamicResource Brush.TextSecondary}" />
+                        <TextBlock DockPanel.Dock="Right" Text="{Binding ServiceCount}" FontSize="{DynamicResource FontSize.Metadata}" FontWeight="SemiBold" />
+                        <TextBlock Text="Сервисов выбрано" FontSize="{DynamicResource FontSize.Metadata}" Foreground="{DynamicResource Brush.TextSecondary}" />
                     </DockPanel>
                     <DockPanel Margin="0,10">
                         <icons:PackIconLucide Kind="Database" Foreground="{DynamicResource Brush.IconMuted}" Width="17" Height="17" Margin="0,0,14,0" />
-                        <TextBlock DockPanel.Dock="Right" Text="{Binding InfrastructureCount}" FontSize="12" FontWeight="SemiBold" />
-                        <TextBlock Text="Инфраструктура" FontSize="12" Foreground="{DynamicResource Brush.TextSecondary}" />
+                        <TextBlock DockPanel.Dock="Right" Text="{Binding InfrastructureCount}" FontSize="{DynamicResource FontSize.Metadata}" FontWeight="SemiBold" />
+                        <TextBlock Text="Инфраструктура" FontSize="{DynamicResource FontSize.Metadata}" Foreground="{DynamicResource Brush.TextSecondary}" />
                     </DockPanel>
                     <DockPanel Margin="0,10">
                         <icons:PackIconLucide Kind="Layers" Foreground="{DynamicResource Brush.IconMuted}" Width="17" Height="17" Margin="0,0,14,0" />
-                        <TextBlock DockPanel.Dock="Right" Text="{Binding SeedStatus}" FontSize="12" FontWeight="SemiBold" />
-                        <TextBlock Text="Тестовые данные" FontSize="12" Foreground="{DynamicResource Brush.TextSecondary}" />
+                        <TextBlock DockPanel.Dock="Right" Text="{Binding SeedStatus}" FontSize="{DynamicResource FontSize.Metadata}" FontWeight="SemiBold" />
+                        <TextBlock Text="Тестовые данные" FontSize="{DynamicResource FontSize.Metadata}" Foreground="{DynamicResource Brush.TextSecondary}" />
                     </DockPanel>
                     <DockPanel Margin="0,10">
                         <icons:PackIconLucide Kind="Network" Foreground="{DynamicResource Brush.IconMuted}" Width="17" Height="17" Margin="0,0,14,0" />
-                        <TextBlock DockPanel.Dock="Right" Text="{Binding PublishedPortCount}" FontSize="12" FontWeight="SemiBold" />
-                        <TextBlock Text="Порты, будет занято" FontSize="12" Foreground="{DynamicResource Brush.TextSecondary}" />
+                        <TextBlock DockPanel.Dock="Right" Text="{Binding PublishedPortCount}" FontSize="{DynamicResource FontSize.Metadata}" FontWeight="SemiBold" />
+                        <TextBlock Text="Порты, будет занято" FontSize="{DynamicResource FontSize.Metadata}" Foreground="{DynamicResource Brush.TextSecondary}" />
                     </DockPanel>
                     <DockPanel Margin="0,10">
                         <icons:PackIconLucide Kind="HardDrive" Foreground="{DynamicResource Brush.IconMuted}" Width="17" Height="17" Margin="0,0,14,0" />
-                        <TextBlock DockPanel.Dock="Right" Text="—" FontSize="12" />
-                        <TextBlock Text="Размер образов (оценочно)" FontSize="12" Foreground="{DynamicResource Brush.TextSecondary}" />
+                        <TextBlock DockPanel.Dock="Right" Text="—" FontSize="{DynamicResource FontSize.Metadata}" />
+                        <TextBlock Text="Размер образов (оценочно)" FontSize="{DynamicResource FontSize.Metadata}" Foreground="{DynamicResource Brush.TextSecondary}" />
                     </DockPanel>
                     <Border BorderBrush="{DynamicResource Brush.Divider}" BorderThickness="0,1,0,0" Margin="0,14,0,0" Padding="0,14,0,0">
                         <StackPanel>
-                            <TextBlock Text="ID окружения" FontSize="11" FontWeight="SemiBold" Margin="0,0,0,6" />
-                            <TextBlock Text="{Binding Id}" FontSize="10" Foreground="{DynamicResource Brush.TextTertiary}" Focusable="True" />
+                            <TextBlock Text="ID окружения" FontSize="{DynamicResource FontSize.Small}" FontWeight="SemiBold" Margin="0,0,0,6" />
+                            <TextBlock Text="{Binding Id}" FontSize="{DynamicResource FontSize.Caption}" Foreground="{DynamicResource Brush.TextTertiary}" Focusable="True" />
                         </StackPanel>
                     </Border>
-                    <Border Background="{DynamicResource Brush.SuccessBackground}" BorderBrush="{DynamicResource Brush.Border}" BorderThickness="1" CornerRadius="5" Padding="10" Margin="0,18,0,0">
+                    <Border Background="{DynamicResource Brush.SuccessBackground}" BorderBrush="{DynamicResource Brush.Border}" BorderThickness="1" CornerRadius="{DynamicResource Radius.Small}" Padding="10" Margin="0,18,0,0">
                         <DockPanel>
                             <icons:PackIconLucide Kind="CircleCheck" Foreground="{DynamicResource Brush.SuccessForeground}" Width="22" Height="22" Margin="0,0,14,0" />
-                            <TextBlock Text="{Binding ConfigurationSummary}" FontSize="11" TextWrapping="Wrap" Foreground="{DynamicResource Brush.SuccessForeground}" />
+                            <TextBlock Text="{Binding ConfigurationSummary}" FontSize="{DynamicResource FontSize.Small}" TextWrapping="Wrap" Foreground="{DynamicResource Brush.SuccessForeground}" />
                         </DockPanel>
                     </Border>
                 </StackPanel>
             </DockPanel>
         </Border>
-        <Border Grid.Row="2" Style="{DynamicResource Panel.Card}" Padding="16">
+        <Border Grid.Row="2" Style="{DynamicResource Panel.Card}" Padding="{DynamicResource Padding.Panel}">
             <ScrollViewer VerticalScrollBarVisibility="Auto">
                 <StackPanel>
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,18">
                         <icons:PackIconLucide Kind="CircleAlert" Foreground="{DynamicResource Brush.WarningForeground}" Width="20" Height="20" Margin="0,0,14,0" />
-                        <TextBlock Text="Проверьте перед сохранением" FontWeight="SemiBold" FontSize="13" VerticalAlignment="Center" />
+                        <TextBlock Text="Проверьте перед сохранением" FontWeight="SemiBold" FontSize="{DynamicResource FontSize.Body}" VerticalAlignment="Center" />
                     </StackPanel>
                     <DockPanel Margin="0,10">
                         <icons:PackIconLucide Kind="CircleCheck" Foreground="{DynamicResource Brush.SuccessForeground}" Width="18" Height="18" Margin="0,0,14,0" />
-                        <TextBlock DockPanel.Dock="Right" Text="{Binding Errors.Count}" FontSize="11" />
-                        <TextBlock Text="Ошибок конфигурации" FontSize="11" TextWrapping="Wrap" />
+                        <TextBlock DockPanel.Dock="Right" Text="{Binding Errors.Count}" FontSize="{DynamicResource FontSize.Small}" />
+                        <TextBlock Text="Ошибок конфигурации" FontSize="{DynamicResource FontSize.Small}" TextWrapping="Wrap" />
                     </DockPanel>
                     <DockPanel Margin="0,10">
                         <icons:PackIconLucide Kind="CircleCheck" Foreground="{DynamicResource Brush.SuccessForeground}" Width="18" Height="18" Margin="0,0,14,0" />
-                        <TextBlock DockPanel.Dock="Right" Text="{Binding ReadinessIssues.Count}" FontSize="11" />
-                        <TextBlock Text="Замечания доступности" FontSize="11" TextWrapping="Wrap" />
+                        <TextBlock DockPanel.Dock="Right" Text="{Binding ReadinessIssues.Count}" FontSize="{DynamicResource FontSize.Small}" />
+                        <TextBlock Text="Замечания доступности" FontSize="{DynamicResource FontSize.Small}" TextWrapping="Wrap" />
                     </DockPanel>
                     <DockPanel Margin="0,10">
                         <icons:PackIconLucide Kind="CircleAlert" Foreground="{DynamicResource Brush.WarningForeground}" Width="18" Height="18" Margin="0,0,14,0" />
-                        <TextBlock Text="{Binding SeedStatus, StringFormat=Тестовые данные: {0}}" FontSize="11" TextWrapping="Wrap" />
+                        <TextBlock Text="{Binding SeedStatus, StringFormat=Тестовые данные: {0}}" FontSize="{DynamicResource FontSize.Small}" TextWrapping="Wrap" />
                     </DockPanel>
-                    <TextBlock Text="{Binding SaveDisabledReason}" Style="{DynamicResource Text.Optional}" Margin="0,16,0,0" FontSize="11" />
+                    <TextBlock Text="{Binding SaveDisabledReason}" Style="{DynamicResource Text.Optional}" Margin="0,16,0,0" FontSize="{DynamicResource FontSize.Small}" />
                 </StackPanel>
             </ScrollViewer>
         </Border>

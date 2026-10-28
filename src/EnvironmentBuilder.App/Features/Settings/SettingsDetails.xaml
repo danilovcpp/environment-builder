@@ -2,12 +2,13 @@
     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
         <StackPanel IsEnabled="{Binding CanConfigure}">
             <TextBlock Text="Настройки сервиса" Style="{DynamicResource Text.SectionTitle}" Margin="0,0,0,10" />
-            <TextBlock Text="Выберите сервис слева или добавьте новый. Для сборки из папки нужен Dockerfile; тип build доступен целевым сервисам." TextWrapping="Wrap" Style="{DynamicResource Text.Metadata}" Margin="0,0,0,12" />
+            <TextBlock Text="Выберите сервис слева или добавьте новый. Для сборки из папки нужен Dockerfile; тип build доступен целевым сервисам." TextWrapping="Wrap" Style="{DynamicResource Text.Metadata}" Margin="{DynamicResource Margin.Field}" />
             <StackPanel DataContext="{Binding SelectedDefinition}">
-                <Label Content="Имя сервиса" />
-                <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" MaxLength="256" AutomationProperties.AutomationId="ServiceDefinitionName" />
-                <TextBlock Text="{Binding Type}" Style="{DynamicResource Text.Metadata}" Margin="0,6,0,10" />
-                <CheckBox Content="Показывать при создании окружения" IsChecked="{Binding Enabled}" Margin="0,0,0,12" AutomationProperties.AutomationId="ServiceDefinitionEnabled" />
+                <HeaderedContentControl Header="Имя сервиса" Style="{DynamicResource Form.Field}">
+                    <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" MaxLength="256" AutomationProperties.AutomationId="ServiceDefinitionName" />
+                </HeaderedContentControl>
+                <TextBlock Text="{Binding Type}" Style="{DynamicResource Text.Metadata}" Margin="{DynamicResource Margin.Field}" />
+                <CheckBox Content="Показывать при создании окружения" IsChecked="{Binding Enabled}" Margin="{DynamicResource Margin.Field}" AutomationProperties.AutomationId="ServiceDefinitionEnabled" />
                 <environments:ComponentEditor DataContext="{Binding Editor}" />
             </StackPanel>
             <TextBlock Text="Здесь задаются значения по умолчанию. Env-переменные, порты и хранилища можно изменить отдельно для каждого окружения." TextWrapping="Wrap" Style="{DynamicResource Text.Metadata}" Margin="0,10,0,8" />

@@ -2,15 +2,16 @@
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="Visible" />
     </UserControl.Resources>
-    <DockPanel>
-        <UniformGrid DockPanel.Dock="Top" Columns="6" Margin="0,0,-10,12">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+    <DockPanel Style="{StaticResource Layout.PageCanvas}">
+        <UniformGrid DockPanel.Dock="Top" Columns="{DynamicResource Layout.RuntimeMetricColumns}" Margin="0,0,-10,12">
             <Border Style="{DynamicResource Panel.Card}" Padding="14,12" Margin="0,0,10,0">
                 <DockPanel>
                     <icons:PackIconLucide Kind="Box" Foreground="{DynamicResource Brush.Accent}" Width="26" Height="26" Margin="0,0,16,0" VerticalAlignment="Top" />
                     <StackPanel>
-                        <TextBlock Text="Сервисов" FontSize="12" Margin="0,0,0,6" />
-                        <TextBlock Text="{Binding RunningSummary}" FontWeight="SemiBold" FontSize="18" />
-                        <Border Background="{DynamicResource Brush.Divider}" CornerRadius="3" Height="5" Margin="0,10,0,0" />
+                        <TextBlock Text="Сервисов" FontSize="{DynamicResource FontSize.Metadata}" Margin="0,0,0,6" />
+                        <TextBlock Text="{Binding RunningSummary}" FontWeight="SemiBold" FontSize="{DynamicResource FontSize.Metric}" />
+                        <Border Background="{DynamicResource Brush.Divider}" CornerRadius="{DynamicResource Radius.Progress}" Height="5" Margin="0,10,0,0" />
                     </StackPanel>
                 </DockPanel>
             </Border>
@@ -18,9 +19,9 @@
                 <DockPanel>
                     <icons:PackIconLucide Kind="HeartPulse" Foreground="{DynamicResource Brush.Accent}" Width="26" Height="26" Margin="0,0,16,0" VerticalAlignment="Top" />
                     <StackPanel>
-                        <TextBlock Text="Health" FontSize="12" Margin="0,0,0,6" />
-                        <TextBlock Text="{Binding HealthSummary}" FontWeight="SemiBold" FontSize="18" />
-                        <Border Background="{DynamicResource Brush.Divider}" CornerRadius="3" Height="5" Margin="0,10,0,0" />
+                        <TextBlock Text="Health" FontSize="{DynamicResource FontSize.Metadata}" Margin="0,0,0,6" />
+                        <TextBlock Text="{Binding HealthSummary}" FontWeight="SemiBold" FontSize="{DynamicResource FontSize.Metric}" />
+                        <Border Background="{DynamicResource Brush.Divider}" CornerRadius="{DynamicResource Radius.Progress}" Height="5" Margin="0,10,0,0" />
                     </StackPanel>
                 </DockPanel>
             </Border>
@@ -28,9 +29,9 @@
                 <DockPanel>
                     <icons:PackIconLucide Kind="Cpu" Foreground="{DynamicResource Brush.Accent}" Width="26" Height="26" Margin="0,0,16,0" VerticalAlignment="Top" />
                     <StackPanel>
-                        <TextBlock Text="CPU" FontSize="12" Margin="0,0,0,6" />
-                        <TextBlock Text="{Binding CpuSummary}" FontWeight="SemiBold" FontSize="18" />
-                        <Border Background="{DynamicResource Brush.Divider}" CornerRadius="3" Height="5" Margin="0,10,0,0" />
+                        <TextBlock Text="CPU" FontSize="{DynamicResource FontSize.Metadata}" Margin="0,0,0,6" />
+                        <TextBlock Text="{Binding CpuSummary}" FontWeight="SemiBold" FontSize="{DynamicResource FontSize.Metric}" />
+                        <Border Background="{DynamicResource Brush.Divider}" CornerRadius="{DynamicResource Radius.Progress}" Height="5" Margin="0,10,0,0" />
                     </StackPanel>
                 </DockPanel>
             </Border>
@@ -38,9 +39,9 @@
                 <DockPanel>
                     <icons:PackIconLucide Kind="MemoryStick" Foreground="{DynamicResource Brush.Accent}" Width="26" Height="26" Margin="0,0,16,0" VerticalAlignment="Top" />
                     <StackPanel>
-                        <TextBlock Text="Память" FontSize="12" Margin="0,0,0,6" />
-                        <TextBlock Text="{Binding MemorySummary}" FontWeight="SemiBold" FontSize="18" />
-                        <Border Background="{DynamicResource Brush.Divider}" CornerRadius="3" Height="5" Margin="0,10,0,0" />
+                        <TextBlock Text="Память" FontSize="{DynamicResource FontSize.Metadata}" Margin="0,0,0,6" />
+                        <TextBlock Text="{Binding MemorySummary}" FontWeight="SemiBold" FontSize="{DynamicResource FontSize.Metric}" />
+                        <Border Background="{DynamicResource Brush.Divider}" CornerRadius="{DynamicResource Radius.Progress}" Height="5" Margin="0,10,0,0" />
                     </StackPanel>
                 </DockPanel>
             </Border>
@@ -48,9 +49,9 @@
                 <DockPanel>
                     <icons:PackIconLucide Kind="Clock" Foreground="{DynamicResource Brush.Accent}" Width="26" Height="26" Margin="0,0,16,0" VerticalAlignment="Top" />
                     <StackPanel>
-                        <TextBlock Text="Uptime" FontSize="12" Margin="0,0,0,6" />
-                        <TextBlock Text="—" FontWeight="SemiBold" FontSize="18" />
-                        <Border Background="{DynamicResource Brush.Divider}" CornerRadius="3" Height="5" Margin="0,10,0,0" />
+                        <TextBlock Text="Uptime" FontSize="{DynamicResource FontSize.Metadata}" Margin="0,0,0,6" />
+                        <TextBlock Text="—" FontWeight="SemiBold" FontSize="{DynamicResource FontSize.Metric}" />
+                        <Border Background="{DynamicResource Brush.Divider}" CornerRadius="{DynamicResource Radius.Progress}" Height="5" Margin="0,10,0,0" />
                     </StackPanel>
                 </DockPanel>
             </Border>
@@ -58,9 +59,9 @@
                 <DockPanel>
                     <icons:PackIconLucide Kind="Network" Foreground="{DynamicResource Brush.Accent}" Width="26" Height="26" Margin="0,0,16,0" VerticalAlignment="Top" />
                     <StackPanel>
-                        <TextBlock Text="Открытые порты" FontSize="12" Margin="0,0,0,6" />
-                        <TextBlock Text="{Binding PortCount}" FontWeight="SemiBold" FontSize="18" />
-                        <Border Background="{DynamicResource Brush.Divider}" CornerRadius="3" Height="5" Margin="0,10,0,0" />
+                        <TextBlock Text="Открытые порты" FontSize="{DynamicResource FontSize.Metadata}" Margin="0,0,0,6" />
+                        <TextBlock Text="{Binding PortCount}" FontWeight="SemiBold" FontSize="{DynamicResource FontSize.Metric}" />
+                        <Border Background="{DynamicResource Brush.Divider}" CornerRadius="{DynamicResource Radius.Progress}" Height="5" Margin="0,10,0,0" />
                     </StackPanel>
                 </DockPanel>
             </Border>
@@ -69,23 +70,23 @@
         <Expander DockPanel.Dock="Top" Header="Начальное наполнение: пакеты и результаты шагов" Margin="0,0,0,8">
           <StackPanel>
             <DataGrid ItemsSource="{Binding InitializationSteps}" AutoGenerateColumns="False" IsReadOnly="True" Height="140" EnableRowVirtualization="True">
-              <DataGrid.Columns><DataGridTextColumn Header="Экземпляр" Binding="{Binding ComponentId}" Width="*"/><DataGridTextColumn Header="Пакет / версия" Binding="{Binding Pack}" Width="2*"/><DataGridTextColumn Header="Шаг" Binding="{Binding Step}" Width="*"/><DataGridTextColumn Header="Результат" Binding="{Binding State}" Width="*"/><DataGridTextColumn Header="Попытка" Binding="{Binding Attempt}" Width="70"/></DataGrid.Columns>
+              <DataGrid.Columns><DataGridTextColumn Header="Экземпляр" Binding="{Binding ComponentId}" Width="*" ElementStyle="{StaticResource Text.Table}" EditingElementStyle="{StaticResource Input.Table}" /><DataGridTextColumn Header="Пакет / версия" Binding="{Binding Pack}" Width="2*" ElementStyle="{StaticResource Text.Table}" EditingElementStyle="{StaticResource Input.Table}" /><DataGridTextColumn Header="Шаг" Binding="{Binding Step}" Width="*" ElementStyle="{StaticResource Text.Table}" EditingElementStyle="{StaticResource Input.Table}" /><DataGridTextColumn Header="Результат" Binding="{Binding State}" Width="*" ElementStyle="{StaticResource Text.Table}" EditingElementStyle="{StaticResource Input.Table}" /><DataGridTextColumn Header="Попытка" Binding="{Binding Attempt}" Width="70" ElementStyle="{StaticResource Text.Table}" EditingElementStyle="{StaticResource Input.Table}" /></DataGrid.Columns>
             </DataGrid>
-            <DockPanel Margin="0,8">
-                <Button DockPanel.Dock="Right" Content="Решить результат…" Command="{Binding ResolveInitializationCommand}" Margin="8,0" AutomationProperties.AutomationId="ResolveUnknownInitialization"/>
+            <DockPanel Margin="{DynamicResource Margin.Block}">
+                <Button DockPanel.Dock="Right" Content="Решить результат…" Command="{Binding ResolveInitializationCommand}" Margin="{DynamicResource Margin.SearchContent}" AutomationProperties.AutomationId="ResolveUnknownInitialization" />
                 <ComboBox ItemsSource="{Binding InitializationIssues}" SelectedItem="{Binding SelectedInitializationIssue}" AutomationProperties.Name="Неоднозначный шаг наполнения">
-                    <ComboBox.ItemTemplate><DataTemplate><TextBlock><Run Text="{Binding Key.ComponentId}"/><Run Text=" · "/><Run Text="{Binding Key.StepId}"/><Run Text=" · "/><Run Text="{Binding State}"/></TextBlock></DataTemplate></ComboBox.ItemTemplate>
+                    <ComboBox.ItemTemplate><DataTemplate><TextBlock><Run Text="{Binding Key.ComponentId}" /><Run Text=" · " /><Run Text="{Binding Key.StepId}" /><Run Text=" · " /><Run Text="{Binding State}" /></TextBlock></DataTemplate></ComboBox.ItemTemplate>
                 </ComboBox>
             </DockPanel>
           </StackPanel>
         </Expander>
-        <DockPanel DockPanel.Dock="Bottom" Margin="0,8,0,0">
-            <TextBlock DockPanel.Dock="Right" Text="{Binding Status}" Style="{DynamicResource Text.Metadata}" FontSize="10" VerticalAlignment="Center" />
-            <StackPanel Orientation="Horizontal">
-                <Button Content="{x:Static local:EnvironmentCommands.ClearLabel}" Command="{Binding ClearDataCommand}" ToolTip="{Binding DataResetDisabledReason}" ToolTipService.ShowOnDisabled="True" AutomationProperties.AutomationId="ClearEnvironmentData" Style="{DynamicResource Button.Ghost}" FontSize="11" />
-                <Button Content="{x:Static local:EnvironmentCommands.RestoreLabel}" Command="{Binding RestoreBaselineCommand}" ToolTip="{Binding RestoreDisabledReason}" ToolTipService.ShowOnDisabled="True" AutomationProperties.AutomationId="RestoreEnvironmentBaseline" Style="{DynamicResource Button.Ghost}" FontSize="11" />
-                <Button Content="Отменить этапы" Command="{Binding CancelCommand}" AutomationProperties.AutomationId="CancelOperation" Style="{DynamicResource Button.Ghost}" FontSize="11" />
-            </StackPanel>
+        <DockPanel DockPanel.Dock="Bottom" Margin="{DynamicResource Margin.ScrollbarHorizontal}">
+            <TextBlock DockPanel.Dock="Right" Text="{Binding Status}" Style="{DynamicResource Text.Metadata}" FontSize="{DynamicResource FontSize.Caption}" VerticalAlignment="Center" />
+            <components:SpacedWrapPanel>
+                <Button Content="{x:Static local:EnvironmentCommands.ClearLabel}" Command="{Binding ClearDataCommand}" ToolTip="{Binding DataResetDisabledReason}" ToolTipService.ShowOnDisabled="True" AutomationProperties.AutomationId="ClearEnvironmentData" Style="{DynamicResource Button.Ghost}" FontSize="{DynamicResource FontSize.Small}" />
+                <Button Content="{x:Static local:EnvironmentCommands.RestoreLabel}" Command="{Binding RestoreBaselineCommand}" ToolTip="{Binding RestoreDisabledReason}" ToolTipService.ShowOnDisabled="True" AutomationProperties.AutomationId="RestoreEnvironmentBaseline" Style="{DynamicResource Button.Ghost}" FontSize="{DynamicResource FontSize.Small}" />
+                <Button Content="Отменить этапы" Command="{Binding CancelCommand}" AutomationProperties.AutomationId="CancelOperation" Style="{DynamicResource Button.Ghost}" FontSize="{DynamicResource FontSize.Small}" />
+            </components:SpacedWrapPanel>
         </DockPanel>
         <Grid>
             <Grid.RowDefinitions>
@@ -100,9 +101,9 @@
                 </Grid.ColumnDefinitions>
                 <Border Style="{DynamicResource Panel.Card}" Padding="0" Margin="0,0,12,0">
                     <DockPanel>
-                        <Border DockPanel.Dock="Top" Style="{DynamicResource Reference.Heading}">
+                        <Border DockPanel.Dock="Top" Style="{DynamicResource Panel.Heading}">
                             <StackPanel Orientation="Horizontal">
-                                <icons:PackIconLucide Kind="Box" Style="{DynamicResource Reference.Icon}" />
+                                <icons:PackIconLucide Kind="Box" Style="{DynamicResource Icon.Section}" />
                                 <TextBlock Text="Сервисы" Style="{DynamicResource Text.GroupTitle}" VerticalAlignment="Center" />
                             </StackPanel>
                         </Border>
@@ -120,7 +121,7 @@
                             </ComboBox>
                             <Button Grid.Column="2" Command="{Binding RefreshCommand}" AutomationProperties.AutomationId="RefreshObservation" AutomationProperties.Name="{x:Static local:EnvironmentCommands.ObservationLabel}">
                                 <StackPanel Orientation="Horizontal">
-                                    <icons:PackIconLucide Kind="RefreshCw" Width="16" Height="16" Margin="0,0,8,0" />
+                                    <icons:PackIconLucide Kind="RefreshCw" Width="16" Height="16" Margin="{DynamicResource Margin.Related}" />
                                     <TextBlock Text="Обновить" />
                                 </StackPanel>
                             </Button>
@@ -147,7 +148,7 @@
                                         <DataTemplate>
                                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                                 <icons:PackIconLucide Kind="{Binding Icon}" Foreground="{DynamicResource Brush.Accent}" Width="20" Height="20" Margin="0,0,14,0" />
-                                                <TextBlock Text="{Binding Name}" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                                <TextBlock Text="{Binding Name}" FontSize="{DynamicResource FontSize.Metadata}" FontWeight="SemiBold" VerticalAlignment="Center" />
                                             </StackPanel>
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
@@ -155,26 +156,26 @@
                                 <DataGridTemplateColumn Header="Тип" Width="1*">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
-                                            <Border Style="{DynamicResource Reference.Badge}" CornerRadius="3" Padding="6,2">
-                                                <TextBlock Text="{Binding Category}" FontSize="10" />
+                                            <Border Style="{DynamicResource Badge.Info}" CornerRadius="{DynamicResource Radius.Small}" Padding="6,2">
+                                                <TextBlock Text="{Binding Category}" FontSize="{DynamicResource FontSize.Caption}" />
                                             </Border>
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
-                                <DataGridTextColumn Header="Контейнер" Binding="{Binding Container}" Width="1.3*" />
-                                <DataGridTextColumn Header="Порты" Binding="{Binding Ports}" Width="0.7*" />
+                                <DataGridTextColumn Header="Контейнер" Binding="{Binding Container}" Width="1.3*" ElementStyle="{StaticResource Text.Table}" EditingElementStyle="{StaticResource Input.Table}" />
+                                <DataGridTextColumn Header="Порты" Binding="{Binding Ports}" Width="0.7*" ElementStyle="{StaticResource Text.Table}" EditingElementStyle="{StaticResource Input.Table}" />
                                 <DataGridTemplateColumn Header="Статус" Width="1*">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
-                                            <TextBlock Text="{Binding DisplayStatus}" FontSize="11" VerticalAlignment="Center" />
+                                            <TextBlock Text="{Binding DisplayStatus}" FontSize="{DynamicResource FontSize.Small}" VerticalAlignment="Center" />
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
                                 <DataGridTemplateColumn Header="Health" Width="1*">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
-                                            <Border Style="{DynamicResource Reference.Badge}" Background="{DynamicResource Brush.NeutralBackground}" TextElement.Foreground="{DynamicResource Brush.NeutralForeground}" CornerRadius="4" Padding="6,3">
-                                                <TextBlock Text="{Binding Health}" FontSize="11" />
+                                            <Border Style="{DynamicResource Badge.Info}" Background="{DynamicResource Brush.NeutralBackground}" TextElement.Foreground="{DynamicResource Brush.NeutralForeground}" CornerRadius="{DynamicResource Radius.Small}" Padding="6,3">
+                                                <TextBlock Text="{Binding Health}" FontSize="{DynamicResource FontSize.Small}" />
                                             </Border>
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
@@ -182,21 +183,21 @@
                                 <DataGridTemplateColumn Header="CPU / Память" Width="1.1*">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
-                                            <TextBlock Text="— / —" Style="{DynamicResource Text.Metadata}" FontSize="11" VerticalAlignment="Center" />
+                                            <TextBlock Text="— / —" Style="{DynamicResource Text.Metadata}" FontSize="{DynamicResource FontSize.Small}" VerticalAlignment="Center" />
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
                                 <DataGridTemplateColumn Header="Действия" Width="74">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
-                                            <StackPanel Orientation="Horizontal">
+                                            <components:SpacedWrapPanel>
                                                 <Button Style="{DynamicResource Button.Icon}" Command="{x:Static components:PlaceholderActions.Explain}">
                                                     <icons:PackIconLucide Kind="ExternalLink" Width="15" Height="15" Foreground="{DynamicResource Brush.Accent}" />
                                                 </Button>
                                                 <Button Style="{DynamicResource Button.Icon}" Command="{x:Static components:PlaceholderActions.Explain}">
                                                     <icons:PackIconLucide Kind="FileText" Width="15" Height="15" Foreground="{DynamicResource Brush.Accent}" />
                                                 </Button>
-                                            </StackPanel>
+                                            </components:SpacedWrapPanel>
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
@@ -206,9 +207,9 @@
                 </Border>
                 <Border Grid.Column="1" Style="{DynamicResource Panel.Card}" Padding="0">
                     <DockPanel>
-                        <Border DockPanel.Dock="Top" Style="{DynamicResource Reference.Heading}">
+                        <Border DockPanel.Dock="Top" Style="{DynamicResource Panel.Heading}">
                             <StackPanel Orientation="Horizontal">
-                                <icons:PackIconLucide Kind="FileText" Style="{DynamicResource Reference.Icon}" />
+                                <icons:PackIconLucide Kind="FileText" Style="{DynamicResource Icon.Section}" />
                                 <TextBlock Text="Сводка окружения" Style="{DynamicResource Text.GroupTitle}" VerticalAlignment="Center" />
                             </StackPanel>
                         </Border>
@@ -221,8 +222,8 @@
                                         <ColumnDefinition Width="1.1*" />
                                     </Grid.ColumnDefinitions>
                                     <icons:PackIconLucide Kind="Box" Width="15" Height="15" Foreground="{DynamicResource Brush.IconMuted}" />
-                                    <TextBlock Grid.Column="1" Text="Название" Style="{DynamicResource Text.Metadata}" FontSize="11" />
-                                    <TextBlock Grid.Column="2" Text="{Binding Name}" FontSize="12" TextWrapping="Wrap" />
+                                    <TextBlock Grid.Column="1" Text="Название" Style="{DynamicResource Text.Metadata}" FontSize="{DynamicResource FontSize.Small}" />
+                                    <TextBlock Grid.Column="2" Text="{Binding Name}" FontSize="{DynamicResource FontSize.Metadata}" TextWrapping="Wrap" />
                                 </Grid>
                                 <Grid Margin="0,5">
                                     <Grid.ColumnDefinitions>
@@ -231,8 +232,8 @@
                                         <ColumnDefinition Width="1.1*" />
                                     </Grid.ColumnDefinitions>
                                     <icons:PackIconLucide Kind="Layers" Width="15" Height="15" Foreground="{DynamicResource Brush.IconMuted}" />
-                                    <TextBlock Grid.Column="1" Text="Профиль" Style="{DynamicResource Text.Metadata}" FontSize="11" />
-                                    <TextBlock Grid.Column="2" Text="Локальное окружение" FontSize="12" TextWrapping="Wrap" />
+                                    <TextBlock Grid.Column="1" Text="Профиль" Style="{DynamicResource Text.Metadata}" FontSize="{DynamicResource FontSize.Small}" />
+                                    <TextBlock Grid.Column="2" Text="Локальное окружение" FontSize="{DynamicResource FontSize.Metadata}" TextWrapping="Wrap" />
                                 </Grid>
                                 <Grid Margin="0,5">
                                     <Grid.ColumnDefinitions>
@@ -241,8 +242,8 @@
                                         <ColumnDefinition Width="1.1*" />
                                     </Grid.ColumnDefinitions>
                                     <icons:PackIconLucide Kind="Monitor" Width="15" Height="15" Foreground="{DynamicResource Brush.IconMuted}" />
-                                    <TextBlock Grid.Column="1" Text="Запуск" Style="{DynamicResource Text.Metadata}" FontSize="11" />
-                                    <TextBlock Grid.Column="2" Text="Локально" FontSize="12" TextWrapping="Wrap" />
+                                    <TextBlock Grid.Column="1" Text="Запуск" Style="{DynamicResource Text.Metadata}" FontSize="{DynamicResource FontSize.Small}" />
+                                    <TextBlock Grid.Column="2" Text="Локально" FontSize="{DynamicResource FontSize.Metadata}" TextWrapping="Wrap" />
                                 </Grid>
                                 <Grid Margin="0,5">
                                     <Grid.ColumnDefinitions>
@@ -251,8 +252,8 @@
                                         <ColumnDefinition Width="1.1*" />
                                     </Grid.ColumnDefinitions>
                                     <icons:PackIconLucide Kind="Container" Width="15" Height="15" Foreground="{DynamicResource Brush.IconMuted}" />
-                                    <TextBlock Grid.Column="1" Text="Docker Engine" Style="{DynamicResource Text.Metadata}" FontSize="11" />
-                                    <TextBlock Grid.Column="2" Text="Не проверен" FontSize="12" TextWrapping="Wrap" />
+                                    <TextBlock Grid.Column="1" Text="Docker Engine" Style="{DynamicResource Text.Metadata}" FontSize="{DynamicResource FontSize.Small}" />
+                                    <TextBlock Grid.Column="2" Text="Не проверен" FontSize="{DynamicResource FontSize.Metadata}" TextWrapping="Wrap" />
                                 </Grid>
                                 <Grid Margin="0,5">
                                     <Grid.ColumnDefinitions>
@@ -261,10 +262,10 @@
                                         <ColumnDefinition Width="1.1*" />
                                     </Grid.ColumnDefinitions>
                                     <icons:PackIconLucide Kind="Network" Width="15" Height="15" Foreground="{DynamicResource Brush.IconMuted}" />
-                                    <TextBlock Grid.Column="1" Text="Открытые порты" Style="{DynamicResource Text.Metadata}" FontSize="11" />
-                                    <TextBlock Grid.Column="2" Text="{Binding PortCount}" FontSize="12" TextWrapping="Wrap" />
+                                    <TextBlock Grid.Column="1" Text="Открытые порты" Style="{DynamicResource Text.Metadata}" FontSize="{DynamicResource FontSize.Small}" />
+                                    <TextBlock Grid.Column="2" Text="{Binding PortCount}" FontSize="{DynamicResource FontSize.Metadata}" TextWrapping="Wrap" />
                                 </Grid>
-                                <TextBlock Text="{Binding QuiescenceStatus}" TextWrapping="Wrap" Style="{DynamicResource Text.Metadata}" FontSize="11" Margin="0,12,0,8" />
+                                <TextBlock Text="{Binding QuiescenceStatus}" TextWrapping="Wrap" Style="{DynamicResource Text.Metadata}" FontSize="{DynamicResource FontSize.Small}" Margin="0,12,0,8" />
                                 <components:OperationProgress />
                             </StackPanel>
                         </ScrollViewer>
@@ -279,9 +280,9 @@
                 </Grid.ColumnDefinitions>
                 <Border Style="{DynamicResource Panel.Card}" Padding="0" Margin="0,0,12,0">
                     <DockPanel>
-                        <Border DockPanel.Dock="Top" Style="{DynamicResource Reference.Heading}">
+                        <Border DockPanel.Dock="Top" Style="{DynamicResource Panel.Heading}">
                             <StackPanel Orientation="Horizontal">
-                                <icons:PackIconLucide Kind="FileText" Style="{DynamicResource Reference.Icon}" />
+                                <icons:PackIconLucide Kind="FileText" Style="{DynamicResource Icon.Section}" />
                                 <TextBlock Text="Логи" Style="{DynamicResource Text.GroupTitle}" VerticalAlignment="Center" />
                             </StackPanel>
                         </Border>
@@ -289,31 +290,31 @@
                             <TabItem Header="Все">
                                 <DockPanel Margin="12,6,12,10">
                                     <DockPanel DockPanel.Dock="Top" Margin="0,0,0,6">
-                                        <CheckBox Content="Приостановить" IsChecked="{Binding LogsPaused}" FontSize="11" VerticalAlignment="Center" />
-                                        <TextBlock Text="{Binding LogStatus}" Style="{DynamicResource Text.Metadata}" FontSize="10" Margin="12,0,0,0" />
+                                        <CheckBox Content="Приостановить" IsChecked="{Binding LogsPaused}" FontSize="{DynamicResource FontSize.Small}" VerticalAlignment="Center" />
+                                        <TextBlock Text="{Binding LogStatus}" Style="{DynamicResource Text.Metadata}" FontSize="{DynamicResource FontSize.Caption}" Margin="12,0,0,0" />
                                     </DockPanel>
-                                    <TextBox Text="{Binding Logs, Mode=OneWay}" IsReadOnly="True" AcceptsReturn="True" Background="#121C2C" Foreground="#C5D7E5" BorderThickness="0" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" FontFamily="Consolas" FontSize="11" Padding="10" AutomationProperties.AutomationId="InspectLogs" />
+                                    <TextBox Text="{Binding Logs, Mode=OneWay}" IsReadOnly="True" AcceptsReturn="True" Background="{DynamicResource Brush.LogBackground}" Foreground="{DynamicResource Brush.LogForeground}" BorderThickness="0" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" FontFamily="{DynamicResource Font.Code}" FontSize="{DynamicResource FontSize.Small}" Padding="10" AutomationProperties.AutomationId="InspectLogs" />
                                 </DockPanel>
                             </TabItem>
                             <TabItem Header="Метрики">
                                 <ScrollViewer VerticalScrollBarVisibility="Auto">
-                                    <StackPanel Margin="12">
+                                    <StackPanel Margin="{DynamicResource Margin.Content}">
                                         <TextBlock Text="{Binding Aggregate}" TextWrapping="Wrap" />
                                         <TextBlock Text="{Binding Measurements}" TextWrapping="Wrap" Margin="0,12,0,0" />
                                     </StackPanel>
                                 </ScrollViewer>
                             </TabItem>
                             <TabItem Header="Адреса">
-                                <TextBlock Text="{Binding Endpoints}" TextWrapping="Wrap" Margin="12" />
+                                <TextBlock Text="{Binding Endpoints}" TextWrapping="Wrap" Margin="{DynamicResource Margin.Content}" />
                             </TabItem>
                         </TabControl>
                     </DockPanel>
                 </Border>
                 <Border Grid.Column="1" Style="{DynamicResource Panel.Card}" Padding="0" Margin="0,0,12,0">
                     <DockPanel>
-                        <Border DockPanel.Dock="Top" Style="{DynamicResource Reference.Heading}">
+                        <Border DockPanel.Dock="Top" Style="{DynamicResource Panel.Heading}">
                             <StackPanel Orientation="Horizontal">
-                                <icons:PackIconLucide Kind="ChartColumn" Style="{DynamicResource Reference.Icon}" />
+                                <icons:PackIconLucide Kind="ChartColumn" Style="{DynamicResource Icon.Section}" />
                                 <TextBlock Text="Метрики и ресурсы" Style="{DynamicResource Text.GroupTitle}" VerticalAlignment="Center" />
                             </StackPanel>
                         </Border>
@@ -323,8 +324,8 @@
                                     <DockPanel>
                                         <icons:PackIconLucide Kind="Cpu" Foreground="{DynamicResource Brush.Accent}" Width="22" Height="22" Margin="0,0,14,0" />
                                         <StackPanel>
-                                            <TextBlock Text="CPU (все сервисы)" FontSize="11" />
-                                            <TextBlock Text="{Binding CpuSummary}" FontSize="15" FontWeight="SemiBold" Margin="0,6,0,0" />
+                                            <TextBlock Text="CPU (все сервисы)" FontSize="{DynamicResource FontSize.Small}" />
+                                            <TextBlock Text="{Binding CpuSummary}" FontSize="{DynamicResource FontSize.Value}" FontWeight="SemiBold" Margin="0,6,0,0" />
                                         </StackPanel>
                                     </DockPanel>
                                 </Border>
@@ -332,8 +333,8 @@
                                     <DockPanel>
                                         <icons:PackIconLucide Kind="MemoryStick" Foreground="{DynamicResource Brush.Accent}" Width="22" Height="22" Margin="0,0,14,0" />
                                         <StackPanel>
-                                            <TextBlock Text="Память (все сервисы)" FontSize="11" />
-                                            <TextBlock Text="{Binding MemorySummary}" FontSize="15" FontWeight="SemiBold" Margin="0,6,0,0" />
+                                            <TextBlock Text="Память (все сервисы)" FontSize="{DynamicResource FontSize.Small}" />
+                                            <TextBlock Text="{Binding MemorySummary}" FontSize="{DynamicResource FontSize.Value}" FontWeight="SemiBold" Margin="0,6,0,0" />
                                         </StackPanel>
                                     </DockPanel>
                                 </Border>
@@ -341,8 +342,8 @@
                                     <DockPanel>
                                         <icons:PackIconLucide Kind="Network" Foreground="{DynamicResource Brush.Accent}" Width="22" Height="22" Margin="0,0,14,0" />
                                         <StackPanel>
-                                            <TextBlock Text="Сеть (RX / TX)" FontSize="11" />
-                                            <TextBlock Text="— / —" FontSize="15" FontWeight="SemiBold" Margin="0,6,0,0" />
+                                            <TextBlock Text="Сеть (RX / TX)" FontSize="{DynamicResource FontSize.Small}" />
+                                            <TextBlock Text="— / —" FontSize="{DynamicResource FontSize.Value}" FontWeight="SemiBold" Margin="0,6,0,0" />
                                         </StackPanel>
                                     </DockPanel>
                                 </Border>
@@ -350,21 +351,21 @@
                                     <DockPanel>
                                         <icons:PackIconLucide Kind="HardDrive" Foreground="{DynamicResource Brush.Accent}" Width="22" Height="22" Margin="0,0,14,0" />
                                         <StackPanel>
-                                            <TextBlock Text="Диск I/O" FontSize="11" />
-                                            <TextBlock Text="— / —" FontSize="15" FontWeight="SemiBold" Margin="0,6,0,0" />
+                                            <TextBlock Text="Диск I/O" FontSize="{DynamicResource FontSize.Small}" />
+                                            <TextBlock Text="— / —" FontSize="{DynamicResource FontSize.Value}" FontWeight="SemiBold" Margin="0,6,0,0" />
                                         </StackPanel>
                                     </DockPanel>
                                 </Border>
-                                <TextBlock Text="{Binding Aggregate}" Style="{DynamicResource Text.Metadata}" FontSize="10" TextWrapping="Wrap" Margin="0,12,0,0" />
+                                <TextBlock Text="{Binding Aggregate}" Style="{DynamicResource Text.Metadata}" FontSize="{DynamicResource FontSize.Caption}" TextWrapping="Wrap" Margin="0,12,0,0" />
                             </StackPanel>
                         </ScrollViewer>
                     </DockPanel>
                 </Border>
                 <Border Grid.Column="2" Style="{DynamicResource Panel.Card}" Padding="0">
                     <DockPanel>
-                        <Border DockPanel.Dock="Top" Style="{DynamicResource Reference.Heading}">
+                        <Border DockPanel.Dock="Top" Style="{DynamicResource Panel.Heading}">
                             <StackPanel Orientation="Horizontal">
-                                <icons:PackIconLucide Kind="Link" Style="{DynamicResource Reference.Icon}" />
+                                <icons:PackIconLucide Kind="Link" Style="{DynamicResource Icon.Section}" />
                                 <TextBlock Text="Эндпоинты и доступ" Style="{DynamicResource Text.GroupTitle}" VerticalAlignment="Center" />
                             </StackPanel>
                         </Border>
@@ -372,9 +373,9 @@
                             <StackPanel Margin="14">
                                 <StackPanel Orientation="Horizontal" Margin="0,4,0,14">
                                     <icons:PackIconLucide Kind="Globe" Foreground="{DynamicResource Brush.Accent}" Width="22" Height="22" Margin="0,0,12,0" />
-                                    <TextBlock Text="Адреса выбранного сервиса" FontSize="11" TextWrapping="Wrap" />
+                                    <TextBlock Text="Адреса выбранного сервиса" FontSize="{DynamicResource FontSize.Small}" TextWrapping="Wrap" />
                                 </StackPanel>
-                                <TextBlock Text="{Binding Endpoints}" TextWrapping="Wrap" Foreground="{DynamicResource Brush.AccentText}" FontSize="12" Focusable="True" />
+                                <TextBlock Text="{Binding Endpoints}" TextWrapping="Wrap" Foreground="{DynamicResource Brush.AccentText}" FontSize="{DynamicResource FontSize.Metadata}" Focusable="True" />
                             </StackPanel>
                         </ScrollViewer>
                     </DockPanel>
@@ -382,4 +383,5 @@
             </Grid>
         </Grid>
     </DockPanel>
+    </ScrollViewer>
 </UserControl>

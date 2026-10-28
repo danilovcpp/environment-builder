@@ -5,9 +5,10 @@
                 <ui:ThemesDictionary Theme="Light" />
                 <ui:ControlsDictionary />
                 <ResourceDictionary Source="Themes/Light.xaml" />
+                <ResourceDictionary Source="Themes/Tokens.xaml" />
                 <ResourceDictionary Source="Themes/Typography.xaml" />
                 <ResourceDictionary Source="Themes/Components.xaml" />
-                <ResourceDictionary Source="Themes/Reference.xaml" />
+                <ResourceDictionary Source="Themes/Surfaces.xaml" />
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </Application.Resources>

@@ -7,12 +7,30 @@ public partial class MainWindow : Window
 {
     private bool closing;
     private bool approved;
+    private bool compactLayout;
+    private bool contextCollapsedForLayout;
     public MainWindow(ShellViewModel viewModel) { InitializeComponent(); DataContext = viewModel; Closing += OnClosing; }
     public Func<Task<bool>>? RequestClose { get; set; }
-    private void WindowSizeChanged(object sender, SizeChangedEventArgs e) => Resources["Size.ContextPanel"] = ActualWidth >= 1500 ? 448d : 320d;
-    private void MinimizeWindow(object sender, RoutedEventArgs e) => WindowState = WindowState.Minimized;
-    private void MaximizeWindow(object sender, RoutedEventArgs e) => WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
-    private void CloseWindow(object sender, RoutedEventArgs e) => Close();
+    private void WindowSizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        Resources["Size.ContextPanel"] = FindResource(ActualWidth >= (double)FindResource("Breakpoint.Wide")
+            ? "Size.ContextPanelWide" : "Size.ContextPanelRegular");
+        bool compact = ActualWidth < (double)FindResource("Breakpoint.Compact");
+        Resources["Layout.Compact"] = compact;
+        Resources["Layout.RuntimeMetricColumns"] = compact ? 3 : 6;
+        if (PageContext is null || compact == compactLayout) { return; }
+        if (compact)
+        {
+            contextCollapsedForLayout = PageContext.IsExpanded;
+            PageContext.IsExpanded = false;
+        }
+        else if (contextCollapsedForLayout)
+        {
+            PageContext.IsExpanded = true;
+            contextCollapsedForLayout = false;
+        }
+        compactLayout = compact;
+    }
     private async void OnClosing(object? sender, CancelEventArgs e)
     {
         if (approved || RequestClose is null) { return; }
