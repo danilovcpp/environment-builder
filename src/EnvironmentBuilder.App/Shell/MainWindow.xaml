@@ -139,25 +139,25 @@
                             </ContentControl.Resources>
                         </ContentControl>
                         <WrapPanel Visibility="{Binding ShowSeedPacks, Converter={StaticResource VisibleIfTrue}}">
-                            <Button Command="{x:Static components:PlaceholderActions.Explain}" Style="{DynamicResource Button.Primary}" Margin="0,0,8,0">
+                            <Button Command="{Binding SeedPacks.ImportCommand}" Style="{DynamicResource Button.Primary}" Margin="0,0,8,0">
                                 <StackPanel Orientation="Horizontal">
                                     <icons:PackIconLucide Kind="Upload" Margin="0,0,8,0" />
                                     <TextBlock Text="Загрузить пак" />
                                 </StackPanel>
                             </Button>
-                            <Button Style="{DynamicResource Reference.PreviewAction}" Margin="0,0,8,0">
+                            <Button IsEnabled="False" ToolTip="Пакеты создаются вне приложения и импортируются из ZIP" ToolTipService.ShowOnDisabled="True" Style="{DynamicResource Reference.PreviewAction}" Margin="0,0,8,0">
                                 <StackPanel Orientation="Horizontal">
                                     <icons:PackIconLucide Kind="Plus" Margin="0,0,8,0" />
                                     <TextBlock Text="Создать пак" />
                                 </StackPanel>
                             </Button>
-                            <Button Style="{DynamicResource Reference.PreviewAction}" Margin="0,0,8,0">
+                            <Button Command="{Binding SeedPacks.RemoveCommand}" Style="{DynamicResource Reference.PreviewAction}" Margin="0,0,8,0">
                                 <StackPanel Orientation="Horizontal">
                                     <icons:PackIconLucide Kind="Trash2" Margin="0,0,8,0" />
                                     <TextBlock Text="Удалить" />
                                 </StackPanel>
                             </Button>
-                            <Button Command="{x:Static components:PlaceholderActions.Explain}" Style="{DynamicResource Button.Primary}">
+                            <Button Command="{Binding SeedPacks.ApplyToEnvironmentCommand}" Style="{DynamicResource Button.Primary}">
                                 <StackPanel Orientation="Horizontal">
                                     <icons:PackIconLucide Kind="Play" Margin="0,0,8,0" />
                                     <TextBlock Text="Применить к окружению" />

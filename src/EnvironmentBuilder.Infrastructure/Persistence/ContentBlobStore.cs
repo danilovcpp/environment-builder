@@ -142,6 +142,13 @@ public sealed class ContentBlobStore(AppDataDirectory directory, SqliteWorker wo
     }
 
     internal string NewIndexPath() => directory.Child("staging", Guid.NewGuid().ToString("N") + ".index");
+    internal bool IsLeased(string hash) => leases.GetValueOrDefault(hash) > 0;
+    internal async Task<T> WithFileLockAsync<T>(Func<Task<T>> action, CancellationToken token)
+    {
+        await files.WaitAsync(token).ConfigureAwait(false);
+        try { return await action().ConfigureAwait(false); }
+        finally { files.Release(); }
+    }
     internal string PromoteIndex(string staging, string hash)
     {
         string target = directory.Child("blobs", hash + ".index");

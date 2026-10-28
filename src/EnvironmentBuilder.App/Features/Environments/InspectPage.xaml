@@ -66,6 +66,19 @@
             </Border>
         </UniformGrid>
         <TextBlock DockPanel.Dock="Top" Text="{Binding Error}" Style="{DynamicResource Text.Optional}" Foreground="{DynamicResource Brush.ErrorForeground}" />
+        <Expander DockPanel.Dock="Top" Header="Начальное наполнение: пакеты и результаты шагов" Margin="0,0,0,8">
+          <StackPanel>
+            <DataGrid ItemsSource="{Binding InitializationSteps}" AutoGenerateColumns="False" IsReadOnly="True" Height="140" EnableRowVirtualization="True">
+              <DataGrid.Columns><DataGridTextColumn Header="Экземпляр" Binding="{Binding ComponentId}" Width="*"/><DataGridTextColumn Header="Пакет / версия" Binding="{Binding Pack}" Width="2*"/><DataGridTextColumn Header="Шаг" Binding="{Binding Step}" Width="*"/><DataGridTextColumn Header="Результат" Binding="{Binding State}" Width="*"/><DataGridTextColumn Header="Попытка" Binding="{Binding Attempt}" Width="70"/></DataGrid.Columns>
+            </DataGrid>
+            <DockPanel Margin="0,8">
+                <Button DockPanel.Dock="Right" Content="Решить результат…" Command="{Binding ResolveInitializationCommand}" Margin="8,0" AutomationProperties.AutomationId="ResolveUnknownInitialization"/>
+                <ComboBox ItemsSource="{Binding InitializationIssues}" SelectedItem="{Binding SelectedInitializationIssue}" AutomationProperties.Name="Неоднозначный шаг наполнения">
+                    <ComboBox.ItemTemplate><DataTemplate><TextBlock><Run Text="{Binding Key.ComponentId}"/><Run Text=" · "/><Run Text="{Binding Key.StepId}"/><Run Text=" · "/><Run Text="{Binding State}"/></TextBlock></DataTemplate></ComboBox.ItemTemplate>
+                </ComboBox>
+            </DockPanel>
+          </StackPanel>
+        </Expander>
         <DockPanel DockPanel.Dock="Bottom" Margin="0,8,0,0">
             <TextBlock DockPanel.Dock="Right" Text="{Binding Status}" Style="{DynamicResource Text.Metadata}" FontSize="10" VerticalAlignment="Center" />
             <StackPanel Orientation="Horizontal">

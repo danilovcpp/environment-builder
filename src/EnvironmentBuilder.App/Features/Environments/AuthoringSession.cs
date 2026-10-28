@@ -50,6 +50,7 @@ public sealed class AuthoringSession : ObservableObject
     }
     public EnvironmentListViewModel List { get; }
     public EnvironmentEditorViewModel? Editor { get; private set; }
+    public Core.SeedPacks.SeedPackReference? PreferredSeedPack { get; set; }
     public object Current { get => current; private set => SetProperty(ref current, value); }
 
     public async Task<bool> CanLeaveAsync(CancellationToken cancellationToken)
@@ -124,6 +125,7 @@ public sealed class AuthoringSession : ObservableObject
         Current = Editor;
         navigation.Navigate(new NavigationAddress("editor", draft.IsPersisted ? draft.Snapshot.Id : null, draft.DraftId));
         await Editor.LoadLibraryAsync(CancellationToken.None);
+        if (PreferredSeedPack is { } preferred) { Editor.SelectedPackChoice = Editor.PackChoices.FirstOrDefault(p => p.Pack == preferred); }
     }
     private async Task ReturnToListAsync()
     {

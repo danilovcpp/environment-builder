@@ -1,16 +1,35 @@
 using CommunityToolkit.Mvvm.ComponentModel;
+using EnvironmentBuilder.App.Components;
 using EnvironmentBuilder.Core.Abstractions;
 using EnvironmentBuilder.Core.Environments;
 using EnvironmentBuilder.Core.Operations;
+using EnvironmentBuilder.Core.SeedPacks;
 
 namespace EnvironmentBuilder.App.Features.Environments;
 
 // Application-owned handles survive route changes. Observation and cancellation remain independent.
 public sealed class EnvironmentCommands(StartEnvironmentService start, OperationCoordinator coordinator, PreviewReviewStore reviews, IRuntimeInteractions interactions, StopEnvironmentService stop, EditEnvironmentService? edit = null,
     ClearEnvironmentDataService? clear = null, RefreshEnvironmentDataService? restore = null, IDestructiveInteractions? destructive = null,
-    IInputResolver? inputs = null, ISeedPackStore? packs = null, DeleteEnvironmentService? delete = null) : ObservableObject, IEnvironmentEditing
+    IInputResolver? inputs = null, ISeedPackStore? packs = null, DeleteEnvironmentService? delete = null,
+    ResolveUnknownInitializationService? resolution = null, IUnknownInitializationInteractions? unknown = null) : ObservableObject, IEnvironmentEditing
 {
     public const string ObservationLabel = "Обновить состояние";
+    public Task<IReadOnlyList<DataApplicationRecord>> ReadInitializationAsync(Guid environment, CancellationToken token) => resolution?.ReadRecordsAsync(environment, token) ?? Task.FromResult<IReadOnlyList<DataApplicationRecord>>([]);
+    public async Task<OperationHandle?> ResolveInitializationAsync(IsolatedEnvironment environment, DataApplicationRecord record, CancellationToken token)
+    {
+        if (resolution is null || unknown is null) { throw new InvalidOperationException("Initialization decisions are unavailable."); }
+        var decision = await unknown.DecideAsync(environment, record, token);
+        if (decision?.Decision is null) { return null; }
+        OperationHandle handle;
+        if (decision.Decision == InitializationDecision.Refresh)
+        {
+            if (restore is null || destructive is null) { throw new InvalidOperationException("Refresh is unavailable."); }
+            handle = restore.RefreshAfterUnknown(environment, destructive.ConfirmAsync);
+        }
+        else { handle = resolution.Resolve(environment, record, decision.Decision.Value, decision.IndependentlyVerified); }
+        handles[environment.Id] = handle;
+        return handle;
+    }
     public const string ClearLabel = "Очистить данные";
     public const string RestoreLabel = "Восстановить baseline (refresh данных)";
     public const string DeleteLabel = "Удалить окружение";

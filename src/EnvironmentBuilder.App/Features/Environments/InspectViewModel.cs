@@ -22,6 +22,7 @@ public sealed record InspectComponentRow(ComponentObservation Actual, string Nam
     public string Ports => Actual.Ports.Length == 0 ? "—" : string.Join(", ", Actual.Ports.Select(p => p.HostPort));
     public string Details => ComponentId + " · " + Actual.ContainerId + " · " + Actual.Reason + (Actual.ExitCode is null ? "" : " · exit " + Actual.ExitCode + " · OOM " + Actual.OomKilled);
 }
+public sealed record InitializationStatusRow(Guid ComponentId, string Pack, string Step, string State, int Attempt);
 
 public sealed partial class InspectViewModel(IEnvironmentObservationSource source, IInspectionStreamsFactory streams, EnvironmentCommands commands,
     Func<Action, CancellationToken, Task> apply) : ObservableObject, IAsyncDisposable
@@ -36,6 +37,9 @@ public sealed partial class InspectViewModel(IEnvironmentObservationSource sourc
     private string? baselineInputReason = "Входы baseline ещё не проверены.";
     private bool baselineChecked;
     public ObservableCollection<InspectComponentRow> Components { get; } = [];
+    public ObservableCollection<DataApplicationRecord> InitializationIssues { get; } = [];
+    public ObservableCollection<InitializationStatusRow> InitializationSteps { get; } = [];
+    [ObservableProperty, NotifyCanExecuteChangedFor(nameof(ResolveInitializationCommand))] private DataApplicationRecord? selectedInitializationIssue;
     [ObservableProperty] private InspectComponentRow? selectedComponent;
     [ObservableProperty] private string name = "";
     [ObservableProperty] private string status = "Runtime не проверен";
@@ -54,7 +58,7 @@ public sealed partial class InspectViewModel(IEnvironmentObservationSource sourc
     [ObservableProperty] private string error = "";
     [ObservableProperty] private bool logsPaused;
     [ObservableProperty]
-    [NotifyCanExecuteChangedFor(nameof(StartCommand), nameof(StopCommand), nameof(CancelCommand), nameof(ClearDataCommand), nameof(RestoreBaselineCommand))]
+    [NotifyCanExecuteChangedFor(nameof(StartCommand), nameof(StopCommand), nameof(CancelCommand), nameof(ClearDataCommand), nameof(RestoreBaselineCommand), nameof(ResolveInitializationCommand))]
     private bool isOperationActive;
     private const string GenerationRecovery = "Сохранность поколения данных не подтверждена. Остановите окружение, проверьте ресурсы и рассмотрите восстановление baseline с подтверждением плана потери данных.";
     public string StartDisabledReason => environment is null ? "Окружение не выбрано." : commands.DisabledReason(environment.Id) ?? (observation?.Components.Any(c => c.Reason == "data-generation-invalid") == true ? GenerationRecovery : "");
@@ -76,7 +80,7 @@ public sealed partial class InspectViewModel(IEnvironmentObservationSource sourc
         await CloseSessionAsync();
         environment = document; observation = null; sessionId = Guid.NewGuid(); Name = document.Name;
         baselineChecked = false; baselineInputReason = "Входы baseline ещё не проверены.";
-        SelectedComponent = null; Components.Clear(); Logs = ""; Endpoints = "Адреса не проверены"; Error = "";
+        SelectedComponent = null; Components.Clear(); InitializationIssues.Clear(); InitializationSteps.Clear(); SelectedInitializationIssue = null; Logs = ""; Endpoints = "Адреса не проверены"; Error = "";
         StartCommand.NotifyCanExecuteChanged(); StopCommand.NotifyCanExecuteChanged(); ClearDataCommand.NotifyCanExecuteChanged(); RestoreBaselineCommand.NotifyCanExecuteChanged(); OnPropertyChanged(nameof(DataResetDisabledReason)); OnPropertyChanged(nameof(StopDisabledReason)); OnPropertyChanged(nameof(QuiescenceStatus));
         cancellation = CancellationTokenSource.CreateLinkedTokenSource(token);
         session = streams.Create(document);
@@ -100,6 +104,7 @@ public sealed partial class InspectViewModel(IEnvironmentObservationSource sourc
         try
         {
             EnvironmentObservation next = await source.ReadAsync(document, id, observation, token).ConfigureAwait(false);
+            IReadOnlyList<DataApplicationRecord> initialization = await commands.ReadInitializationAsync(document.Id, token).ConfigureAwait(false);
             string? inputReason = baselineInputReason;
             if (!baselineChecked) { inputReason = await commands.CheckRestoreInputsAsync(document, token).ConfigureAwait(false); }
             Guid? selected = SelectedComponent?.ComponentId ?? next.Components.FirstOrDefault()?.ComponentId;
@@ -108,6 +113,21 @@ public sealed partial class InspectViewModel(IEnvironmentObservationSource sourc
             {
                 if (id != sessionId || token.IsCancellationRequested || next.EnvironmentId != document.Id || next.SessionId != id) { return; }
                 observation = next;
+                var selectedKey = SelectedInitializationIssue?.Key;
+                InitializationIssues.Clear(); foreach (var issue in initialization.Where(r => r.State is StepState.Unknown or StepState.Started or StepState.Failed)) { InitializationIssues.Add(issue); }
+                SelectedInitializationIssue = InitializationIssues.FirstOrDefault(i => i.Key == selectedKey) ?? InitializationIssues.FirstOrDefault();
+                InitializationSteps.Clear();
+                var states = initialization.ToDictionary(r => (r.Key.ComponentId, r.Key.ApplicationHash, r.Key.StepId));
+                foreach (var application in document.Baseline.Applications)
+                {
+                    string hash = CanonicalJson.Hash(application);
+                    string pack = application.SeedPack is null ? "Обязательная инициализация" : application.SeedPack.Id + " · " + application.SeedPack.Version;
+                    foreach (var step in application.Initializer.Steps)
+                    {
+                        states.TryGetValue((application.ComponentId, hash, step.Id), out var actualStep);
+                        InitializationSteps.Add(new(application.ComponentId, pack, step.Title, actualStep?.State.ToString() ?? "Не выполнялся", actualStep?.Attempt ?? 0));
+                    }
+                }
                 baselineInputReason = inputReason; baselineChecked = true; OnPropertyChanged(nameof(RestoreDisabledReason));
                 string freshness = next.Freshness == "current" ? "Актуальное состояние" : next.Freshness == "stale" ? "Данные устарели" : "Состояние неизвестно";
                 Status = $"{freshness} · проверено {next.CheckedAt.LocalDateTime:g} · последняя успешная проверка {next.LastSuccessfulAt?.LocalDateTime.ToString("g") ?? "неизвестна"}";
@@ -182,6 +202,19 @@ public sealed partial class InspectViewModel(IEnvironmentObservationSource sourc
         catch (Exception error) when (error is not OutOfMemoryException) { Error = "Остановка заблокирована. Обновите состояние и проверьте принадлежность контейнеров."; }
     }
     [RelayCommand(CanExecute = nameof(CanCancel))] private Task CancelAsync() => environment is null ? Task.CompletedTask : commands.CancelAsync(environment.Id, CancellationToken.None);
+    private bool CanResolveInitialization() => environment is not null && SelectedInitializationIssue is not null && !IsOperationActive;
+    [RelayCommand(CanExecute = nameof(CanResolveInitialization))]
+    private async Task ResolveInitializationAsync(CancellationToken token)
+    {
+        if (environment is null || SelectedInitializationIssue is null || IsOperationActive) { return; }
+        try
+        {
+            var handle = await commands.ResolveInitializationAsync(environment, SelectedInitializationIssue, token);
+            if (handle is not null) { OperationId = handle.Current.Id.ToString(); IsOperationActive = true; Progress = "Проверка актуальных ресурсов и запись явного решения…"; }
+        }
+        catch (OperationCanceledException) { }
+        catch (Exception error) when (error is not OutOfMemoryException) { Error = "Решение заблокировано. Проверьте состояние; для refresh сначала остановите окружение."; }
+    }
     [RelayCommand(CanExecute = nameof(CanReset))] private Task ClearDataAsync() => ResetAsync(false);
     [RelayCommand(CanExecute = nameof(CanRestore))] private Task RestoreBaselineAsync() => ResetAsync(true);
     private async Task ResetAsync(bool restore)

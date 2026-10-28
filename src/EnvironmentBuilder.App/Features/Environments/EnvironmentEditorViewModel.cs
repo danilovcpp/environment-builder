@@ -65,6 +65,8 @@ public sealed partial class EnvironmentEditorViewModel : ObservableObject
     public ObservableCollection<ValidationMessage> Errors { get; } = [];
     public ObservableCollection<ReadinessIssue> ReadinessIssues { get; } = [];
     public ObservableCollection<ComponentChoice> ComponentChoices { get; } = [];
+    public ObservableCollection<PackApplicationChoice> PackChoices { get; } = [];
+    [ObservableProperty] private PackApplicationChoice? selectedPackChoice;
     public ObservableCollection<DependencyChoice> UnresolvedDependencies { get; } = [];
     [ObservableProperty] private DefinitionChoice? selectedDefinition;
     [ObservableProperty] private DependencyChoice? selectedRequirement;
@@ -95,8 +97,37 @@ public sealed partial class EnvironmentEditorViewModel : ObservableObject
             SelectedDefinition ??= Library.FirstOrDefault();
             LibraryStatus = Library.Count == 0 ? "Библиотека пуста. Импортируйте JSON-описание компонента." : $"Описаний в библиотеке: {Library.Count}";
             OnPropertyChanged(nameof(TargetDefinitions)); OnPropertyChanged(nameof(InfrastructureDefinitions));
+            await LoadPackChoicesAsync(cancellationToken);
         }
         catch (Exception error) when (error is not OperationCanceledException and not OutOfMemoryException) { LibraryStatus = "Не удалось прочитать библиотеку. Проверьте документы в хранилище."; }
+    }
+    [RelayCommand]
+    private async Task LoadPackChoicesAsync(CancellationToken token)
+    {
+        PackChoices.Clear(); SelectedPackChoice = null;
+        if (packs is not ISeedPackCatalog catalog) { return; }
+        try
+        {
+            foreach (var pack in await catalog.ListMetadataAsync(token))
+            {
+                var reference = new SeedPackReference(pack.Id, pack.Version, pack.ContentHash);
+                foreach (var initializer in pack.Initializers) { PackChoices.Add(new(reference, pack.Title, initializer.Path)); }
+            }
+            SelectedPackChoice = PackChoices.FirstOrDefault();
+        }
+        catch (OperationCanceledException) { throw; }
+        catch (Exception error) when (error is not OutOfMemoryException) { ActionError = "Не удалось прочитать библиотеку SeedPack."; }
+    }
+    [RelayCommand]
+    private async Task SelectSeedPackAsync(CancellationToken token)
+    {
+        if (!CanEdit || BaselineTarget is null || SelectedPackChoice is null) { return; }
+        await WithActionAsync(async () =>
+        {
+            IsolatedEnvironment updated = await new BaselineSelectionService(packs).SelectAsync(BuildSnapshot(), BaselineTarget.Id,
+                SelectedPackChoice.Pack, SelectedPackChoice.InitializerPath, token);
+            Draft.Update(updated); RenderDraft(); Edited(this, EventArgs.Empty);
+        });
     }
     public IsolatedEnvironment BuildSnapshot() => Draft.Snapshot with
     {

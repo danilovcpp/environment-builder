@@ -113,6 +113,7 @@ public sealed class OperationCoordinator(IOperationStore store, IClock clock, Fu
         string? resultCode = null;
         DateTimeOffset? completedAt = null;
         bool finalized = false;
+        bool recoveryPending = false;
         try
         {
             await PersistAsync(handle, operation => operation, CancellationToken.None).ConfigureAwait(false);
@@ -122,6 +123,7 @@ public sealed class OperationCoordinator(IOperationStore store, IClock clock, Fu
                 (transition, commit) => PersistAsync(handle, transition, CancellationToken.None, commit));
             await workflow(execution).ConfigureAwait(false);
             finalized = execution.Finalized;
+            if (finalized) { recoveryPending = (await store.ReadUnresolvedAsync(CancellationToken.None).ConfigureAwait(false)).Any(o => o.EnvironmentId == handle.Current.EnvironmentId); }
             if (execution.RequiresReconciliation) { throw new UnresolvedEffectException(); }
             terminal = handle.Cancellation.IsCancellationRequested ? OperationState.Cancelled : OperationState.Succeeded;
             completedAt = clock.UtcNow;
@@ -156,6 +158,7 @@ public sealed class OperationCoordinator(IOperationStore store, IClock clock, Fu
                 active.Remove(handle.Current.EnvironmentId);
                 if (handle.Current.State is OperationState.NeedsAttention or OperationState.PartiallyCompleted ||
                     handle.Current.Kind == "delete" && handle.Current.Confirmation is not null && !finalized) { unresolved.Add(handle.Current.EnvironmentId); }
+                else if (finalized && recoveryPending) { unresolved.Add(handle.Current.EnvironmentId); }
                 else if (finalized) { unresolved.Remove(handle.Current.EnvironmentId); }
                 remainingWrites = handle.LastWrite;
             }

@@ -7,7 +7,7 @@ using Microsoft.Data.Sqlite;
 
 namespace EnvironmentBuilder.Infrastructure.Persistence;
 
-public sealed class DataApplicationStore(SqliteWorker worker) : IDataApplicationJournal, ISafeInitializationRetry
+public sealed partial class DataApplicationStore(SqliteWorker worker) : IDataApplicationJournal, ISafeInitializationRetry, IInitializationResolutionStore
 {
     public Task<bool> IsActiveGenerationAsync(Guid environment, Guid? generation, string baseline, CancellationToken token) => worker.ReadAsync(connection =>
     {

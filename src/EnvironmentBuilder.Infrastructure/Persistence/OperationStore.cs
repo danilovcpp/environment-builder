@@ -52,6 +52,11 @@ public sealed class OperationStore(SqliteWorker worker, IClock clock) : IOperati
             }
             if (operation.Plan.Candidate is not null) { EnvironmentStore.SaveReferences(connection, transaction, "operation", operation.Id, operation.Plan.Candidate.Baseline.Applications); }
             foreach (var pack in operation.Plan.Packs) { EnvironmentStore.AddReference(connection, transaction, "operation", operation.Id, CanonicalJson.Hash(pack), pack); }
+            if (operation.State is OperationState.Succeeded or OperationState.Failed or OperationState.Cancelled)
+            {
+                using var held = Sql.Command(connection, transaction, "SELECT EXISTS(SELECT 1 FROM OperationSteps WHERE operationId=$id AND state IN ('Started','Unknown')) OR EXISTS(SELECT 1 FROM ResourceLedger WHERE operationId=$id AND unresolved=1)", ("$id", operation.Id.ToString()));
+                if ((long)held.ExecuteScalar()! == 0) { Sql.Execute(connection, transaction, "DELETE FROM PackageReferences WHERE ownerKind='operation' AND ownerId=$id", ("$id", operation.Id.ToString())); }
+            }
             return true;
         }, cancellationToken);
     }

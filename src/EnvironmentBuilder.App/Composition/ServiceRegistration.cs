@@ -50,6 +50,8 @@ public sealed class AppServices : IAsyncDisposable
             services.AddSingleton<ResourceLedgerStore>();
             services.AddSingleton<DataApplicationStore>();
             services.AddSingleton<IDataApplicationJournal>(p => p.GetRequiredService<DataApplicationStore>());
+            services.AddSingleton<IInitializationResolutionStore>(p => p.GetRequiredService<DataApplicationStore>());
+            services.AddSingleton<ResolveUnknownInitializationService>();
             services.AddSingleton<BaselineExecutor>();
             services.AddSingleton<DockerProcessFactory>();
             services.AddSingleton<RuntimeInputCapture>();
@@ -70,6 +72,7 @@ public sealed class AppServices : IAsyncDisposable
             services.AddSingleton<BaselinePreflight>();
             services.AddSingleton<RefreshEnvironmentDataService>();
             services.AddSingleton<IDestructiveInteractions, DestructiveInteractions>();
+            services.AddSingleton<Components.IUnknownInitializationInteractions, UnknownInitializationInteractions>();
             services.AddSingleton<IEnvironmentObservationSource, DockerObservationReader>();
             services.AddSingleton<LogMemoryBudget>();
             services.AddSingleton<IInspectionStreamsFactory, DockerInspectionStreams>();
@@ -81,8 +84,14 @@ public sealed class AppServices : IAsyncDisposable
             services.AddSingleton<ContentBlobStore>();
             services.AddSingleton<SeedPackStore>();
             services.AddSingleton<ISeedPackStore>(p => p.GetRequiredService<SeedPackStore>());
+            services.AddSingleton<ISeedPackCatalog>(p => p.GetRequiredService<SeedPackStore>());
+            services.AddSingleton<BaselineSelectionService>();
             services.AddSingleton<SeedPackImporter>();
-            services.AddSingleton(p => new Features.SeedPacks.SeedPackLibraryViewModel(p.GetRequiredService<SeedPackStore>().ListMetadataAsync));
+            services.AddSingleton<ISeedPackImporter>(p => p.GetRequiredService<SeedPackImporter>());
+            services.AddSingleton<ISeedPreviewReader, SeedPreviewReader>();
+            services.AddSingleton<Features.SeedPacks.ISeedPackInteractions, SeedPackInteractions>();
+            services.AddSingleton(p => new Features.SeedPacks.SeedPackLibraryViewModel(p.GetRequiredService<SeedPackStore>().ListMetadataAsync,
+                p.GetRequiredService<ISeedPackImporter>(), p.GetRequiredService<ISeedPackCatalog>(), p.GetRequiredService<ISeedPreviewReader>(), p.GetRequiredService<Features.SeedPacks.ISeedPackInteractions>()));
             services.AddSingleton(p => new Features.Settings.SettingsViewModel(themes, p.GetRequiredService<IComponentLibrary>(), p.GetRequiredService<ILocalPathMappings>()));
             services.AddSingleton<ISecretVault, DpapiSecretVault>();
             services.AddSingleton<LocalPathResolver>();

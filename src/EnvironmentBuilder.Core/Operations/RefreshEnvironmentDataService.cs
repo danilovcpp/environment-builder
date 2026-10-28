@@ -6,13 +6,22 @@ using EnvironmentBuilder.Core.SeedPacks;
 namespace EnvironmentBuilder.Core.Operations;
 
 public sealed class RefreshEnvironmentDataService(ClearEnvironmentDataService clear, BaselinePreflight preflight, BaselineExecutor baseline,
-    IStopRuntime stop, OperationCoordinator coordinator, IClock clock)
+    IStopRuntime stop, OperationCoordinator coordinator, IClock clock, IInitializationResolutionStore? resolutions = null)
 {
     public OperationHandle Refresh(IsolatedEnvironment environment, Func<OperationPlan, CancellationToken, Task<ConfirmationRecord?>> confirm)
+        => Run(environment, confirm, false);
+    public OperationHandle RefreshAfterUnknown(IsolatedEnvironment environment, Func<OperationPlan, CancellationToken, Task<ConfirmationRecord?>> confirm)
+        => Run(environment, confirm, true);
+    private OperationHandle Run(IsolatedEnvironment environment, Func<OperationPlan, CancellationToken, Task<ConfirmationRecord?>> confirm, bool afterUnknown)
     {
         Operation operation = ClearEnvironmentDataService.CreateOperation(environment, "refresh", clock);
-        return coordinator.Submit(operation, async execution =>
+        async Task Workflow(OperationExecution execution)
         {
+            if (afterUnknown)
+            {
+                if (resolutions is null) { throw new PreflightBlockedException("initialization-recovery-unavailable"); }
+                await resolutions.ValidateRefreshAsync(environment, operation.Id, execution.CancellationToken).ConfigureAwait(false);
+            }
             ICleanupSession cleanup = await clear.PrepareAsync(environment, operation.Id, execution.CancellationToken).ConfigureAwait(false);
             OperationPlan plan = await ClearEnvironmentDataService.PlanAsync(environment, cleanup, execution.CancellationToken).ConfigureAwait(false);
             await using IStartSession temporary = await preflight.PrepareAsync(environment, operation.Id, plan.NextDataGenerationId!.Value, execution.CancellationToken).ConfigureAwait(false);
@@ -39,6 +48,8 @@ public sealed class RefreshEnvironmentDataService(ClearEnvironmentDataService cl
             await StopEnvironmentService.ExecuteAsync(environment, stopped, execution).ConfigureAwait(false);
             // Stopped containers alone do not prove the restored volumes survived the final stage.
             await baseline.VerifyAsync(environment, temporary, execution.CancellationToken).ConfigureAwait(false);
-        });
+            if (afterUnknown) { await execution.CompleteAtomicallyAsync(resolutions!.FinishRefreshAsync, clock.UtcNow).ConfigureAwait(false); }
+        }
+        return afterUnknown ? coordinator.SubmitReconciliation(operation, Workflow) : coordinator.Submit(operation, Workflow);
     }
 }

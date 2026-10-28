@@ -9,7 +9,7 @@ using Microsoft.Data.Sqlite;
 
 namespace EnvironmentBuilder.Infrastructure.Persistence;
 
-public sealed class SeedPackStore(SqliteWorker worker, ContentBlobStore blobs, StrictDocumentReader reader, IClock clock) : ISeedPackStore
+public sealed class SeedPackStore(SqliteWorker worker, ContentBlobStore blobs, StrictDocumentReader reader, IClock clock) : ISeedPackStore, ISeedPackCatalog
 {
     // Metadata-only presentation read; opening the library never acquires payloads or runs an initializer.
     public async Task<IReadOnlyList<SeedPack>> ListMetadataAsync(CancellationToken cancellationToken)
@@ -68,14 +68,37 @@ public sealed class SeedPackStore(SqliteWorker worker, ContentBlobStore blobs, S
         return new VerifiedSeedPack(manifest, initializers.ToImmutable());
     }
 
-    public Task RemoveAsync(SeedPackReference reference, CancellationToken cancellationToken) => worker.CommitAsync("pack-delete", (connection, transaction) =>
+    public Task<IReadOnlyList<SeedPackOwner>> ReadOwnersAsync(SeedPackReference reference, CancellationToken token) =>
+        worker.ReadAsync(connection => ReadOwners(connection, null, reference), token);
+
+    private static IReadOnlyList<SeedPackOwner> ReadOwners(SqliteConnection connection, SqliteTransaction? transaction, SeedPackReference reference)
     {
-        using SqliteCommand actual = Sql.Command(connection, transaction, "SELECT contentHash FROM SeedPacks WHERE packId=$id AND version=$version", ("$id", reference.Id.ToString()), ("$version", reference.Version));
-        if (actual.ExecuteScalar() is not string hash || hash != reference.ContentHash) { throw new InvalidOperationException("Exact package identity is required for deletion."); }
-        using SqliteCommand held = Sql.Command(connection, transaction, "SELECT EXISTS(SELECT 1 FROM PackageReferences WHERE packId=$id AND version=$version)", ("$id", reference.Id.ToString()), ("$version", reference.Version));
-        if ((long)held.ExecuteScalar()! != 0) { throw new InvalidOperationException("Saved environments or recovery operations retain this package."); }
-        Sql.Execute(connection, transaction, "DELETE FROM PackEntries WHERE packId=$id AND version=$version", ("$id", reference.Id.ToString()), ("$version", reference.Version));
-        Sql.Execute(connection, transaction, "DELETE FROM SeedPacks WHERE packId=$id AND version=$version AND contentHash=$hash", ("$id", reference.Id.ToString()), ("$version", reference.Version), ("$hash", reference.ContentHash));
-        return true;
-    }, cancellationToken);
+        using var command = Sql.Command(connection, transaction,
+            "SELECT DISTINCT r.ownerKind,r.ownerId,COALESCE(e.name,oe.name,r.ownerId) FROM PackageReferences r LEFT JOIN Environments e ON r.ownerKind='environment' AND e.id=r.ownerId LEFT JOIN Operations o ON r.ownerKind='operation' AND o.id=r.ownerId LEFT JOIN Environments oe ON oe.id=o.environmentId WHERE r.packId=$id AND r.version=$version ORDER BY r.ownerKind,r.ownerId",
+            ("$id", reference.Id.ToString()), ("$version", reference.Version));
+        using var rows = command.ExecuteReader();
+        var owners = new List<SeedPackOwner>();
+        while (rows.Read()) { owners.Add(new(rows.GetString(0), Guid.Parse(rows.GetString(1)), rows.GetString(2))); }
+        return owners;
+    }
+
+    public async Task RemoveAsync(SeedPackReference reference, CancellationToken cancellationToken)
+    {
+        await blobs.WithFileLockAsync(() => worker.CommitAsync("pack-delete", (connection, transaction) =>
+        {
+            using SqliteCommand actual = Sql.Command(connection, transaction, "SELECT contentHash FROM SeedPacks WHERE packId=$id AND version=$version", ("$id", reference.Id.ToString()), ("$version", reference.Version));
+            if (actual.ExecuteScalar() is not string hash || hash != reference.ContentHash) { throw new InvalidOperationException("Exact package identity is required for deletion."); }
+            IReadOnlyList<SeedPackOwner> owners = ReadOwners(connection, transaction, reference);
+            if (owners.Count != 0) { throw new SeedPackInUseException(owners); }
+            using (var entries = Sql.Command(connection, transaction, "SELECT blobHash FROM PackEntries WHERE packId=$id AND version=$version", ("$id", reference.Id.ToString()), ("$version", reference.Version)))
+            using (var rows = entries.ExecuteReader())
+            {
+                while (rows.Read()) { if (blobs.IsLeased(rows.GetString(0))) { throw new SeedPackInUseException([new("lease", reference.Id, "Активное чтение содержимого")]); } }
+            }
+            Sql.Execute(connection, transaction, "DELETE FROM PackEntries WHERE packId=$id AND version=$version", ("$id", reference.Id.ToString()), ("$version", reference.Version));
+            Sql.Execute(connection, transaction, "DELETE FROM SeedPacks WHERE packId=$id AND version=$version AND contentHash=$hash", ("$id", reference.Id.ToString()), ("$version", reference.Version), ("$hash", reference.ContentHash));
+            return true;
+        }, cancellationToken), cancellationToken).ConfigureAwait(false);
+        await blobs.CleanupOrphansAsync(cancellationToken).ConfigureAwait(false);
+    }
 }

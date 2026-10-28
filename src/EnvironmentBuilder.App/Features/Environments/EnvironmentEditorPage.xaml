@@ -229,6 +229,11 @@
                                 <ComboBox ItemsSource="{Binding ComponentChoices}" SelectedItem="{Binding BaselineTarget}" DisplayMemberPath="Label" Width="300" Margin="0,0,8,0" AutomationProperties.Name="Целевой экземпляр baseline" />
                                 <Button Content="Добавить initializer…" Command="{Binding AddBaselineCommand}" />
                             </WrapPanel>
+                            <WrapPanel Margin="0,0,0,8">
+                                <ComboBox ItemsSource="{Binding PackChoices}" SelectedItem="{Binding SelectedPackChoice}" Width="350" AutomationProperties.Name="Точная версия SeedPack и initializer" />
+                                <Button Content="Назначить пакет" Command="{Binding SelectSeedPackCommand}" IsEnabled="{Binding CanEdit}" Margin="8,0" AutomationProperties.AutomationId="AssignSeedPack"/>
+                                <Button Content="Обновить список" Command="{Binding LoadPackChoicesCommand}" />
+                            </WrapPanel>
                             <ItemsControl ItemsSource="{Binding Baseline}">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>

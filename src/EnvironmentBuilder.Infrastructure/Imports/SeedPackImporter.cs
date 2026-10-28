@@ -9,7 +9,7 @@ namespace EnvironmentBuilder.Infrastructure.Imports;
 
 public sealed record ImportedPackEntry(string Path, string? SectionId, BlobLease Blob, long? RecordCount, string? IndexPath);
 
-public sealed class SeedPackImporter(StrictDocumentReader reader, ContentBlobStore blobs, SeedPackStore store)
+public sealed class SeedPackImporter(StrictDocumentReader reader, ContentBlobStore blobs, SeedPackStore store) : ISeedPackImporter
 {
     public async Task<SeedPackReference> ImportAsync(string archivePath, CancellationToken cancellationToken)
     {

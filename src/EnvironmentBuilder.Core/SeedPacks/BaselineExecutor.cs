@@ -33,11 +33,13 @@ public sealed class BaselineExecutor(IDataApplicationJournal journal, IClock clo
                     CanonicalJson.Hash(application), CanonicalJson.Hash(application.Initializer), step.Id);
                 DataApplicationRecord? previous = await journal.ReadAsync(key, token).ConfigureAwait(false);
                 if (previous?.State == StepState.Succeeded) { continue; }
-                if (previous is not null && (previous.State != StepState.Pending || previous.Attempt != 0)) { throw new UnresolvedEffectException(); }
+                if (previous is not null && (previous.State != StepState.Pending || previous.Attempt != 0 &&
+                    (journal is not IInitializationResolutionStore resolutions || !await resolutions.IsReplayAuthorizedAsync(key, previous.Attempt, token).ConfigureAwait(false))))
+                { throw new UnresolvedEffectException(); }
                 if (previous is null) { await journal.SaveAsync(new(key, StepState.Pending, 0, null, null, null, null, null), token).ConfigureAwait(false); }
                 using var budget = CancellationTokenSource.CreateLinkedTokenSource(token);
                 budget.CancelAfter(TimeSpan.FromSeconds(step.TimeoutSeconds));
-                int attempt = 0;
+                int attempt = previous?.Attempt ?? 0;
                 while (true)
                 {
                     budget.Token.ThrowIfCancellationRequested();

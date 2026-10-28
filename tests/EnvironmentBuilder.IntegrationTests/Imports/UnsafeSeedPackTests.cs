@@ -50,7 +50,7 @@ public sealed class UnsafeSeedPackTests
             new BaselineApplication(environment.Components[0].Id, verified!.Initializers.Values.Single(), first)])
         };
         await fixture.Environments.SaveNewAsync(environment, TestContext.Current.CancellationToken);
-        await Assert.ThrowsAsync<InvalidOperationException>(() => store.RemoveAsync(first, TestContext.Current.CancellationToken));
+        await Assert.ThrowsAsync<SeedPackInUseException>(() => store.RemoveAsync(first, TestContext.Current.CancellationToken));
         var inputs = new Infrastructure.Security.InputResolver(fixture.Worker, new Infrastructure.Security.LocalPathResolver(),
             new Infrastructure.Security.DpapiSecretVault(fixture.Worker, fixture.Clock), fixture.Clock);
         Assert.DoesNotContain(await Core.Environments.EnvironmentReadiness.CheckAsync(environment, inputs, store, TestContext.Current.CancellationToken), issue => issue.Code == "missing-pack");

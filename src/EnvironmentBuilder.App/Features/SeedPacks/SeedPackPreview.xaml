@@ -1,0 +1,14 @@
+<UserControl x:Class="EnvironmentBuilder.App.Features.SeedPacks.SeedPackPreview" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <DockPanel>
+    <StackPanel DockPanel.Dock="Top" Margin="0,0,0,6">
+      <ComboBox ItemsSource="{Binding Sections}" SelectedItem="{Binding SelectedSection}" DisplayMemberPath="Title" AutomationProperties.Name="Секция preview"/>
+      <WrapPanel Margin="0,4,0,0">
+        <Button Content="Сначала" ToolTip="Первая страница" AutomationProperties.Name="Первая страница" FontSize="11" Padding="8,4" Command="{Binding FirstCommand}" Margin="0,0,6,0" AutomationProperties.AutomationId="SeedPreviewFirst"/>
+        <Button Content="Далее →" ToolTip="Следующая страница" AutomationProperties.Name="Следующая страница" FontSize="11" Padding="8,4" Command="{Binding NextCommand}" AutomationProperties.AutomationId="SeedPreviewNext"/>
+        <Button Content="Отмена" FontSize="11" Padding="8,4" Command="{Binding CancelCommand}" Margin="6,0,0,0"/>
+      </WrapPanel>
+    </StackPanel>
+    <TextBlock DockPanel.Dock="Bottom" Text="{Binding Status}" TextWrapping="Wrap" Style="{DynamicResource Text.Metadata}" FontSize="11" Margin="0,4,0,0" AutomationProperties.AutomationId="SeedPreviewStatus"/>
+    <TextBox Text="{Binding Text, Mode=OneWay}" IsReadOnly="True" AcceptsReturn="True" FontFamily="Consolas" FontSize="12" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" AutomationProperties.AutomationId="SeedPreviewText"/>
+  </DockPanel>
+</UserControl>
