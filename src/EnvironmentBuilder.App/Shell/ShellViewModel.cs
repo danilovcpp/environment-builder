@@ -24,8 +24,8 @@ public sealed partial class ShellViewModel : ObservableObject
         navigation.PropertyChanged += (_, e) =>
         {
             if (e.PropertyName != nameof(NavigationService.Current)) { return; }
-            if (navigation.Current.Route == "editor") { Title = "Описание окружения"; Description = "Состав, настройки и начальные данные без запуска"; }
-            else if (navigation.Current.Route == "inspect") { Title = "Inspect"; Description = "Фактическое состояние, операции, логи и измерения"; }
+            if (navigation.Current.Route == "editor") { Title = "Создание среды"; Description = "Настройте состав сервисов, инфраструктуры и параметры окружения."; }
+            else if (navigation.Current.Route == "inspect") { Title = "Просмотр среды"; Description = "Состояние запущенных сервисов, журналы и диагностика окружения."; }
             else if (navigation.Current.Route == "preview") { Title = "Compose preview"; Description = "Будущая конфигурация с замаскированными секретами"; }
             else if (navigation.Current.Route == "environments") { Title = "Окружения"; Description = "Сохранённые описания локальных окружений"; }
             NotifyContext();
@@ -36,7 +36,7 @@ public sealed partial class ShellViewModel : ObservableObject
     [ObservableProperty] private SettingsViewModel settings;
     public DiagnosticsViewModel Diagnostics { get; } = new();
     [ObservableProperty] private string title = "Окружения";
-    [ObservableProperty] private string description = "Сохранённые описания локальных окружений";
+    [ObservableProperty] private string description = "Все созданные окружения. Запуск, остановка и управление изолированными средами на основе Docker.";
     [ObservableProperty] private string status = "Открытие хранилища…";
     [ObservableProperty] private string dataDirectory = "";
     [ObservableProperty] private string storageError = "";
@@ -49,6 +49,8 @@ public sealed partial class ShellViewModel : ObservableObject
 
     public string PageIcon => navigation.Current.Route switch { "seedpacks" => "Database", "settings" => "Settings", "diagnostics" => "Activity", "preview" => "Code", "inspect" => "Activity", _ => "Box" };
     public string ContextTitle => navigation.Current.Route switch { "seedpacks" => "Сводка выбранного пака", "settings" => "Параметры компонента", "diagnostics" => "Состояние приложения", _ => "Сводка окружения" };
+    public object? ContextDetail => navigation.Current.Route switch { "seedpacks" => SeedPacks, "settings" => Settings, "editor" => Authoring?.Current, _ => null };
+    public bool HasContext => ShowSeedPacks || ShowDiagnostics || ShowEnvironments && Authoring?.Current is EnvironmentEditorViewModel or ComposePreviewViewModel;
     public string ContextSupportingText => navigation.Current.Route switch
     {
         "seedpacks" => "Текстовое preview\n\n" + SeedPacks.WorkflowReason,
@@ -86,7 +88,7 @@ public sealed partial class ShellViewModel : ObservableObject
         NotifyContext();
     }
     private void ContextChanged(object? sender, PropertyChangedEventArgs e) => NotifyContext();
-    private void NotifyContext() { OnPropertyChanged(nameof(ContextSummary)); OnPropertyChanged(nameof(ContextSupportingText)); OnPropertyChanged(nameof(ContextTitle)); OnPropertyChanged(nameof(PageIcon)); }
+    private void NotifyContext() { OnPropertyChanged(nameof(ContextSummary)); OnPropertyChanged(nameof(ContextSupportingText)); OnPropertyChanged(nameof(ContextTitle)); OnPropertyChanged(nameof(ContextDetail)); OnPropertyChanged(nameof(PageIcon)); OnPropertyChanged(nameof(HasContext)); }
     partial void OnSeedPacksChanged(SeedPackLibraryViewModel? oldValue, SeedPackLibraryViewModel newValue) { if (oldValue is not null) { oldValue.PropertyChanged -= ContextChanged; } newValue.PropertyChanged += ContextChanged; NotifyContext(); }
     partial void OnSettingsChanged(SettingsViewModel? oldValue, SettingsViewModel newValue) { if (oldValue is not null) { oldValue.PropertyChanged -= ContextChanged; } newValue.PropertyChanged += ContextChanged; NotifyContext(); }
     partial void OnRecoveryStatusChanged(string value) { Diagnostics.RecoveryStatus = value; NotifyContext(); }
@@ -127,12 +129,22 @@ public sealed partial class ShellViewModel : ObservableObject
         ShowSeedPacks = route == "seedpacks";
         (Title, Description) = route switch
         {
-            "seedpacks" => ("Тестовые данные", "Библиотека неизменяемых пакетов начальных данных"),
-            "settings" => ("Настройки", "Локальное хранилище и оформление"),
+            "seedpacks" => ("Тестовые данные", "Управление themed data-seed паками для демонстрационных и тестовых окружений."),
+            "settings" => ("Настройки", "Источники образов, build-настройки и параметры поддерживаемых сервисов."),
             "diagnostics" => ("Диагностика", "Состояние хранилища и незавершённые операции"),
             _ => ("Окружения", "Сохранённые описания локальных окружений")
         };
         NotifyContext();
     }
     [RelayCommand] private void ToggleTheme() => themes.Apply(!themes.IsDark);
+    [RelayCommand] private async Task OpenComposeAsync()
+    {
+        if (Authoring?.Current is EnvironmentEditorViewModel editor) { await editor.ShowPreviewCommand.ExecuteAsync(null); }
+        else if (Authoring?.List.SelectedItem is { } selected)
+        {
+            ShowEnvironments = true; ShowSeedPacks = false; ShowSettings = false; ShowDiagnostics = false;
+            await Authoring.List.ComposeItemCommand.ExecuteAsync(selected);
+        }
+        else { Components.PlaceholderActions.Explain.Execute(null); }
+    }
 }

@@ -21,6 +21,16 @@ public sealed partial class SettingsViewModel(ThemeService themes, IComponentLib
     private IReadOnlyList<DefinitionRow> all = [];
     public ObservableCollection<DefinitionRow> Definitions { get; } = [];
     public ObservableCollection<LocalPathMapping> Paths { get; } = [];
+    public IEnumerable<Components.ServicePresentation> DisplayDefinitions => (all.Count == 0 ? Components.ServicePresentation.Examples : Definitions.Select(d => new Components.ServicePresentation(d.Name, d.Type == "Инфраструктура" ? "Infrastructure" : "Backend", d.Source, "Box", "#0072FF"))).Where(d => d.Name.Contains(Search, StringComparison.OrdinalIgnoreCase) && (Category == "Все" || d.Category == Category));
+    public IReadOnlyList<Components.ServicePresentation> Infrastructure => Components.ServicePresentation.Infrastructure;
+    [ObservableProperty] private Components.ServicePresentation selectedService = Components.ServicePresentation.Examples[4];
+    [ObservableProperty] private string category = "Все";
+    partial void OnCategoryChanged(string value) => OnPropertyChanged(nameof(DisplayDefinitions));
+    [RelayCommand] private void FilterCategory(string value) => Category = value;
+    public string ExampleNotice => all.Count == 0 ? "Демонстрационные настройки · изменения не сохраняются" : "Предварительный просмотр настроек · изменения не сохраняются";
+    public string ConfigurationStatus => all.Count == 0 ? "●  Конфигурация корректна" : "Метаданные загружены";
+    public string ConfigurationHint => all.Count == 0 ? "Пример настроек" : "Только просмотр";
+    public string ServiceCount => all.Count == 0 ? "15 сервисов поддерживается" : $"{all.Count} компонентов в библиотеке";
     [ObservableProperty] private DefinitionRow? selectedDefinition;
     [ObservableProperty] private string search = "";
     [ObservableProperty] private string dataDirectory = "Хранилище ещё не открыто";
@@ -35,6 +45,8 @@ public sealed partial class SettingsViewModel(ThemeService themes, IComponentLib
         var selected = SelectedDefinition;
         Definitions.Clear(); foreach (var row in all.Where(d => d.Name.Contains(Search, StringComparison.OrdinalIgnoreCase))) { Definitions.Add(row); }
         SelectedDefinition = Definitions.FirstOrDefault(d => d.Definition.Id == selected?.Definition.Id && d.Version == selected.Version);
+        if (all.Count > 0) { SelectedService = DisplayDefinitions.FirstOrDefault() ?? Components.ServicePresentation.Examples[4]; }
+        OnPropertyChanged(nameof(DisplayDefinitions)); OnPropertyChanged(nameof(ExampleNotice)); OnPropertyChanged(nameof(ServiceCount)); OnPropertyChanged(nameof(ConfigurationStatus)); OnPropertyChanged(nameof(ConfigurationHint));
     }
     public async Task LoadAsync(CancellationToken cancellationToken)
     {

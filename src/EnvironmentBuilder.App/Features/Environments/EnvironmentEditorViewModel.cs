@@ -53,9 +53,15 @@ public sealed partial class EnvironmentEditorViewModel : ObservableObject
     public EditorRows<DependencyEditor> Dependencies { get; } = [];
     public EditorRows<BaselineEditor> Baseline { get; } = [];
     public ObservableCollection<DefinitionChoice> Library { get; } = [];
-    public IEnumerable<DefinitionChoice> TargetDefinitions => Library.Where(d => d.Definition.ComponentType == "target");
-    public IEnumerable<DefinitionChoice> InfrastructureDefinitions => Library.Where(d => d.Definition.ComponentType == "infrastructure");
+    public IEnumerable<DefinitionChoice> TargetDefinitions => Library.Where(d => d.Definition.ComponentType == "target" && d.Definition.Name.Contains(CatalogSearch, StringComparison.OrdinalIgnoreCase));
+    public IEnumerable<DefinitionChoice> InfrastructureDefinitions => Library.Where(d => d.Definition.ComponentType == "infrastructure" && d.Definition.Name.Contains(CatalogSearch, StringComparison.OrdinalIgnoreCase));
+    [ObservableProperty] private string catalogSearch = "";
+    partial void OnCatalogSearchChanged(string value) { OnPropertyChanged(nameof(TargetDefinitions)); OnPropertyChanged(nameof(InfrastructureDefinitions)); }
     public string ConfigurationSummary => $"{Components.Count(c => c.Definition.ComponentType == "target")} приложений · {Components.Count(c => c.Definition.ComponentType == "infrastructure")} инфраструктурных · {Dependencies.Count} связей · {Baseline.Count} baseline";
+    public string ServiceCount => Components.Count(c => c.Definition.ComponentType == "target").ToString(System.Globalization.CultureInfo.CurrentCulture);
+    public string InfrastructureCount => Components.Count(c => c.Definition.ComponentType == "infrastructure").ToString(System.Globalization.CultureInfo.CurrentCulture);
+    public string PublishedPortCount => Components.Sum(c => c.Ports.Count).ToString(System.Globalization.CultureInfo.CurrentCulture);
+    public string SeedStatus => Baseline.Count == 0 ? "Не настроены" : $"Применений: {Baseline.Count}";
     public ObservableCollection<ValidationMessage> Errors { get; } = [];
     public ObservableCollection<ReadinessIssue> ReadinessIssues { get; } = [];
     public ObservableCollection<ComponentChoice> ComponentChoices { get; } = [];
@@ -151,6 +157,7 @@ public sealed partial class EnvironmentEditorViewModel : ObservableObject
     private void NotifyState()
     {
         OnPropertyChanged(nameof(ConfigurationSummary));
+        OnPropertyChanged(nameof(ServiceCount)); OnPropertyChanged(nameof(InfrastructureCount)); OnPropertyChanged(nameof(PublishedPortCount)); OnPropertyChanged(nameof(SeedStatus));
         OnPropertyChanged(nameof(IsDirty)); OnPropertyChanged(nameof(CanSave)); OnPropertyChanged(nameof(CanPreview)); OnPropertyChanged(nameof(CanEdit)); OnPropertyChanged(nameof(CanInteract)); OnPropertyChanged(nameof(SaveDisabledReason));
         SaveCommand.NotifyCanExecuteChanged(); ShowPreviewCommand.NotifyCanExecuteChanged(); InspectSavedCommand.NotifyCanExecuteChanged();
         OnPropertyChanged(nameof(CanBeginEdit)); OnPropertyChanged(nameof(CanInspect)); BeginEditCommand.NotifyCanExecuteChanged();

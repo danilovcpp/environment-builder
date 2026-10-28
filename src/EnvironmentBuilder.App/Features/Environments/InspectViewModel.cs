@@ -15,6 +15,11 @@ public sealed record InspectComponentRow(ComponentObservation Actual, string Nam
     public string RuntimeReady => DeclaredReadiness == "none" ? "Проверка не задана" : Actual.RuntimeReady ? "Подтверждена" : "Не подтверждена";
     public string ApplicationReady => DeclaredReadiness == "none" ? "Проверка не задана" : Actual.ApplicationReady ? "Готов" : "Не подтверждена";
     public string Drift => Actual.Drift == "expected" ? "" : Actual.Drift;
+    public string DisplayStatus => Status == "running" ? "Запущен" : Status == "exited" ? "Остановлен" : Status;
+    public string Category => Name.Contains("postgres", StringComparison.OrdinalIgnoreCase) || Name.Contains("rabbit", StringComparison.OrdinalIgnoreCase) ? "Infrastructure" : "Backend";
+    public string Icon => Category == "Infrastructure" ? "Database" : "Box";
+    public string Container => Actual.ContainerId is { Length: > 12 } id ? id[..12] : Actual.ContainerId ?? "—";
+    public string Ports => Actual.Ports.Length == 0 ? "—" : string.Join(", ", Actual.Ports.Select(p => p.HostPort));
     public string Details => ComponentId + " · " + Actual.ContainerId + " · " + Actual.Reason + (Actual.ExitCode is null ? "" : " · exit " + Actual.ExitCode + " · OOM " + Actual.OomKilled);
 }
 
@@ -40,6 +45,11 @@ public sealed partial class InspectViewModel(IEnvironmentObservationSource sourc
     [ObservableProperty] private string logStatus = "Логи не получены";
     [ObservableProperty] private string measurements = "Метрики не получены";
     [ObservableProperty] private string aggregate = "Общие метрики не получены";
+    [ObservableProperty] private string cpuSummary = "—";
+    [ObservableProperty] private string memorySummary = "—";
+    public string RunningSummary => $"{Components.Count(c => c.Status == "running")} / {Components.Count}";
+    public string HealthSummary => Components.Count == 0 ? "Не проверен" : Components.All(c => c.Actual.Health == "healthy") ? "Healthy" : "Не подтверждён";
+    public string PortCount => Components.Sum(c => c.Actual.Ports.Length).ToString(System.Globalization.CultureInfo.CurrentCulture);
     [ObservableProperty] private string endpoints = "Адреса не проверены";
     [ObservableProperty] private string error = "";
     [ObservableProperty] private bool logsPaused;
@@ -118,6 +128,9 @@ public sealed partial class InspectViewModel(IEnvironmentObservationSource sourc
                 MeasurementAggregate cpu = Measurement.Sum(live.Measurements.Values.Where(m => m.ContainsKey("cpu")).Select(m => m["cpu"]), document.Components.Length);
                 MeasurementAggregate memory = Measurement.Sum(live.Measurements.Values.Where(m => m.ContainsKey("memoryUsed")).Select(m => m["memoryUsed"]), document.Components.Length);
                 Aggregate = $"CPU ≈ {cpu.Value?.ToString("G4", System.Globalization.CultureInfo.CurrentCulture) ?? "нет данных"}% · покрытие {cpu.Measured}/{cpu.Expected}; память ≈ {memory.Value?.ToString("G4", System.Globalization.CultureInfo.CurrentCulture) ?? "нет данных"} bytes · покрытие {memory.Measured}/{memory.Expected}";
+                CpuSummary = cpu.Value is { } cpuValue ? $"≈ {cpuValue:G4}%" : "—";
+                MemorySummary = memory.Value is { } memoryValue ? $"≈ {memoryValue / 1048576d:N1} MB" : "—";
+                OnPropertyChanged(nameof(RunningSummary)); OnPropertyChanged(nameof(HealthSummary)); OnPropertyChanged(nameof(PortCount));
                 var handle = commands.Get(document.Id);
                 OperationId = handle?.Current.Id.ToString() ?? "";
                 IsOperationActive = handle is { Completion.IsCompleted: false };

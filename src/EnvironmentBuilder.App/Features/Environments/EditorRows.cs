@@ -84,6 +84,7 @@ public sealed record ComponentChoice(Guid Id, string Label);
 public sealed record DefinitionChoice(ComponentDefinition Definition)
 {
     public string Label => $"{Definition.Name} · {Definition.Version} · {Definition.ComponentType}";
+    public string SourceLabel => Definition.DefaultSource is ImageSource image ? image.Reference : "Локальная сборка";
 }
 
 internal static class EditorJson

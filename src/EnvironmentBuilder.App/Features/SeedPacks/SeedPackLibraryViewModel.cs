@@ -19,6 +19,17 @@ public sealed partial class SeedPackLibraryViewModel(Func<CancellationToken, Tas
 {
     private IReadOnlyList<SeedPackRow> all = [];
     public ObservableCollection<SeedPackRow> Items { get; } = [];
+    public ObservableCollection<SeedPackPresentation> DisplayItems { get; } = new(SeedPackPresentation.Examples);
+    [ObservableProperty] private SeedPackPresentation? selectedDisplayPack = SeedPackPresentation.Examples[0];
+    public bool ShowingExamples => all.Count == 0 && Error.Length == 0;
+    public string DisplayCount => ShowingExamples ? "8" : Count;
+    public string InstalledCount => ShowingExamples ? "5" : "—";
+    public string DisplaySize => ShowingExamples ? "382 MB" : Size;
+    public string EntityCount => ShowingExamples ? "12" : all.SelectMany(p => p.Manifest.Sections).Select(s => s.Id).Distinct().Count().ToString(System.Globalization.CultureInfo.CurrentCulture);
+    public string ExampleNotice => ShowingExamples ? "Демонстрационные данные · библиотека пока пуста" : "";
+    [ObservableProperty] private string displayFilter = "Все";
+    partial void OnDisplayFilterChanged(string value) => Filter();
+    [CommunityToolkit.Mvvm.Input.RelayCommand] private void FilterTheme(string value) => DisplayFilter = value;
     public ObservableCollection<string> Themes { get; } = ["Все темы"];
     [ObservableProperty] private SeedPackRow? selectedPack;
     [ObservableProperty] private string search = "";
@@ -46,20 +57,33 @@ public sealed partial class SeedPackLibraryViewModel(Func<CancellationToken, Tas
             if (!Themes.Contains(Theme)) { Theme = "Все темы"; }
             IsLoaded = true; Filter();
         }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { Error = "Чтение библиотеки отменено."; }
-        catch (Exception error) when (error is not OutOfMemoryException) { Error = "Не удалось прочитать метаданные пакетов. Проверьте хранилище в диагностике."; }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { Error = "Чтение библиотеки отменено."; DisplayItems.Clear(); SelectedDisplayPack = null; }
+        catch (Exception error) when (error is not OutOfMemoryException) { Error = "Не удалось прочитать метаданные пакетов. Проверьте хранилище в диагностике."; DisplayItems.Clear(); SelectedDisplayPack = null; }
         finally { IsLoading = false; NotifyState(); }
     }
     partial void OnSearchChanged(string value) => Filter();
     partial void OnThemeChanged(string value) => Filter();
-    partial void OnSelectedPackChanged(SeedPackRow? value) => OnPropertyChanged(nameof(Summary));
+    partial void OnSelectedPackChanged(SeedPackRow? value)
+    {
+        OnPropertyChanged(nameof(Summary));
+        if (value is not null) { SelectedDisplayPack = DisplayItems.FirstOrDefault(p => p.PackId == value.Manifest.Id && p.RawVersion == value.Version); }
+    }
+    partial void OnSelectedDisplayPackChanged(SeedPackPresentation? value)
+    {
+        if (value is not null && !value.IsExample) { SelectedPack = Items.FirstOrDefault(p => p.Manifest.Id == value.PackId && p.Version == value.RawVersion); }
+    }
     private void Filter()
     {
         SeedPackRow? selected = SelectedPack;
         Items.Clear();
         foreach (var item in all.Where(p => (Theme == "Все темы" || p.Theme == Theme) && (Search.Length == 0 || p.Title.Contains(Search, StringComparison.OrdinalIgnoreCase) || p.Manifest.Purpose.Contains(Search, StringComparison.OrdinalIgnoreCase)))) { Items.Add(item); }
         SelectedPack = Items.FirstOrDefault(p => p.Manifest.Id == selected?.Manifest.Id && p.Version == selected.Version);
+        var previous = SelectedDisplayPack;
+        DisplayItems.Clear();
+        IEnumerable<SeedPackPresentation> display = ShowingExamples ? SeedPackPresentation.Examples : Items.Select(p => new SeedPackPresentation(p.Title, p.Theme, "—", p.Records.ToString(System.Globalization.CultureInfo.CurrentCulture), "v" + p.Version, "Загружен", "Database", false, $"{p.Bytes / 1048576d:N2} MB", null, null, null, null, null) { PackId = p.Manifest.Id, RawVersion = p.Version });
+        foreach (var item in display.Where(p => (DisplayFilter == "Все" || p.Theme == DisplayFilter || DisplayFilter == "Большие" && p.Size is "Large" or "XL" || DisplayFilter == "Избранные" && p == SeedPackPresentation.Examples[0]) && (!ShowingExamples || p.Title.Contains(Search, StringComparison.OrdinalIgnoreCase)))) { DisplayItems.Add(item); }
+        SelectedDisplayPack = DisplayItems.FirstOrDefault(p => previous is not null && (p.IsExample ? p.Title == previous.Title : p.PackId == previous.PackId && p.RawVersion == previous.RawVersion)) ?? DisplayItems.FirstOrDefault();
         NotifyState();
     }
-    private void NotifyState() { OnPropertyChanged(nameof(Count)); OnPropertyChanged(nameof(Size)); OnPropertyChanged(nameof(IsEmpty)); OnPropertyChanged(nameof(NoResults)); }
+    private void NotifyState() { OnPropertyChanged(nameof(Count)); OnPropertyChanged(nameof(Size)); OnPropertyChanged(nameof(IsEmpty)); OnPropertyChanged(nameof(NoResults)); OnPropertyChanged(nameof(ShowingExamples)); OnPropertyChanged(nameof(DisplayCount)); OnPropertyChanged(nameof(InstalledCount)); OnPropertyChanged(nameof(DisplaySize)); OnPropertyChanged(nameof(EntityCount)); OnPropertyChanged(nameof(ExampleNotice)); }
 }

@@ -23,6 +23,9 @@ public sealed partial class EnvironmentRowViewModel : ObservableObject
     public string Components => Item.Document is null ? "Состав недоступен" : string.Join(" · ", Item.Document.Components.Select(c => c.DefinitionSnapshot.Name));
     public string Measurement => "Метрики не получены";
     public string ComponentCount => Item.Document is null ? "—" : $"{Item.Document.Components.Length} комп.";
+    public IEnumerable<Components.ServicePresentation> TargetIcons => Icons("target");
+    public IEnumerable<Components.ServicePresentation> InfrastructureIcons => Icons("infrastructure");
+    private IEnumerable<Components.ServicePresentation> Icons(string type) => Item.Document?.Components.Where(c => c.DefinitionSnapshot.ComponentType == type).Take(4).Select(c => new Components.ServicePresentation(c.DefinitionSnapshot.Name, type, "", type == "infrastructure" ? "Database" : "Box", type == "infrastructure" ? "#1B659A" : "#0072FF")) ?? [];
     public IReadOnlyList<ComponentListRow> ComponentRows => Item.Document?.Components.Select(c => new ComponentListRow(c.DefinitionSnapshot.Name,
         c.DefinitionSnapshot.ComponentType == "target" ? "Приложение" : "Инфраструктура",
         c.Source is ImageSource image ? image.Reference : "Локальная сборка",

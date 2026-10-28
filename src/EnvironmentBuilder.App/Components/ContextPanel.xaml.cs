@@ -6,6 +6,8 @@ namespace EnvironmentBuilder.App.Components;
 public partial class ContextPanel : UserControl
 {
     public ContextPanel() { InitializeComponent(); }
+    public static readonly DependencyProperty DetailProperty = DependencyProperty.Register(nameof(Detail), typeof(object), typeof(ContextPanel));
+    public object? Detail { get => GetValue(DetailProperty); set => SetValue(DetailProperty, value); }
     public static readonly DependencyProperty TextProperty = DependencyProperty.Register(nameof(Text), typeof(string), typeof(ContextPanel));
     public string Text { get => (string)GetValue(TextProperty); set => SetValue(TextProperty, value); }
     public static readonly DependencyProperty HeadingProperty = DependencyProperty.Register(nameof(Heading), typeof(string), typeof(ContextPanel), new PropertyMetadata("Сводка"));

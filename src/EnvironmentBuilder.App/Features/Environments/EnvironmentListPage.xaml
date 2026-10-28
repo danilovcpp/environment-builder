@@ -1,35 +1,79 @@
-<UserControl x:Class="EnvironmentBuilder.App.Features.Environments.EnvironmentListPage"
- xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
- xmlns:local="clr-namespace:EnvironmentBuilder.App.Features.Environments" xmlns:icons="http://metro.mahapps.com/winfx/xaml/iconpacks">
- <UserControl.Resources><BooleanToVisibilityConverter x:Key="Visible"/></UserControl.Resources>
- <DockPanel>
-  <StackPanel DockPanel.Dock="Top">
-   <Grid Margin="0,0,0,12"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="160"/></Grid.ColumnDefinitions>
-    <TextBox x:Name="SearchBox" Text="{Binding Search, UpdateSourceTrigger=PropertyChanged}" Style="{DynamicResource Input.Search}" Tag="Поиск…" AutomationProperties.AutomationId="EnvironmentSearch" AutomationProperties.Name="Поиск по имени и описанию" ToolTip="Поиск по имени и описанию"/>
-    <ComboBox Grid.Column="1" Margin="12,0,0,0" ItemsSource="{x:Static local:EnvironmentListViewModel.TypeOptions}" SelectedValuePath="Key" DisplayMemberPath="Label" SelectedValue="{Binding TypeFilter}" AutomationProperties.Name="Фильтр типа"/>
-   </Grid>
-   <WrapPanel Margin="0,0,0,12"><RadioButton Content="Все" IsChecked="{Binding AllStatus}" Style="{DynamicResource Toggle.Chip}" Margin="0,0,8,4"/><RadioButton Content="Не проверено" IsChecked="{Binding UnknownStatus}" Style="{DynamicResource Toggle.Chip}" Margin="0,0,8,4"/><RadioButton Content="Требует сверки" IsChecked="{Binding AttentionStatus}" Style="{DynamicResource Toggle.Chip}" Margin="0,0,8,4"/><RadioButton Content="Ошибка" IsChecked="{Binding ErrorStatus}" Style="{DynamicResource Toggle.Chip}" Margin="0,0,8,4"/></WrapPanel>
-   <TextBlock Text="{Binding OfflineStatus}" Style="{DynamicResource Text.CanvasSupporting}" Margin="0,0,0,8"/>
-   <TextBlock Text="{Binding Error}" Style="{DynamicResource Text.Optional}" Foreground="{DynamicResource Brush.ErrorForeground}"/>
-   <Button Content="Повторить загрузку" Command="{Binding ReloadCommand}" HorizontalAlignment="Left" Margin="0,8" Visibility="{Binding HasError, Converter={StaticResource Visible}}"/>
-   <TextBlock Text="Загрузка окружений…" Visibility="{Binding IsLoading, Converter={StaticResource Visible}}"/>
-   <Border Style="{DynamicResource Panel.Card}" Margin="0,8" Visibility="{Binding IsEmpty, Converter={StaticResource Visible}}"><StackPanel><TextBlock Text="Окружений пока нет" Style="{DynamicResource Text.SectionTitle}"/><TextBlock Text="Создайте описание из компонентов библиотеки. Сохранение доступно без Docker." TextWrapping="Wrap" Margin="0,8,0,0"/></StackPanel></Border>
-   <TextBlock Text="По заданным фильтрам ничего не найдено." Visibility="{Binding NoResults, Converter={StaticResource Visible}}" Margin="0,12"/>
-   <TextBlock Text="{Binding SelectionNotice}" Style="{DynamicResource Text.Optional}"/>
-  </StackPanel>
-  <WrapPanel DockPanel.Dock="Bottom" Margin="0,12,0,0">
-   <Button Content="{x:Static local:EnvironmentCommands.ObservationLabel}" Command="{Binding ObserveSelectedCommand}" ToolTip="{x:Static local:EnvironmentCommands.ObservationExplanation}" AutomationProperties.AutomationId="ObserveSelectedEnvironment" Margin="0,0,8,4"/>
-   <Button Content="{x:Static local:EnvironmentCommands.ClearLabel}" Command="{Binding ClearSelectedDataCommand}" ToolTip="{x:Static local:EnvironmentCommands.ClearExplanation}" AutomationProperties.AutomationId="ClearSelectedEnvironmentData" Margin="0,0,8,4"/>
-   <Button Content="{x:Static local:EnvironmentCommands.RestoreLabel}" Command="{Binding RestoreSelectedBaselineCommand}" ToolTip="{x:Static local:EnvironmentCommands.RestoreExplanation}" AutomationProperties.AutomationId="RestoreSelectedEnvironmentBaseline" Margin="0,0,0,4"/>
-  </WrapPanel>
-  <Border Style="{DynamicResource Panel.Card}" Padding="0" ClipToBounds="True"><DockPanel>
-   <Border DockPanel.Dock="Top" Background="{DynamicResource Brush.PanelMuted}" Height="{DynamicResource Size.TableHeader}" BorderBrush="{DynamicResource Brush.Divider}" BorderThickness="0,0,0,1">
-    <Grid Margin="8,0"><Grid.ColumnDefinitions><ColumnDefinition Width="28"/><ColumnDefinition Width="2*"/><ColumnDefinition Width="0.7*"/><ColumnDefinition Width="1.3*"/><ColumnDefinition Width="140"/></Grid.ColumnDefinitions><TextBlock Grid.Column="1" Text="Название" VerticalAlignment="Center" Style="{DynamicResource Text.Metadata}"/><TextBlock Grid.Column="2" Text="Состав" VerticalAlignment="Center" Style="{DynamicResource Text.Metadata}"/><TextBlock Grid.Column="3" Text="Состояние" VerticalAlignment="Center" Style="{DynamicResource Text.Metadata}"/><TextBlock Grid.Column="4" Text="Команды" VerticalAlignment="Center" Style="{DynamicResource Text.Metadata}"/></Grid>
-   </Border>
-   <ListBox x:Name="Rows" ItemsSource="{Binding VisibleItems}" SelectedItem="{Binding SelectedItem}" AutomationProperties.AutomationId="EnvironmentRows" ScrollViewer.CanContentScroll="True" ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Disabled" VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling" ScrollViewer.ScrollChanged="RowsScrollChanged" Loaded="RowsLoaded" HorizontalContentAlignment="Stretch" Background="{DynamicResource Brush.Panel}" BorderThickness="0" ItemContainerStyle="{DynamicResource List.TableRow}">
-    <ListBox.ItemsPanel><ItemsPanelTemplate><VirtualizingStackPanel ScrollUnit="Pixel"/></ItemsPanelTemplate></ListBox.ItemsPanel>
-    <ListBox.ItemTemplate><DataTemplate><local:EnvironmentRow/></DataTemplate></ListBox.ItemTemplate>
-   </ListBox>
-  </DockPanel></Border>
- </DockPanel>
+<UserControl x:Class="EnvironmentBuilder.App.Features.Environments.EnvironmentListPage" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:local="clr-namespace:EnvironmentBuilder.App.Features.Environments" xmlns:icons="http://metro.mahapps.com/winfx/xaml/iconpacks">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="Visible" />
+    </UserControl.Resources>
+    <DockPanel>
+        <StackPanel DockPanel.Dock="Top">
+            <TextBlock Text="{Binding Error}" Style="{DynamicResource Text.Optional}" Foreground="{DynamicResource Brush.ErrorForeground}" />
+            <Button Content="Повторить загрузку" Command="{Binding ReloadCommand}" HorizontalAlignment="Left" Margin="0,8" Visibility="{Binding HasError, Converter={StaticResource Visible}}" />
+            <TextBlock Text="Загрузка окружений…" Visibility="{Binding IsLoading, Converter={StaticResource Visible}}" />
+            <TextBlock Text="{Binding SelectionNotice}" Style="{DynamicResource Text.Optional}" />
+        </StackPanel>
+        <DockPanel DockPanel.Dock="Bottom" Margin="4,10,0,2">
+            <TextBlock DockPanel.Dock="Right" Text="{Binding OfflineStatus}" Style="{DynamicResource Text.Metadata}" FontSize="11" VerticalAlignment="Center" />
+            <WrapPanel>
+                <Button Content="{x:Static local:EnvironmentCommands.ObservationLabel}" Command="{Binding ObserveSelectedCommand}" ToolTip="{x:Static local:EnvironmentCommands.ObservationExplanation}" AutomationProperties.AutomationId="ObserveSelectedEnvironment" Margin="0,0,8,0" Style="{DynamicResource Button.Ghost}" FontSize="11" />
+                <Button Content="{x:Static local:EnvironmentCommands.ClearLabel}" Command="{Binding ClearSelectedDataCommand}" ToolTip="{x:Static local:EnvironmentCommands.ClearExplanation}" AutomationProperties.AutomationId="ClearSelectedEnvironmentData" Margin="0,0,8,0" Style="{DynamicResource Button.Ghost}" FontSize="11" />
+                <Button Content="{x:Static local:EnvironmentCommands.RestoreLabel}" Command="{Binding RestoreSelectedBaselineCommand}" ToolTip="{x:Static local:EnvironmentCommands.RestoreExplanation}" AutomationProperties.AutomationId="RestoreSelectedEnvironmentBaseline" Style="{DynamicResource Button.Ghost}" FontSize="11" />
+            </WrapPanel>
+        </DockPanel>
+        <Border Style="{DynamicResource Panel.Card}" Padding="0" ClipToBounds="True">
+            <DockPanel>
+                <Border DockPanel.Dock="Top" BorderBrush="{DynamicResource Brush.Divider}" BorderThickness="0,0,0,1" Padding="14,14">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition />
+                            <ColumnDefinition Width="0.8*" />
+                            <ColumnDefinition Width="150" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Orientation="Horizontal">
+                            <RadioButton Content="Все" IsChecked="{Binding AllStatus}" Style="{DynamicResource Toggle.Chip}" Margin="0,0,8,0" Padding="20,7" />
+                            <RadioButton Content="Не проверено" IsChecked="{Binding UnknownStatus}" Style="{DynamicResource Toggle.Chip}" Margin="0,0,8,0" Padding="18,7" />
+                            <RadioButton Content="Требует сверки" IsChecked="{Binding AttentionStatus}" Style="{DynamicResource Toggle.Chip}" Margin="0,0,8,0" Padding="18,7" />
+                            <RadioButton Content="Ошибка" IsChecked="{Binding ErrorStatus}" Style="{DynamicResource Toggle.Chip}" Margin="0,0,8,0" />
+                        </StackPanel>
+                        <TextBox Grid.Column="2" x:Name="SearchBox" Text="{Binding Search, UpdateSourceTrigger=PropertyChanged}" Style="{DynamicResource Input.Search}" Tag="Поиск окружений..." AutomationProperties.AutomationId="EnvironmentSearch" AutomationProperties.Name="Поиск по имени и описанию" Margin="12,0" />
+                        <ComboBox Grid.Column="3" ItemsSource="{x:Static local:EnvironmentListViewModel.TypeOptions}" SelectedValuePath="Key" DisplayMemberPath="Label" SelectedValue="{Binding TypeFilter}" AutomationProperties.Name="Фильтр типа" />
+                    </Grid>
+                </Border>
+                <Border DockPanel.Dock="Top" Background="{DynamicResource Brush.Panel}" Height="38" BorderBrush="{DynamicResource Brush.Divider}" BorderThickness="0,0,0,1">
+                    <Grid Margin="10,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="28" />
+                            <ColumnDefinition Width="2*" />
+                            <ColumnDefinition Width="1.7*" />
+                            <ColumnDefinition Width="1.2*" />
+                            <ColumnDefinition Width="1.35*" />
+                            <ColumnDefinition Width="1.6*" />
+                            <ColumnDefinition Width="156" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="" Style="{DynamicResource Reference.TableHeader}" />
+                        <TextBlock Grid.Column="1" Text="Название" Style="{DynamicResource Reference.TableHeader}" />
+                        <TextBlock Grid.Column="2" Text="Сервисы" Style="{DynamicResource Reference.TableHeader}" />
+                        <TextBlock Grid.Column="3" Text="Инфраструктура" Style="{DynamicResource Reference.TableHeader}" />
+                        <TextBlock Grid.Column="4" Text="Сводка" Style="{DynamicResource Reference.TableHeader}" />
+                        <TextBlock Grid.Column="5" Text="" Style="{DynamicResource Reference.TableHeader}" />
+                        <TextBlock Grid.Column="6" Text="Команды" Style="{DynamicResource Reference.TableHeader}" />
+                    </Grid>
+                </Border>
+                <Grid>
+                    <ListBox x:Name="Rows" ItemsSource="{Binding VisibleItems}" SelectedItem="{Binding SelectedItem}" AutomationProperties.AutomationId="EnvironmentRows" ScrollViewer.CanContentScroll="True" ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Disabled" VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling" ScrollViewer.ScrollChanged="RowsScrollChanged" Loaded="RowsLoaded" HorizontalContentAlignment="Stretch" Background="{DynamicResource Brush.Panel}" BorderThickness="0" ItemContainerStyle="{DynamicResource List.TableRow}">
+                        <ListBox.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <VirtualizingStackPanel ScrollUnit="Pixel" />
+                            </ItemsPanelTemplate>
+                        </ListBox.ItemsPanel>
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <local:EnvironmentRow />
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                    <local:EnvironmentExamples Visibility="{Binding IsEmpty, Converter={StaticResource Visible}}" />
+                    <TextBlock Text="По заданным фильтрам ничего не найдено." Visibility="{Binding NoResults, Converter={StaticResource Visible}}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                </Grid>
+            </DockPanel>
+        </Border>
+    </DockPanel>
 </UserControl>

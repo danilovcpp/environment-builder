@@ -54,6 +54,16 @@ internal static class UiReferenceTests
                         Assert.True(fixture.Shell.NavigateCommand.ExecuteAsync(route).IsCompletedSuccessfully);
                         Layout(window); Capture(window, route + suffix);
                     }
+                    var savedPacks = fixture.Shell.SeedPacks;
+                    var savedSettings = fixture.Shell.Settings;
+                    fixture.Shell.SeedPacks = new SeedPackLibraryViewModel();
+                    fixture.Shell.Settings = new App.Features.Settings.SettingsViewModel(fixture.Themes);
+                    Assert.True(fixture.Shell.NavigateCommand.ExecuteAsync("seedpacks").IsCompletedSuccessfully);
+                    Layout(window); Capture(window, "seedpacks-example" + suffix);
+                    Assert.True(fixture.Shell.NavigateCommand.ExecuteAsync("settings").IsCompletedSuccessfully);
+                    Layout(window); Capture(window, "settings-example" + suffix);
+                    fixture.Shell.SeedPacks = savedPacks;
+                    fixture.Shell.Settings = savedSettings;
                     Assert.True(fixture.Shell.NavigateCommand.ExecuteAsync("environments").IsCompletedSuccessfully);
                     Assert.True(fixture.Shell.Authoring.List.CreateNewCommand.ExecuteAsync(null).IsCompletedSuccessfully);
                     var editor = Assert.IsType<EnvironmentEditorViewModel>(fixture.Shell.Authoring.Current);

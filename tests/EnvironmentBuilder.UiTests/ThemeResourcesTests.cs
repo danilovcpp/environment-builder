@@ -263,6 +263,11 @@ public sealed class ThemeResourcesTests
         public string Error => "";
         public string Measurements => "CPU 125.5% ≈ · memory unavailable · покрытие 1/2";
         public string Aggregate => "CPU ≈125.5% · покрытие 1/2; память — нет данных · покрытие 0/2";
+        public string CpuSummary => "≈ 125.5%";
+        public string MemorySummary => "—";
+        public string RunningSummary => "1 / 2";
+        public string HealthSummary => "Не подтверждён";
+        public string PortCount => "1";
         public string Endpoints => "127.0.0.1:49152 → 8080/tcp";
         public bool LogsPaused { get; set; }
         public string LogStatus => "following · удалено строк 24 · усечено 1";
@@ -355,6 +360,8 @@ public sealed class ThemeResourcesTests
                 window.Dispatcher.Invoke(() => { }, DispatcherPriority.ContextIdle);
             }
             Assert.Same(model, window.DataContext);
+            model.NavigateCommand.Execute("diagnostics");
+            window.UpdateLayout();
             var context = Descendants(window).OfType<App.Components.ContextPanel>().Single();
             context.IsExpanded = false;
             window.UpdateLayout();
@@ -409,7 +416,7 @@ public sealed class ThemeResourcesTests
             // Load the production dictionaries without executing App.OnStartup against a user's data.
             Resources.MergedDictionaries.Add(new Wpf.Ui.Markup.ThemesDictionary { Theme = ApplicationTheme.Light });
             Resources.MergedDictionaries.Add(new Wpf.Ui.Markup.ControlsDictionary());
-            foreach (string name in new[] { "Light", "Typography", "Components" })
+            foreach (string name in new[] { "Light", "Typography", "Components", "Reference" })
             { Resources.MergedDictionaries.Add(new ResourceDictionary { Source = new Uri($"pack://application:,,,/EnvironmentBuilder.App;component/Themes/{name}.xaml") }); }
         }
     }
