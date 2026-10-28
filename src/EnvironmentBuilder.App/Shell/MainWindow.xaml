@@ -165,22 +165,22 @@
                             </Button>
                         </WrapPanel>
                         <WrapPanel Visibility="{Binding ShowSettings, Converter={StaticResource VisibleIfTrue}}">
-                            <Button Style="{DynamicResource Reference.PreviewAction}" Margin="0,0,8,0">
+                            <Button Command="{Binding Settings.ResetCommand}" Style="{DynamicResource Reference.PreviewAction}" Margin="0,0,8,0">
                                 <StackPanel Orientation="Horizontal">
                                     <icons:PackIconLucide Kind="RotateCcw" Margin="0,0,8,0" />
                                     <TextBlock Text="Сбросить" />
                                 </StackPanel>
                             </Button>
-                            <Button Style="{DynamicResource Reference.PreviewAction}" Margin="0,0,8,0">
+                            <Button Command="{Binding Settings.SaveCommand}" Style="{DynamicResource Reference.PreviewAction}" Margin="0,0,8,0">
                                 <StackPanel Orientation="Horizontal">
                                     <icons:PackIconLucide Kind="Save" Margin="0,0,8,0" />
                                     <TextBlock Text="Сохранить настройки" />
                                 </StackPanel>
                             </Button>
-                            <Button Command="{x:Static components:PlaceholderActions.Explain}" Style="{DynamicResource Button.Primary}">
+                            <Button Command="{Binding Settings.AddTargetCommand}" Style="{DynamicResource Button.Primary}">
                                 <StackPanel Orientation="Horizontal">
-                                    <icons:PackIconLucide Kind="Play" Margin="0,0,8,0" />
-                                    <TextBlock Text="Применить" />
+                                    <icons:PackIconLucide Kind="Plus" Margin="0,0,8,0" />
+                                    <TextBlock Text="Добавить сервис" />
                                 </StackPanel>
                             </Button>
                         </WrapPanel>

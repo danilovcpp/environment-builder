@@ -81,8 +81,10 @@ public sealed partial class DependencyEditor : EditorRow
 
 public sealed record ValidationMessage(string FieldPath, string Message);
 public sealed record ComponentChoice(Guid Id, string Label);
-public sealed record DefinitionChoice(ComponentDefinition Definition)
+public sealed partial class DefinitionChoice(ComponentDefinition definition) : ObservableObject
 {
+    public ComponentDefinition Definition { get; } = definition;
+    [ObservableProperty] private bool isSelected;
     public string Label => $"{Definition.Name} · {Definition.Version} · {Definition.ComponentType}";
     public string SourceLabel => Definition.DefaultSource is ImageSource image ? image.Reference : "Локальная сборка";
 }

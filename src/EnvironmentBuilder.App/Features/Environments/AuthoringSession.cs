@@ -119,6 +119,12 @@ public sealed class AuthoringSession : ObservableObject
     {
         Editor = new EnvironmentEditorViewModel(draft, create, library, interactions, documents, mappings, inputs, packs, commands, destructive);
         Editor.Saved = async saved => { await List.LoadAsync(CancellationToken.None); List.SelectSaved(saved.Id); Editor = null; Current = List; navigation.Navigate(new NavigationAddress("environments")); };
+        Editor.StartSaved = async saved =>
+        {
+            await List.LoadAsync(CancellationToken.None); List.SelectSaved(saved.Id);
+            await OpenInspectAsync(saved);
+            if (Current == inspect && inspect?.StartCommand.CanExecute(null) == true) { await inspect.StartCommand.ExecuteAsync(null); }
+        };
         Editor.Back = ReturnToListAsync;
         Editor.Preview = ShowPreviewAsync;
         Editor.Inspect = OpenInspectAsync;

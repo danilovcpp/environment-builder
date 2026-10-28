@@ -7,7 +7,8 @@
             <DockPanel>
                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
                     <Button Content="Compose preview" Command="{Binding ShowPreviewCommand}" Margin="0,0,10,0" Foreground="{DynamicResource Brush.AccentText}" />
-                    <Button Content="Сохранить описание" Command="{Binding SaveCommand}" Style="{DynamicResource Button.Primary}" />
+                    <Button Content="Сохранить" Command="{Binding SaveCommand}" Margin="0,0,10,0" AutomationProperties.AutomationId="SaveEnvironmentFooter" />
+                    <Button Content="Сохранить и запустить" Command="{Binding SaveAndStartCommand}" Style="{DynamicResource Button.Primary}" AutomationProperties.AutomationId="SaveAndStartEnvironment" />
                 </StackPanel>
                 <TextBlock Text="Выберите сервисы и инфраструктуру для создания окружения." Style="{DynamicResource Text.Metadata}" FontSize="11" TextWrapping="Wrap" VerticalAlignment="Center" Margin="4,0,12,0" />
             </DockPanel>
@@ -57,12 +58,13 @@
                         </Expander>
                     </StackPanel>
                 </Border>
-                <Grid Margin="0,0,0,12" IsEnabled="{Binding CanEdit}">
+                <Grid x:Name="CatalogGrid" Margin="0,0,0,12" IsEnabled="{Binding CanEdit}" SizeChanged="CatalogSizeChanged">
+                    <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="1.4*" />
                         <ColumnDefinition />
                     </Grid.ColumnDefinitions>
-                    <Border Margin="0,0,6,0" Style="{DynamicResource Panel.Card}" Padding="16">
+                    <Border x:Name="TargetCatalog" Margin="0,0,6,0" Style="{DynamicResource Panel.Card}" Padding="16">
                         <DockPanel>
                             <StackPanel DockPanel.Dock="Top">
                                 <StackPanel Orientation="Horizontal">
@@ -76,14 +78,12 @@
                                         <ColumnDefinition Width="30" />
                                         <ColumnDefinition Width="1.2*" />
                                         <ColumnDefinition Width="1.5*" />
-                                        <ColumnDefinition Width="0.8*" />
                                         <ColumnDefinition Width="90" />
                                     </Grid.ColumnDefinitions>
-                                    <CheckBox IsChecked="False" IsHitTestVisible="False" />
+                                    <TextBlock Text="" />
                                     <TextBlock Grid.Column="1" Text="Название" Style="{DynamicResource Reference.TableHeader}" />
-                                    <TextBlock Grid.Column="2" Text="Версия / Образ" Style="{DynamicResource Reference.TableHeader}" />
-                                    <TextBlock Grid.Column="3" Text="Тип" Style="{DynamicResource Reference.TableHeader}" />
-                                    <TextBlock Grid.Column="4" Text="Действия" Style="{DynamicResource Reference.TableHeader}" />
+                                    <TextBlock Grid.Column="2" Text="Источник" Style="{DynamicResource Reference.TableHeader}" />
+                                    <TextBlock Grid.Column="3" Text="Действия" Style="{DynamicResource Reference.TableHeader}" />
                                 </Grid>
                             </StackPanel>
                             <ItemsControl ItemsSource="{Binding TargetDefinitions}">
@@ -95,19 +95,15 @@
                                                     <ColumnDefinition Width="30" />
                                                     <ColumnDefinition Width="1.2*" />
                                                     <ColumnDefinition Width="1.5*" />
-                                                    <ColumnDefinition Width="0.8*" />
                                                     <ColumnDefinition Width="90" />
                                                 </Grid.ColumnDefinitions>
-                                                <CheckBox IsChecked="False" IsHitTestVisible="False" />
-                                                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                                                    <icons:PackIconLucide Kind="Settings" Width="22" Height="22" Foreground="#FF8500" Margin="0,0,12,0" />
-                                                    <TextBlock Text="{Binding Definition.Name}" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center" ToolTip="{Binding Label}" />
-                                                </StackPanel>
+                                                <CheckBox IsChecked="{Binding IsSelected}" Command="{Binding DataContext.ToggleDefinitionCommand, RelativeSource={RelativeSource AncestorType=local:EnvironmentEditorPage}}" CommandParameter="{Binding}" AutomationProperties.AutomationId="ChooseTargetService" AutomationProperties.Name="{Binding Definition.Name}" />
+                                                <DockPanel Grid.Column="1" VerticalAlignment="Center">
+                                                    <icons:PackIconLucide DockPanel.Dock="Left" Kind="Settings" Width="22" Height="22" Foreground="#FF8500" Margin="0,0,12,0" />
+                                                    <TextBlock Text="{Binding Definition.Name}" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" ToolTip="{Binding Label}" />
+                                                </DockPanel>
                                                 <TextBlock Grid.Column="2" Text="{Binding SourceLabel}" FontSize="11" Foreground="{DynamicResource Brush.TextSecondary}" VerticalAlignment="Center" Margin="8,0" TextWrapping="Wrap" />
-                                                <Border Grid.Column="3" Style="{DynamicResource Reference.Badge}" Padding="5,2" CornerRadius="3" Margin="4,0">
-                                                    <TextBlock Text="Backend" FontSize="10" />
-                                                </Border>
-                                                <Button Grid.Column="4" Content="Добавить" Command="{Binding DataContext.AddDefinitionCommand, RelativeSource={RelativeSource AncestorType=local:EnvironmentEditorPage}}" CommandParameter="{Binding}" Padding="8,4" MinHeight="28" FontSize="11" Foreground="{DynamicResource Brush.AccentText}" Margin="4,0" />
+                                                <Button Grid.Column="3" Content="Ещё один" ToolTip="Добавить ещё один экземпляр сервиса" Command="{Binding DataContext.AddDefinitionCommand, RelativeSource={RelativeSource AncestorType=local:EnvironmentEditorPage}}" CommandParameter="{Binding}" Padding="8,4" MinHeight="28" FontSize="11" Foreground="{DynamicResource Brush.AccentText}" Margin="4,0" />
                                             </Grid>
                                         </Border>
                                     </DataTemplate>
@@ -115,7 +111,7 @@
                             </ItemsControl>
                         </DockPanel>
                     </Border>
-                    <Border Grid.Column="1" Margin="6,0,0,0" Style="{DynamicResource Panel.Card}" Padding="16">
+                    <Border x:Name="InfrastructureCatalog" Grid.Column="1" Margin="6,0,0,0" Style="{DynamicResource Panel.Card}" Padding="16">
                         <DockPanel>
                             <StackPanel DockPanel.Dock="Top">
                                 <StackPanel Orientation="Horizontal">
@@ -129,14 +125,12 @@
                                         <ColumnDefinition Width="30" />
                                         <ColumnDefinition Width="1.2*" />
                                         <ColumnDefinition Width="1.5*" />
-                                        <ColumnDefinition Width="0.8*" />
                                         <ColumnDefinition Width="90" />
                                     </Grid.ColumnDefinitions>
-                                    <CheckBox IsChecked="False" IsHitTestVisible="False" />
+                                    <TextBlock Text="" />
                                     <TextBlock Grid.Column="1" Text="Название" Style="{DynamicResource Reference.TableHeader}" />
-                                    <TextBlock Grid.Column="2" Text="Версия / Образ" Style="{DynamicResource Reference.TableHeader}" />
-                                    <TextBlock Grid.Column="3" Text="Тип" Style="{DynamicResource Reference.TableHeader}" />
-                                    <TextBlock Grid.Column="4" Text="Действия" Style="{DynamicResource Reference.TableHeader}" />
+                                    <TextBlock Grid.Column="2" Text="Источник" Style="{DynamicResource Reference.TableHeader}" />
+                                    <TextBlock Grid.Column="3" Text="Действия" Style="{DynamicResource Reference.TableHeader}" />
                                 </Grid>
                             </StackPanel>
                             <ItemsControl ItemsSource="{Binding InfrastructureDefinitions}">
@@ -148,19 +142,15 @@
                                                     <ColumnDefinition Width="30" />
                                                     <ColumnDefinition Width="1.2*" />
                                                     <ColumnDefinition Width="1.5*" />
-                                                    <ColumnDefinition Width="0.8*" />
                                                     <ColumnDefinition Width="90" />
                                                 </Grid.ColumnDefinitions>
-                                                <CheckBox IsChecked="False" IsHitTestVisible="False" />
-                                                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                                                    <icons:PackIconLucide Kind="Database" Width="22" Height="22" Foreground="#1B659A" Margin="0,0,12,0" />
-                                                    <TextBlock Text="{Binding Definition.Name}" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center" ToolTip="{Binding Label}" />
-                                                </StackPanel>
+                                                <CheckBox IsChecked="{Binding IsSelected}" Command="{Binding DataContext.ToggleDefinitionCommand, RelativeSource={RelativeSource AncestorType=local:EnvironmentEditorPage}}" CommandParameter="{Binding}" AutomationProperties.AutomationId="ChooseInfrastructureService" AutomationProperties.Name="{Binding Definition.Name}" />
+                                                <DockPanel Grid.Column="1" VerticalAlignment="Center">
+                                                    <icons:PackIconLucide DockPanel.Dock="Left" Kind="Database" Width="22" Height="22" Foreground="#1B659A" Margin="0,0,12,0" />
+                                                    <TextBlock Text="{Binding Definition.Name}" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" ToolTip="{Binding Label}" />
+                                                </DockPanel>
                                                 <TextBlock Grid.Column="2" Text="{Binding SourceLabel}" FontSize="11" Foreground="{DynamicResource Brush.TextSecondary}" VerticalAlignment="Center" Margin="8,0" TextWrapping="Wrap" />
-                                                <Border Grid.Column="3" Style="{DynamicResource Reference.Badge}" Padding="5,2" CornerRadius="3" Margin="4,0">
-                                                    <TextBlock Text="Infrastructure" FontSize="10" />
-                                                </Border>
-                                                <Button Grid.Column="4" Content="Добавить" Command="{Binding DataContext.AddDefinitionCommand, RelativeSource={RelativeSource AncestorType=local:EnvironmentEditorPage}}" CommandParameter="{Binding}" Padding="8,4" MinHeight="28" FontSize="11" Foreground="{DynamicResource Brush.AccentText}" Margin="4,0" />
+                                                <Button Grid.Column="3" Content="Ещё один" ToolTip="Добавить ещё один экземпляр сервиса" Command="{Binding DataContext.AddDefinitionCommand, RelativeSource={RelativeSource AncestorType=local:EnvironmentEditorPage}}" CommandParameter="{Binding}" Padding="8,4" MinHeight="28" FontSize="11" Foreground="{DynamicResource Brush.AccentText}" Margin="4,0" />
                                             </Grid>
                                         </Border>
                                     </DataTemplate>
@@ -169,7 +159,11 @@
                         </DockPanel>
                     </Border>
                 </Grid>
-                <Expander IsExpanded="True" Header="Импорт и выбор компонента" Margin="0,0,0,12">
+                <DockPanel Margin="0,0,0,12">
+                    <Button DockPanel.Dock="Right" Content="Настроить сервисы" Command="{Binding DataContext.NavigateCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="settings" />
+                    <TextBlock Text="{Binding LibraryStatus}" TextWrapping="Wrap" Style="{DynamicResource Text.Metadata}" VerticalAlignment="Center" />
+                </DockPanel>
+                <Expander IsExpanded="False" Header="Дополнительно: импорт описания компонента" Margin="0,0,0,12">
                     <StackPanel IsEnabled="{Binding CanEdit}" Margin="12">
                         <TextBlock Text="{Binding LibraryStatus}" Style="{DynamicResource Text.Metadata}" />
                         <WrapPanel Margin="0,8,0,0">

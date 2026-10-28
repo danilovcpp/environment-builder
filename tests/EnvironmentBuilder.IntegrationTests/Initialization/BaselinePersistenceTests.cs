@@ -78,11 +78,11 @@ public sealed class BaselinePersistenceTests
         await journal.SaveAsync(record with { State = StepState.Succeeded, Attempt = 1, CompletedAt = DateTimeOffset.UtcNow, AcceptedStatus = 204, AssertionsPassed = true }, TestContext.Current.CancellationToken);
         // Reconstruct the previous database schema in this isolated fixture, leaving authoritative records intact.
         await worker.CommitAsync("v1-fixture", (connection, transaction) =>
-        { using var command = connection.CreateCommand(); command.Transaction = transaction; command.CommandText = "DROP TABLE InitializationAttempts; UPDATE AppMetadata SET value='1' WHERE key='databaseSchemaVersion'; PRAGMA user_version=1"; return command.ExecuteNonQuery(); }, TestContext.Current.CancellationToken);
+        { using var command = connection.CreateCommand(); command.Transaction = transaction; command.CommandText = "DROP TABLE InitializationAttempts; DROP TABLE ComponentLibrarySelections; UPDATE AppMetadata SET value='1' WHERE key='databaseSchemaVersion'; PRAGMA user_version=1"; return command.ExecuteNonQuery(); }, TestContext.Current.CancellationToken);
         await worker.DisposeAsync();
         await using var reopened = new SqliteWorker(directory, lease); await reopened.Ready;
         Assert.Equal(StepState.Succeeded, (await new DataApplicationStore(reopened).ReadAsync(key, TestContext.Current.CancellationToken))!.State);
-        Assert.Equal(2L, await reopened.ReadAsync(connection =>
+        Assert.Equal(3L, await reopened.ReadAsync(connection =>
         { using var command = connection.CreateCommand(); command.CommandText = "PRAGMA user_version"; return (long)command.ExecuteScalar()!; }, TestContext.Current.CancellationToken));
     }
 

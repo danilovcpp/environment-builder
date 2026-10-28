@@ -17,7 +17,18 @@ Unit/VM tests выполняются без окна. Integration использ
 ответы и функции, включая cancellation, nonzero exit и потерю HTTP-ответа после мутации.
 Незапланированный вызов завершается ошибкой. Проверки runtime, владения ресурсами,
 ошибок и восстановления используют подготовленные Docker/HTTP responses и fault injection.
-Вся integration suite запускается без дополнительных переменных окружения и фильтров.
+Обычная integration suite запускается без дополнительных переменных окружения.
+Отдельный opt-in тест `Category=DockerLive` пропускается по умолчанию. Он проверяет
+настоящую цепочку Settings → создание → Start: инфраструктура, целевой image,
+локальная сборка, HTTP и env override. Нужны локальные образы `redis:7.2-alpine`
+и `nginx:stable-alpine`. Тест создаёт собственное окружение и удаляет его через
+production-проверку владения; при неудаче очистки сохраняет отдельный store.
+
+```powershell
+$env:ENVIRONMENTBUILDER_LIVE_DOCKER = '1'
+dotnet test tests/EnvironmentBuilder.IntegrationTests/EnvironmentBuilder.IntegrationTests.csproj --configuration Release --no-build --no-restore --filter 'Category=DockerLive'
+Remove-Item Env:ENVIRONMENTBUILDER_LIVE_DOCKER
+```
 
 `Category=UI` запускает smoke общих ресурсов, authoring и Inspect. Проверка ресурсов загружает скомпилированные словари
 из App, создаёт настоящий WPF host вне видимой области, проверяет цвета, validation и DataGrid,

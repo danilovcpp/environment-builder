@@ -140,6 +140,7 @@ public sealed class ThemeResourcesTests
             VerifyDataReset(diagnostics);
             DeleteSmokeTests.Verify();
             SeedPackSmokeTests.Verify();
+            SettingsSmokeTests.Verify();
             Assert.Empty(diagnostics.Errors);
         }
         finally

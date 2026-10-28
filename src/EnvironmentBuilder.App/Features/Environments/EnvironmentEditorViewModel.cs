@@ -24,6 +24,8 @@ public sealed partial class EnvironmentEditorViewModel : ObservableObject
     private bool synchronizing;
     private bool unparsedEdits;
     private long editVersion;
+    private IReadOnlyList<ComponentDefinition> dependencyDefinitions = [];
+    private IReadOnlyList<LocalPathMapping> localPaths = [];
 
     public EnvironmentEditorViewModel(EnvironmentDraft draft, CreateEnvironmentService service, IComponentLibrary library, IAuthoringInteractions interactions,
         IInitializationDocumentReader documents, ILocalPathMappings mappings, IInputResolver inputs, ISeedPackStore packs,
@@ -84,6 +86,7 @@ public sealed partial class EnvironmentEditorViewModel : ObservableObject
     public string LastFocusedField { get; set; } = "name";
     public double ScrollOffset { get; set; }
     public Func<IsolatedEnvironment, Task>? Saved { get; set; }
+    public Func<IsolatedEnvironment, Task>? StartSaved { get; set; }
     public Func<IsolatedEnvironment, Task>? Preview { get; set; }
     public Func<IsolatedEnvironment, Task>? Inspect { get; set; }
     public Func<Task>? Back { get; set; }
@@ -92,10 +95,16 @@ public sealed partial class EnvironmentEditorViewModel : ObservableObject
     {
         try
         {
-            var definitions = await library.ReadAsync(cancellationToken);
+            dependencyDefinitions = await library.ReadAsync(cancellationToken);
+            var definitions = library is IComponentLibrarySettings settings
+                ? (await settings.ReadEntriesAsync(cancellationToken)).Where(e => e.Enabled).Select(e => e.Definition).ToArray()
+                : dependencyDefinitions;
             Library.Clear(); foreach (var definition in definitions) { Library.Add(new DefinitionChoice(definition)); }
             SelectedDefinition ??= Library.FirstOrDefault();
-            LibraryStatus = Library.Count == 0 ? "Библиотека пуста. Импортируйте JSON-описание компонента." : $"Описаний в библиотеке: {Library.Count}";
+            LibraryStatus = Library.Count == 0 ? "Добавьте и сохраните сервисы в настройках — они появятся здесь." : $"Сервисов из настроек: {Library.Count}";
+            localPaths = await mappings.ReadAsync(cancellationToken);
+            foreach (var component in Components) { component.LoadLocalFolder(localPaths); }
+            NotifyState();
             OnPropertyChanged(nameof(TargetDefinitions)); OnPropertyChanged(nameof(InfrastructureDefinitions));
             await LoadPackChoicesAsync(cancellationToken);
         }
@@ -144,7 +153,7 @@ public sealed partial class EnvironmentEditorViewModel : ObservableObject
         try
         {
             Draft.Update(BuildSnapshot());
-            unparsedEdits = false;
+            unparsedEdits = Components.Any(c => c.HasPendingFolder);
             EnvironmentValidator.Validate(Draft.Snapshot);
         }
         catch (DocumentException error) { Errors.Add(new ValidationMessage(error.FieldPath, Explain(error.Code))); }
@@ -170,11 +179,15 @@ public sealed partial class EnvironmentEditorViewModel : ObservableObject
     private void RenderDraft()
     {
         synchronizing = true;
+        var folders = Components.ToDictionary(c => c.Id, c => c.LocalFolder);
         Name = Draft.Snapshot.Name; Description = Draft.Snapshot.Description ?? "";
         Components.Clear(); ComponentChoices.Clear(); Dependencies.Clear(); Baseline.Clear();
         foreach (EnvironmentComponent component in Draft.Snapshot.Components)
         {
-            var model = new ComponentEditorViewModel(component, IsReadOnly); Components.Add(model); ComponentChoices.Add(new ComponentChoice(component.Id, model.Label));
+            var model = new ComponentEditorViewModel(component, IsReadOnly, mappings, interactions) { RemoveCommand = RemoveComponentCommand };
+            model.LoadLocalFolder(localPaths);
+            if (folders.TryGetValue(component.Id, out var folder)) { model.LocalFolder = folder; }
+            Components.Add(model); ComponentChoices.Add(new ComponentChoice(component.Id, model.Label));
         }
         foreach (ComponentDependency dependency in Draft.Snapshot.Dependencies) { Dependencies.Add(DependencyEditor.From(dependency)); }
         foreach (BaselineApplication application in Draft.Snapshot.Baseline.Applications)
@@ -187,14 +200,26 @@ public sealed partial class EnvironmentEditorViewModel : ObservableObject
     }
     private void NotifyState()
     {
+        foreach (var choice in Library) { choice.IsSelected = Components.Any(c => c.Definition.Id == choice.Definition.Id); }
         OnPropertyChanged(nameof(ConfigurationSummary));
         OnPropertyChanged(nameof(ServiceCount)); OnPropertyChanged(nameof(InfrastructureCount)); OnPropertyChanged(nameof(PublishedPortCount)); OnPropertyChanged(nameof(SeedStatus));
         OnPropertyChanged(nameof(IsDirty)); OnPropertyChanged(nameof(CanSave)); OnPropertyChanged(nameof(CanPreview)); OnPropertyChanged(nameof(CanEdit)); OnPropertyChanged(nameof(CanInteract)); OnPropertyChanged(nameof(SaveDisabledReason));
-        SaveCommand.NotifyCanExecuteChanged(); ShowPreviewCommand.NotifyCanExecuteChanged(); InspectSavedCommand.NotifyCanExecuteChanged();
+        SaveCommand.NotifyCanExecuteChanged(); SaveAndStartCommand.NotifyCanExecuteChanged(); ShowPreviewCommand.NotifyCanExecuteChanged(); InspectSavedCommand.NotifyCanExecuteChanged();
         OnPropertyChanged(nameof(CanBeginEdit)); OnPropertyChanged(nameof(CanInspect)); BeginEditCommand.NotifyCanExecuteChanged();
     }
     partial void OnIsBusyChanged(bool value) => NotifyState();
 
+    [RelayCommand]
+    private void ToggleDefinition(DefinitionChoice definition)
+    {
+        if (!CanEdit) { return; }
+        if (Components.Any(c => c.Definition.Id == definition.Definition.Id))
+        {
+            foreach (var component in Components.Where(c => c.Definition.Id == definition.Definition.Id).ToArray()) { RemoveComponent(component); }
+        }
+        else { AddDefinition(definition); }
+        NotifyState();
+    }
     [RelayCommand]
     private void AddDefinition(DefinitionChoice definition)
     {
@@ -219,7 +244,13 @@ public sealed partial class EnvironmentEditorViewModel : ObservableObject
     private void AddComponent()
     {
         if (!CanEdit || SelectedDefinition is null) { return; }
-        try { Draft.Update(BuildSnapshot()); Draft.AddComponent(SelectedDefinition.Definition, Library.Select(i => i.Definition).ToArray()); RenderDraft(); Edited(this, EventArgs.Empty); }
+        try
+        {
+            Draft.Update(BuildSnapshot()); Draft.AddComponent(SelectedDefinition.Definition, dependencyDefinitions);
+            RenderDraft();
+            foreach (var component in Components.Where(c => c.Definition.Id == SelectedDefinition.Definition.Id)) { component.IsExpanded = true; }
+            Edited(this, EventArgs.Empty);
+        }
         catch (DocumentException error) { ActionError = error.Message; }
     }
     [RelayCommand]
@@ -287,9 +318,10 @@ public sealed partial class EnvironmentEditorViewModel : ObservableObject
     private async Task CheckReadinessAsync(CancellationToken cancellationToken)
     {
         Validate(); if (Errors.Count != 0) { return; }
-        long version = editVersion;
         await WithActionAsync(async () =>
         {
+            await PrepareLocalFoldersAsync(cancellationToken);
+            long version = editVersion;
             var issues = await EnvironmentReadiness.CheckAsync(BuildSnapshot(), inputs, packs, cancellationToken);
             if (version != editVersion) { return; }
             ReadinessIssues.Clear(); foreach (var issue in issues) { ReadinessIssues.Add(issue); }
@@ -301,6 +333,9 @@ public sealed partial class EnvironmentEditorViewModel : ObservableObject
         bool saved = false;
         await WithActionAsync(async () =>
         {
+            await PrepareLocalFoldersAsync(cancellationToken);
+            Validate();
+            if (Errors.Count != 0) { return; }
             if (original is not null && editing is not null && destructive is not null)
             {
                 IsolatedEnvironment requested = BuildSnapshot();
@@ -339,14 +374,26 @@ public sealed partial class EnvironmentEditorViewModel : ObservableObject
     [RelayCommand(CanExecute = nameof(CanSave), IncludeCancelCommand = true)]
     private async Task SaveAsync(CancellationToken cancellationToken)
     { if (await TrySaveAsync(cancellationToken) && Saved is not null) { await Saved(Draft.Snapshot); } }
+    [RelayCommand(CanExecute = nameof(CanSave))]
+    private async Task SaveAndStartAsync(CancellationToken token)
+    { if (await TrySaveAsync(token) && StartSaved is not null) { await StartSaved(Draft.Snapshot); } }
     [RelayCommand(CanExecute = nameof(CanPreview))]
     private async Task ShowPreviewAsync()
     {
-        Validate(); if (Errors.Count == 0 && Preview is not null) { await Preview(BuildSnapshot()); }
+        await WithActionAsync(async () =>
+        {
+            await PrepareLocalFoldersAsync(CancellationToken.None);
+            Validate(); if (Errors.Count == 0 && Preview is not null) { await Preview(BuildSnapshot()); }
+        });
     }
     [RelayCommand] private Task GoBackAsync() => Back?.Invoke() ?? Task.CompletedTask;
     [RelayCommand(CanExecute = nameof(CanInspect))] private Task InspectSavedAsync() => Inspect?.Invoke(Draft.Snapshot) ?? Task.CompletedTask;
     [RelayCommand] private void FocusError(ValidationMessage issue) { FocusField = ""; FocusField = issue.FieldPath; }
+    private async Task PrepareLocalFoldersAsync(CancellationToken token)
+    {
+        foreach (var component in Components) { await component.SaveLocalFolderAsync(token); }
+        localPaths = await mappings.ReadAsync(token);
+    }
     private async Task WithActionAsync(Func<Task> action)
     {
         IsBusy = true; ActionError = "";

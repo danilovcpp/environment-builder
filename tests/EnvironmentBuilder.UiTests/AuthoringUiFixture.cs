@@ -10,10 +10,11 @@ using EnvironmentBuilder.Infrastructure.Imports;
 
 namespace EnvironmentBuilder.UiTests;
 
-internal sealed class AuthoringUiFixture : IEnvironmentStore, IComponentLibrary, IAuthoringInteractions, IInitializationDocumentReader, ILocalPathMappings, IInputResolver, ISeedPackStore, IPreviewInputCapture
+internal sealed class AuthoringUiFixture : IEnvironmentStore, IComponentLibrary, IComponentLibrarySettings, IAuthoringInteractions, IInitializationDocumentReader, ILocalPathMappings, IInputResolver, ISeedPackStore, IPreviewInputCapture
 {
+    private readonly Dictionary<Guid, (string Version, bool Enabled)> selections = [];
     public List<EnvironmentListItem> Items { get; } = [];
-    public ComponentDefinition[] Definitions { get; }
+    public ComponentDefinition[] Definitions { get; private set; }
     public AuthoringUiFixture()
     {
         using JsonDocument json = JsonDocument.Parse(File.ReadAllBytes(Path.Combine(AppContext.BaseDirectory, "AuthoringFixtures/components.json")));
@@ -23,6 +24,17 @@ internal sealed class AuthoringUiFixture : IEnvironmentStore, IComponentLibrary,
     { Items.Add(new EnvironmentListItem(environment.Id, environment.Name, 1, environment, null, false)); return Task.CompletedTask; }
     public Task<IReadOnlyList<EnvironmentListItem>> ListAsync(CancellationToken cancellationToken) => Task.FromResult<IReadOnlyList<EnvironmentListItem>>(Items.ToArray());
     public Task<IReadOnlyList<ComponentDefinition>> ReadAsync(CancellationToken cancellationToken) => Task.FromResult<IReadOnlyList<ComponentDefinition>>(Definitions);
+    public Task<IReadOnlyList<ComponentLibraryEntry>> ReadEntriesAsync(CancellationToken cancellationToken) => Task.FromResult<IReadOnlyList<ComponentLibraryEntry>>(
+        Definitions.GroupBy(d => d.Id).Select(group => selections.TryGetValue(group.Key, out var choice)
+            ? new ComponentLibraryEntry(group.Single(d => d.Version == choice.Version), choice.Enabled)
+            : new ComponentLibraryEntry(group.First(), true)).ToArray());
+    public Task SaveAsync(ComponentDefinition definition, bool enabled, CancellationToken cancellationToken)
+    {
+        EnvironmentValidator.ValidateDefinition(definition);
+        Definitions = [.. Definitions.Where(d => d.Id != definition.Id || d.Version != definition.Version), definition];
+        selections[definition.Id] = (definition.Version, enabled);
+        return Task.CompletedTask;
+    }
     public Task<ComponentDefinition> ImportAsync(ReadOnlyMemory<byte> document, CancellationToken cancellationToken) => Task.FromResult(new StrictDocumentReader().Read<ComponentDefinition>(document));
     public Task<byte[]?> SelectComponentDocumentAsync(CancellationToken cancellationToken) => Task.FromResult<byte[]?>(null);
     public Task<string?> SelectFolderAsync(CancellationToken cancellationToken) => Task.FromResult<string?>(null);

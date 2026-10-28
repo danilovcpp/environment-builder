@@ -38,9 +38,7 @@ public sealed class AuthoringSmokeTests
                 Press(Find(window, "CreateEnvironment"));
                 TextBox name = Find(window, "EnvironmentName").AsTextBox();
                 name.Focus(); Keyboard.Type("Keyboard environment");
-                var library = Find(window, "ComponentLibrary").AsComboBox();
-                library.Select(0);
-                Press(Find(window, "AddComponent"));
+                Press(Find(window, "ChooseTargetService"));
                 Wait(() => Find(window, "SaveEnvironment").IsEnabled, "save enabled after adding a valid component");
                 AutomationElement theme = window.FindFirstDescendant(cf => cf.ByName("Переключить светлую и тёмную тему")) ?? throw new InvalidOperationException("Theme command missing.");
                 Press(theme);

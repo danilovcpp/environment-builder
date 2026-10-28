@@ -17,7 +17,7 @@ public partial class ComponentEditor : UserControl
         "ports" => PortsTable,
         "storage" => StorageTable,
         "environment" => VariablesTable,
-        "source" => SourceInput,
+        "source" => DataContext is ComponentEditorViewModel { IsBuild: true } ? FolderInput : SourceInput,
         _ => null
     };
 }

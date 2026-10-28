@@ -11,6 +11,12 @@ public interface IComponentLibrary
     Task<IReadOnlyList<ComponentDefinition>> ReadAsync(CancellationToken cancellationToken);
     Task<ComponentDefinition> ImportAsync(ReadOnlyMemory<byte> document, CancellationToken cancellationToken);
 }
+public sealed record ComponentLibraryEntry(ComponentDefinition Definition, bool Enabled);
+public interface IComponentLibrarySettings
+{
+    Task<IReadOnlyList<ComponentLibraryEntry>> ReadEntriesAsync(CancellationToken cancellationToken);
+    Task SaveAsync(ComponentDefinition definition, bool enabled, CancellationToken cancellationToken);
+}
 public interface ILocalPathMappings
 {
     Task<IReadOnlyList<LocalPathMapping>> ReadAsync(CancellationToken cancellationToken);

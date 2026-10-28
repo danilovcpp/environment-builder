@@ -12,6 +12,17 @@ public partial class EnvironmentEditorPage : UserControl
     private EnvironmentEditorViewModel? model;
     private int focusRequest;
     public EnvironmentEditorPage() { InitializeComponent(); }
+    private void CatalogSizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        if (TargetCatalog is null || InfrastructureCatalog is null) { return; }
+        bool stacked = CatalogGrid.ActualWidth < 920;
+        Grid.SetColumnSpan(TargetCatalog, stacked ? 2 : 1);
+        Grid.SetColumn(InfrastructureCatalog, stacked ? 0 : 1);
+        Grid.SetRow(InfrastructureCatalog, stacked ? 1 : 0);
+        Grid.SetColumnSpan(InfrastructureCatalog, stacked ? 2 : 1);
+        TargetCatalog.Margin = stacked ? new Thickness(0, 0, 0, 12) : new Thickness(0, 0, 6, 0);
+        InfrastructureCatalog.Margin = stacked ? new Thickness(0) : new Thickness(6, 0, 0, 0);
+    }
     private void PageLoaded(object sender, RoutedEventArgs e)
     {
         if (DataContext is not EnvironmentEditorViewModel editor) { return; }

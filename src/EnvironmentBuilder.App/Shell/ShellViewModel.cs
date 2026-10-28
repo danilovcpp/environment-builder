@@ -137,7 +137,8 @@ public sealed partial class ShellViewModel : ObservableObject
         NotifyContext();
     }
     [RelayCommand] private void ToggleTheme() => themes.Apply(!themes.IsDark);
-    [RelayCommand] private async Task OpenComposeAsync()
+    [RelayCommand]
+    private async Task OpenComposeAsync()
     {
         if (Authoring?.Current is EnvironmentEditorViewModel editor) { await editor.ShowPreviewCommand.ExecuteAsync(null); }
         else if (Authoring?.List.SelectedItem is { } selected)
