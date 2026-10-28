@@ -6,12 +6,14 @@
    <TextBlock Text="{Binding Name}" Style="{DynamicResource Text.SectionTitle}"/>
    <WrapPanel Margin="0,12"><Button Content="Назад" Command="{Binding ReturnCommand}" AutomationProperties.AutomationId="InspectBack" Margin="0,0,8,0"/>
     <Button Content="Запустить" Command="{Binding StartCommand}" ToolTip="{Binding StartDisabledReason}" ToolTipService.ShowOnDisabled="True" AutomationProperties.AutomationId="StartEnvironment" Margin="0,0,8,0"/>
+    <Button Content="Остановить" Command="{Binding StopCommand}" ToolTip="{Binding StopDisabledReason}" ToolTipService.ShowOnDisabled="True" AutomationProperties.AutomationId="StopEnvironment" Margin="0,0,8,0"/>
     <Button Content="Отменить дальнейшие этапы" Command="{Binding CancelCommand}" AutomationProperties.AutomationId="CancelOperation" Margin="0,0,8,0"/>
     <Button Content="Проверить состояние" Command="{Binding RefreshCommand}" AutomationProperties.AutomationId="RefreshObservation" Margin="0,0,8,0"/>
     <Button Content="Compose" Command="{Binding ShowComposeCommand}" AutomationProperties.AutomationId="InspectCompose"/>
    </WrapPanel>
    <components:OperationProgress/>
    <TextBlock Text="{Binding Status}" TextWrapping="Wrap" Margin="0,8"/>
+   <TextBlock Text="{Binding QuiescenceStatus}" TextWrapping="Wrap" Margin="0,0,0,8"/>
    <TextBlock Text="{Binding Error}" Foreground="{DynamicResource Brush.ErrorForeground}" TextWrapping="Wrap"/>
   </StackPanel>
   <Grid><Grid.RowDefinitions><RowDefinition Height="180"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>

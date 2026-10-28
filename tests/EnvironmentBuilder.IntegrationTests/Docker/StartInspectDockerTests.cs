@@ -136,7 +136,7 @@ public sealed class StartInspectDockerTests
             Baseline = new(environment.Baseline.Applications.Select(a => a.ComponentId == component.Id && a.SeedPack is null ? a with { Initializer = initializer } : a).ToImmutableArray())
         };
     }
-    private static void CopyDemoSource(string target)
+    internal static void CopyDemoSource(string target)
     {
         Directory.CreateDirectory(target);
         foreach (string name in new[] { "Directory.Build.props", "Directory.Packages.props", ".dockerignore" }) { File.Copy(Path.Combine(DemoContractTests.DemoRoot, name), Path.Combine(target, name)); }
@@ -168,7 +168,7 @@ public sealed class StartInspectDockerTests
         }
     }
 
-    private sealed class CleanupBackend(ServiceProvider provider, IsolatedEnvironment[] environments, IsolatedTestStore isolated) : IScopedDockerBackend
+    internal sealed class CleanupBackend(ServiceProvider provider, IsolatedEnvironment[] environments, IsolatedTestStore isolated) : IScopedDockerBackend
     {
         public async Task<string?> CheckPrerequisitesAsync(CancellationToken token)
         {

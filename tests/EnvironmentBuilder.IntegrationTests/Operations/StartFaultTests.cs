@@ -87,6 +87,7 @@ public sealed class StartFaultTests
         private async Task ReachedAsync(string stage) { Stages.Add(stage); await reach(stage); }
         private sealed class Session(StageRuntime owner, Guid operation, IsolatedEnvironment document, Guid generation) : IStartSession, IInitializationTransport
         {
+            public Task ValidateDataGenerationAsync(CancellationToken token) => Task.CompletedTask;
             public PreviewSnapshot Snapshot { get; } = new(document.Id, 1, CanonicalJson.Hash(document), "{}", "compose-v1", CanonicalJson.Hash(document.Baseline), [], [], [], []);
             public OperationPlan Plan { get; } = new(Guid.NewGuid(), document.Id, 1, CanonicalJson.Hash(document), generation, CanonicalJson.Hash(document.Baseline), [], [], [], "fixture");
             public IInitializationTransport Transport => this;

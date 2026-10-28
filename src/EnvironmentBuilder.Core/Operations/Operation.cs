@@ -27,4 +27,8 @@ public sealed record OperationStep(Guid OperationId, string StepId, string Actio
     public string? ErrorCode { get; init; }
 }
 // This finite result has no fields for bodies, raw output, or secret values.
-public sealed record EffectObservation(string? ActualIdentity, bool Verified, string? ErrorCode = null);
+public sealed record EffectObservation(string? ActualIdentity, bool Verified, string? ErrorCode = null)
+{
+    public int? ContainerExitCode { get; init; }
+    public bool? ContainerOomKilled { get; init; }
+}

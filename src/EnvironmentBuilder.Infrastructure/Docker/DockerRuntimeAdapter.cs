@@ -39,7 +39,7 @@ public sealed class DockerRuntimeAdapter(AppDataDirectory directory, SqliteWorke
             using var command = Sql.Command(connection, null, "SELECT (SELECT value FROM AppMetadata WHERE key='installationId'),g.id FROM DataGenerations g JOIN Environments e ON e.generationId=g.id WHERE e.id=$id AND g.validity='active' AND g.baselineHash=$baseline",
                 ("$id", environment.Id.ToString()), ("$baseline", CanonicalJson.Hash(environment.Baseline)));
             using var row = command.ExecuteReader();
-            if (!row.Read()) { throw new InvalidOperationException("Active data generation is unavailable."); }
+            if (!row.Read()) { throw new PreflightBlockedException("data-generation-invalid"); }
             return (Guid.Parse(row.GetString(0)), Guid.Parse(row.GetString(1)));
         }, token).ConfigureAwait(false);
         IDockerProcess docker = processes.Create(environment);
@@ -49,19 +49,22 @@ public sealed class DockerRuntimeAdapter(AppDataDirectory directory, SqliteWorke
         ImmutableArray<JsonElement> all = await reader.AllContainersAsync(token).ConfigureAwait(false);
         IReadOnlyList<OwnedResource> existing = await ledger.ReadAsync(environment.Id, token).ConfigureAwait(false);
         string[] ownedIds = existing.Where(r => r.Kind == ResourceKind.Container && r.ActualDockerId is not null).Select(r => r.ActualDockerId!).ToArray();
+        var generationResources = new List<ResourceObservation>();
         foreach (OwnedResource resource in existing)
         {
             if (!resource.DesiredAttributes.TryGetValue("engineId", out string? authority) || authority != capability.EngineId)
             { throw new InvalidOperationException("Resource ledger belongs to an unknown or changed Docker authority."); }
             DockerResourceRead? actual = await reader.ReadAsync(resource, all, token).ConfigureAwait(false);
-            if (actual is null && resource.Kind == ResourceKind.Volume)
-            {
-                await applications.InvalidateAsync(generation, operationId, "persisted-volume-missing", DateTimeOffset.UtcNow, token).ConfigureAwait(false);
-                throw new InvalidOperationException("Persisted resource is missing; generation invalidated.");
-            }
-            if (actual is null || !ResourceOwnershipVerifier.Verify(resource, actual.Evidence, ownedIds).Verified)
-            { throw new InvalidOperationException("Existing resource ownership is unresolved."); }
+            generationResources.Add(new(resource, actual?.Evidence, actual is null ? new(null, false, "resource-missing") : ResourceOwnershipVerifier.Verify(resource, actual.Evidence, ownedIds), DateTimeOffset.UtcNow));
         }
+        var activeGeneration = new DataGeneration(generation, environment.Id, CanonicalJson.Hash(environment.Baseline), DateTimeOffset.MinValue, GenerationValidity.Active);
+        string? generationBlock = DataGenerationGuard.BlockReason(environment, activeGeneration, generationResources);
+        if (generationBlock is not null)
+        {
+            await applications.InvalidateAsync(generation, operationId, generationBlock, DateTimeOffset.UtcNow, token).ConfigureAwait(false);
+            throw new PreflightBlockedException(generationBlock);
+        }
+        if (generationResources.Any(r => !r.Ownership.Verified)) { throw new PreflightBlockedException("existing-resource-unverified"); }
         foreach (EnvironmentComponent component in environment.Components)
         {
             string containerName = ComposeCompiler.Compile(environment).ProjectName + "-c-" + component.Id.ToString("N");
@@ -99,7 +102,7 @@ public sealed class DockerRuntimeAdapter(AppDataDirectory directory, SqliteWorke
                 string header = value.SecretRef is null ? value.Literal! : new string(values[value.SecretRef].Value.Span);
                 if (header.Any(char.IsControl)) { throw new InvalidOperationException("Initialization header input is invalid."); }
             }
-            var session = new Session(environment, operationId, installation, generation, directory, ledger, blobs, packs, docker, probe, capability, reader, captured, images, values, existing);
+            var session = new Session(environment, operationId, installation, generation, directory, ledger, applications, blobs, packs, docker, probe, capability, reader, captured, images, values, existing);
             foreach (OwnedResource resource in session.Plan.Resources.Where(r => r.ActualDockerId is null))
             { if (await reader.ReadAsync(resource, all, token).ConfigureAwait(false) is not null) { await session.DisposeAsync().ConfigureAwait(false); throw new InvalidOperationException("Planned resource name is already occupied."); } }
             return session;
@@ -113,6 +116,7 @@ public sealed class DockerRuntimeAdapter(AppDataDirectory directory, SqliteWorke
         private readonly Guid operation;
         private readonly AppDataDirectory directory;
         private readonly ResourceLedgerStore ledger;
+        private readonly DataApplicationStore applications;
         private readonly ContentBlobStore blobs;
         private readonly ISeedPackStore packs;
         private readonly IDockerProcess docker;
@@ -132,10 +136,10 @@ public sealed class DockerRuntimeAdapter(AppDataDirectory directory, SqliteWorke
         public IInitializationTransport Transport { get; }
 
         public Session(IsolatedEnvironment environment, Guid operation, Guid installation, Guid generation, AppDataDirectory directory,
-            ResourceLedgerStore ledger, ContentBlobStore blobs, ISeedPackStore packs, IDockerProcess docker, DockerCapabilityProbe probe, DockerCapabilities capabilities,
+            ResourceLedgerStore ledger, DataApplicationStore applications, ContentBlobStore blobs, ISeedPackStore packs, IDockerProcess docker, DockerCapabilityProbe probe, DockerCapabilities capabilities,
             ResourceConsumerReader reader, RuntimeInputs captured, Dictionary<Guid, ResolvedImage> images, Dictionary<string, SecretValue> secrets, IReadOnlyList<OwnedResource> existing)
         {
-            this.environment = environment; this.operation = operation; this.directory = directory; this.ledger = ledger; this.blobs = blobs; this.packs = packs;
+            this.environment = environment; this.operation = operation; this.directory = directory; this.ledger = ledger; this.applications = applications; this.blobs = blobs; this.packs = packs;
             this.docker = docker; this.probe = probe; this.capabilities = capabilities; this.reader = reader; this.captured = captured; this.images = images; this.secrets = secrets;
             resources = existing.ToList();
             ComposeModel model = ComposeCompiler.Compile(environment);
@@ -157,6 +161,27 @@ public sealed class DockerRuntimeAdapter(AppDataDirectory directory, SqliteWorke
                     resources.Add(new(Guid.NewGuid(), installation, environment.Id, component, kind, environment.Revision, generation, name,
                     kind == ResourceKind.Container ? ImmutableDictionary<string, string>.Empty.Add("stagingLease", captured.Root).Add("engineId", capabilities.EngineId) : ImmutableDictionary<string, string>.Empty.Add("engineId", capabilities.EngineId), null, null, [], false, operation, true));
                 }
+            }
+        }
+        public async Task ValidateDataGenerationAsync(CancellationToken token)
+        {
+            await probe.RequireEngineAsync(capabilities, token).ConfigureAwait(false);
+            var all = await reader.AllContainersAsync(token).ConfigureAwait(false);
+            var actual = new List<ResourceObservation>();
+            string[] allowed = resources.Where(r => r.Kind == ResourceKind.Container && r.ActualDockerId is not null).Select(r => r.ActualDockerId!).ToArray();
+            foreach (OwnedResource volume in resources.Where(r => r.Kind == ResourceKind.Volume && r.ActualDockerId is not null))
+            {
+                DockerResourceRead? read = await reader.ReadAsync(volume, all, token).ConfigureAwait(false);
+                actual.Add(new(volume, read?.Evidence, read is null ? new(null, false, "resource-missing") : ResourceOwnershipVerifier.Verify(volume, read.Evidence, allowed), DateTimeOffset.UtcNow));
+            }
+            var generation = new DataGeneration(Plan.DataGenerationId, environment.Id, Plan.BaselineHash, DateTimeOffset.MinValue, GenerationValidity.Active);
+            string? blocker = DataGenerationGuard.BlockReason(environment, generation, actual);
+            if (blocker is null && !await applications.IsActiveGenerationAsync(environment.Id, generation.Id, generation.BaselineHash, token).ConfigureAwait(false))
+            { throw new UnresolvedEffectException("data-generation-invalid"); }
+            if (blocker is not null)
+            {
+                await applications.InvalidateAsync(generation.Id, operation, blocker, DateTimeOffset.UtcNow, token).ConfigureAwait(false);
+                throw new UnresolvedEffectException(blocker);
             }
         }
         private string Resolve(Value value) => value.SecretRef is null ? value.Literal! : new string(secrets[value.SecretRef].Value.Span);
@@ -256,9 +281,13 @@ public sealed class DockerRuntimeAdapter(AppDataDirectory directory, SqliteWorke
             var args = new List<string>();
             if (resource.Kind == ResourceKind.Container)
             {
-                args.AddRange(["compose", "--ansi", "never", "--progress", "plain", "--project-directory", files!.Root, "--env-file", files.EnvironmentFile,
+                if (resource.ActualDockerId is not null) { args.AddRange(["container", "start", resource.ActualDockerId]); }
+                else
+                {
+                    args.AddRange(["compose", "--ansi", "never", "--progress", "plain", "--project-directory", files!.Root, "--env-file", files.EnvironmentFile,
                     "-f", files.ComposeFile, "-p", "eb-" + environment.Id.ToString("N"), "up", "-d", "--no-deps", "--no-build", "--pull", "never", "c-" + resource.ComponentId!.Value.ToString("N")]);
-                captured.RetainForContainers();
+                    captured.RetainForContainers();
+                }
             }
             else
             {
@@ -266,7 +295,8 @@ public sealed class DockerRuntimeAdapter(AppDataDirectory directory, SqliteWorke
                 foreach ((string key, string value) in ResourceOwnershipVerifier.Labels(resource)) { args.AddRange(["--label", key + "=" + value]); }
                 args.Add(resource.Name);
             }
-            await execution.RunStepAsync(new(operation, "create-" + resource.ResourceId, "create-" + resource.Kind.ToString().ToLowerInvariant(), resource.Name), async safe =>
+            bool resuming = resource.Kind == ResourceKind.Container && resource.ActualDockerId is not null;
+            await execution.RunStepAsync(new(operation, (resuming ? "start-" : "create-") + resource.ResourceId, resuming ? "start-container" : "create-" + resource.Kind.ToString().ToLowerInvariant(), resuming ? resource.ActualDockerId! : resource.Name), async safe =>
             { ResourceConsumerReader.Require(await docker.RunAsync(args, safe).ConfigureAwait(false)); }, async safe =>
             {
                 var current = await reader.ReadAsync(resource, await reader.AllContainersAsync(safe).ConfigureAwait(false), safe).ConfigureAwait(false) ?? throw new IOException("Accepted resource not found.");

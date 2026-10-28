@@ -43,6 +43,7 @@ public sealed class InspectSmokeTests
             window.Focus();
             Press(Find(window, "InspectEnvironment")); Find(window, "InspectComponents");
             Assert.False(Find(window, "CancelOperation").IsEnabled);
+            Assert.False(Find(window, "StopEnvironment").IsEnabled);
             AutomationElement theme = window.FindFirstDescendant(cf => cf.ByName("Переключить светлую и тёмную тему"))!;
             Press(theme); Find(window, "InspectLogs"); Press(theme);
             Press(Find(window, "InspectCompose"));

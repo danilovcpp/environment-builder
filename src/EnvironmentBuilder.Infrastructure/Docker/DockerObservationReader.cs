@@ -45,6 +45,8 @@ public sealed class DockerObservationReader(DockerProcessFactory processes, Reso
             }
             foreach (EnvironmentComponent component in environment.Components.Where(c => !components.Any(o => o.ComponentId == c.Id)))
             { components.Add(new(component.Id, null, "missing", "unknown", [], ImmutableDictionary<string, Measurement>.Empty) { Drift = "missing" }); }
+            Guid? activeId = resources.FirstOrDefault()?.DataGenerationId;
+            bool generationValid = await applications.IsActiveGenerationAsync(environment.Id, activeId, CanonicalJson.Hash(environment.Baseline), token).ConfigureAwait(false);
             foreach (EnvironmentComponent component in environment.Components)
             {
                 int index = Enumerable.Range(0, components.Count).First(i => components[i].ComponentId == component.Id);
@@ -60,7 +62,7 @@ public sealed class DockerObservationReader(DockerProcessFactory processes, Reso
                     InitializationResponse response = await http.SendAsync(component.Id, step, "", null, token).ConfigureAwait(false);
                     ready = response.OutcomeKnown && response.AssertionsPassed;
                 }
-                bool initialized = true;
+                bool initialized = generationValid;
                 Guid? generation = resources.FirstOrDefault()?.DataGenerationId;
                 foreach (BaselineApplication application in environment.Baseline.Applications.Where(a => a.ComponentId == component.Id))
                 {
@@ -70,7 +72,13 @@ public sealed class DockerObservationReader(DockerProcessFactory processes, Reso
                         { initialized = false; }
                     }
                 }
-                components[index] = actual with { RuntimeReady = ready, ApplicationReady = ReadinessEvaluator.ApplicationReady(readiness.Kind, ready, initialized), Initialization = initialized ? "succeeded-or-not-required" : "unverified" };
+                components[index] = actual with
+                {
+                    RuntimeReady = ready,
+                    ApplicationReady = ReadinessEvaluator.ApplicationReady(readiness.Kind, ready, initialized),
+                    Initialization = initialized ? "succeeded-or-not-required" : "unverified",
+                    Reason = generationValid ? actual.Reason : "data-generation-invalid"
+                };
             }
             foreach (var container in all.Where(c => c.GetProperty("Config").GetProperty("Labels").ValueKind == System.Text.Json.JsonValueKind.Object &&
                 c.GetProperty("Config").GetProperty("Labels").TryGetProperty("io.environmentbuilder.environment", out var id) && id.GetString() == environment.Id.ToString() && !allowed.Contains(c.GetProperty("Id").GetString())))

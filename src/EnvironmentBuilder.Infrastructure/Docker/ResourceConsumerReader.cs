@@ -90,7 +90,11 @@ public sealed class ResourceConsumerReader(IDockerProcess docker)
                 foreach (JsonElement mapping in port.Value.EnumerateArray())
                 { ports.Add(new(int.Parse(parts[0], CultureInfo.InvariantCulture), parts[1], mapping.GetProperty("HostIp").GetString()!, int.Parse(mapping.GetProperty("HostPort").GetString()!, CultureInfo.InvariantCulture))); }
             }
-            component = new(ledger.ComponentId!.Value, id, state.GetProperty("Status").GetString()!, health, ports.ToImmutable(), ImmutableDictionary<string, Measurement>.Empty);
+            component = new(ledger.ComponentId!.Value, id, state.GetProperty("Status").GetString()!, health, ports.ToImmutable(), ImmutableDictionary<string, Measurement>.Empty)
+            {
+                ExitCode = state.TryGetProperty("ExitCode", out var exitCode) ? exitCode.GetInt32() : null,
+                OomKilled = state.TryGetProperty("OOMKilled", out var oomKilled) ? oomKilled.GetBoolean() : null
+            };
         }
         return new(new(ledger.Kind, name, id, labels, volume, consumers.Distinct(StringComparer.Ordinal).ToImmutableArray(), true, component?.Status ?? "available"), component);
     }

@@ -1,12 +1,53 @@
+using System.Collections.Immutable;
 using EnvironmentBuilder.App.Features.Environments;
 using EnvironmentBuilder.Core.Abstractions;
 using EnvironmentBuilder.Core.Environments;
+using EnvironmentBuilder.Core.Operations;
 using EnvironmentBuilder.UnitTests.Operations;
 
 namespace EnvironmentBuilder.UnitTests.ViewModels;
 
 public sealed class InspectTests
 {
+    [Fact]
+    public async Task Stop_availability_requires_current_owned_containers_and_refresh_remains_independent()
+    {
+        var fixture = new RuntimeFixture(); await using var coordinator = fixture.Coordinator();
+        var commands = new EnvironmentCommands(new(coordinator, fixture, new(fixture, fixture), fixture), coordinator, new(), fixture, new(coordinator, fixture, fixture));
+        var environment = fixture.Environment();
+        Assert.NotNull(commands.StopDisabledReason(environment.Id, null));
+        var container = new OwnedResource(Guid.NewGuid(), Guid.NewGuid(), environment.Id, environment.Components[0].Id, ResourceKind.Container, 1, Guid.NewGuid(), "test", ImmutableDictionary<string, string>.Empty, "id", null, [], true, Guid.NewGuid(), false);
+        var actual = new ResourceEvidence(ResourceKind.Container, "test", "id", ResourceOwnershipVerifier.Labels(container), null, [], true, "running");
+        var observation = new EnvironmentObservation(environment.Id, Guid.NewGuid(), fixture.UtcNow, fixture.UtcNow, "current", [], [new(container, actual, new("id", true), fixture.UtcNow)], null);
+        Assert.Null(commands.StopDisabledReason(environment.Id, observation));
+        Assert.NotNull(commands.StopDisabledReason(environment.Id, observation with { Freshness = "stale" }));
+        Assert.NotNull(commands.StopDisabledReason(environment.Id, observation with { Resources = [] }));
+        var stopped = await commands.StopAsync(environment, TestContext.Current.CancellationToken); await stopped.Completion;
+        Assert.Equal(OperationState.Succeeded, stopped.Current.State);
+        Assert.Equal("stop", commands.Get(environment.Id)!.Current.Kind);
+    }
+
+    [Fact]
+    public async Task Invalidated_generation_disables_start_and_explains_recovery_while_refresh_stays_available()
+    {
+        var fixture = new RuntimeFixture(); await using var coordinator = fixture.Coordinator();
+        var commands = new EnvironmentCommands(new(coordinator, fixture, new(fixture, fixture), fixture), coordinator, new(), fixture, new(coordinator, fixture, fixture));
+        var streams = new Streams();
+        await using var vm = new InspectViewModel(new InvalidatedSource(), streams, commands, (action, _) => { action(); return Task.CompletedTask; });
+        await vm.OpenAsync(fixture.Environment(), TestContext.Current.CancellationToken);
+        Assert.False(vm.StartCommand.CanExecute(null));
+        Assert.True(vm.RefreshCommand.CanExecute(null));
+        Assert.Contains("baseline", vm.StartDisabledReason); Assert.Contains("потери данных", vm.Error);
+        Assert.Contains("running", vm.QuiescenceStatus);
+    }
+
+    private sealed class InvalidatedSource : IEnvironmentObservationSource
+    {
+        public Task<EnvironmentObservation> ReadAsync(IsolatedEnvironment environment, Guid session, EnvironmentObservation? previous, CancellationToken token) =>
+            Task.FromResult(new EnvironmentObservation(environment.Id, session, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow, "current",
+                [new ComponentObservation(environment.Components[0].Id, "container", "running", "healthy", [], ImmutableDictionary<string, Measurement>.Empty) { Reason = "data-generation-invalid" }], [], null));
+    }
+
     [Fact]
     public async Task Start_compares_the_preview_actually_shown_instead_of_recapturing_changed_inputs()
     {
@@ -15,7 +56,7 @@ public sealed class InspectTests
         var reviews = new PreviewReviewStore();
         PreviewSnapshot shown = await fixture.CaptureAsync(environment, TestContext.Current.CancellationToken);
         reviews.Remember(shown with { Inputs = [new("source", "known", "old-source-hash", null)] });
-        var commands = new EnvironmentCommands(new(coordinator, fixture, new(fixture, fixture), fixture), coordinator, reviews, fixture);
+        var commands = new EnvironmentCommands(new(coordinator, fixture, new(fixture, fixture), fixture), coordinator, reviews, fixture, new(coordinator, fixture, fixture));
         var handle = await commands.StartAsync(environment, TestContext.Current.CancellationToken); await handle.Completion;
         Assert.NotNull(fixture.LastDelta);
         Assert.Contains(fixture.LastDelta, delta => delta.Reference == "source" && delta.Before.Contains("old-source-hash", StringComparison.Ordinal));
@@ -25,7 +66,7 @@ public sealed class InspectTests
     public async Task Switching_environment_waits_for_old_poll_and_disposal_and_discards_late_results()
     {
         var fixture = new RuntimeFixture(); await using var coordinator = fixture.Coordinator();
-        var commands = new EnvironmentCommands(new(coordinator, fixture, new(fixture, fixture), fixture), coordinator, new PreviewReviewStore(), fixture);
+        var commands = new EnvironmentCommands(new(coordinator, fixture, new(fixture, fixture), fixture), coordinator, new PreviewReviewStore(), fixture, new(coordinator, fixture, fixture));
         var source = new Source(); var streams = new Streams();
         await using var vm = new InspectViewModel(source, streams, commands, (action, _) => { action(); return Task.CompletedTask; });
         IsolatedEnvironment first = fixture.Environment(); IsolatedEnvironment second = first with { Id = Guid.NewGuid(), Name = "second" };

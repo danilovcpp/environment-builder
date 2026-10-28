@@ -93,7 +93,7 @@ public sealed class StartWorkflowTests
     }
 }
 
-internal sealed class RuntimeFixture : IStartRuntime, IDataApplicationJournal, IOperationStore, IInitializationTransport, IClock, IRuntimeInteractions, IPreviewInputCapture
+internal sealed class RuntimeFixture : IStartRuntime, IStopRuntime, IDataApplicationJournal, IOperationStore, IInitializationTransport, IClock, IRuntimeInteractions, IPreviewInputCapture
 {
     private readonly Guid generation = Guid.NewGuid();
     public List<string> Events { get; } = [];
@@ -101,6 +101,8 @@ internal sealed class RuntimeFixture : IStartRuntime, IDataApplicationJournal, I
     public bool FailIntent { get; init; }
     public bool FailResult { get; init; }
     public bool LoseHttpResponse { get; init; }
+    public bool InvalidateAfterSend { get; init; }
+    public bool GenerationInvalidated { get; set; }
     public string? PreflightBlock { get; init; }
     public CloseOperationsDecision CloseDecision { get; set; } = CloseOperationsDecision.Return;
     public IReadOnlyList<InputDelta>? LastDelta { get; private set; }
@@ -118,6 +120,13 @@ internal sealed class RuntimeFixture : IStartRuntime, IDataApplicationJournal, I
     }
     public Task<IStartSession> PrepareAsync(IsolatedEnvironment environment, Guid operation, CancellationToken token) =>
         PreflightBlock is null ? Task.FromResult<IStartSession>(new Session(this, environment, generation)) : Task.FromException<IStartSession>(new PreflightBlockedException(PreflightBlock));
+    public Task<IStopSession> PrepareAsync(IsolatedEnvironment environment, Guid operation, int timeoutSeconds, CancellationToken token) => Task.FromResult<IStopSession>(new StopSession(this, environment, generation));
+    private sealed class StopSession(RuntimeFixture fixture, IsolatedEnvironment environment, Guid generation) : IStopSession
+    {
+        public OperationPlan Plan { get; } = new(Guid.NewGuid(), environment.Id, environment.Revision, CanonicalJson.Hash(environment), generation, CanonicalJson.Hash(environment.Baseline), [], [], ["stop"], "fixture");
+        public Task<EnvironmentObservation> ReadAsync(CancellationToken token) => Task.FromResult(new EnvironmentObservation(environment.Id, Guid.NewGuid(), fixture.UtcNow, fixture.UtcNow, "current", [], [], null));
+        public Task StopAsync(OwnedResource container, OperationExecution execution, CancellationToken token) => Task.CompletedTask;
+    }
     public Task<DataApplicationRecord?> ReadAsync(DataApplicationKey key, CancellationToken token) => Task.FromResult(Applications.GetValueOrDefault(key));
     public Task SaveAsync(DataApplicationRecord record, CancellationToken token) { Applications[record.Key] = record; return Task.CompletedTask; }
     public Task WriteIntentAsync(OperationStep step, CancellationToken token) => FailIntent ? Task.FromException(new IOException("intent fault")) : Task.CompletedTask;
@@ -125,13 +134,14 @@ internal sealed class RuntimeFixture : IStartRuntime, IDataApplicationJournal, I
     public Task SaveAsync(Operation operation, CancellationToken token) => BeforeSave?.Invoke(operation) ?? Task.CompletedTask;
     public Task<IReadOnlyList<Operation>> ReadUnresolvedAsync(CancellationToken token) => Task.FromResult<IReadOnlyList<Operation>>([]);
     public Task<InitializationResponse> SendAsync(Guid component, InitializationStep step, string key, Stream? body, CancellationToken token)
-    { Events.Add("http:" + step.Id); return Task.FromResult(LoseHttpResponse ? new InitializationResponse(null, false, false, "lost-response") : new(204, true, true, null)); }
+    { Events.Add("http:" + step.Id); GenerationInvalidated |= InvalidateAfterSend; return Task.FromResult(LoseHttpResponse ? new InitializationResponse(null, false, false, "lost-response") : new(204, true, true, null)); }
     public Task<bool> ConfirmInputsAsync(IReadOnlyList<InputDelta> delta, OperationPlan plan, CancellationToken token) { LastDelta = delta; return Task.FromResult(true); }
     public Task<CloseOperationsDecision> DecideCloseAsync(int count, CancellationToken token) => Task.FromResult(CloseDecision);
     public Task<PreviewSnapshot> CaptureAsync(IsolatedEnvironment environment, CancellationToken token) => Task.FromResult(Snapshot(environment));
     private static PreviewSnapshot Snapshot(IsolatedEnvironment environment) => new(environment.Id, 1, CanonicalJson.Hash(environment), JsonSerializer.Serialize(environment, CanonicalJson.Options), "compose-v1", CanonicalJson.Hash(environment.Baseline), [], [], [], []);
     private sealed class Session(RuntimeFixture fixture, IsolatedEnvironment environment, Guid generation) : IStartSession
     {
+        public Task ValidateDataGenerationAsync(CancellationToken token) => fixture.GenerationInvalidated ? Task.FromException(new UnresolvedEffectException("data-generation-invalid")) : Task.CompletedTask;
         public PreviewSnapshot Snapshot { get; } = RuntimeFixture.Snapshot(environment);
         public OperationPlan Plan { get; } = new(Guid.NewGuid(), environment.Id, 1, CanonicalJson.Hash(environment), generation, CanonicalJson.Hash(environment.Baseline), [], [], [], "fixture");
         public IInitializationTransport Transport => fixture;

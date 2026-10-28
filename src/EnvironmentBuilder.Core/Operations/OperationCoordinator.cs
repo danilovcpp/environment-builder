@@ -67,7 +67,7 @@ public sealed class OperationCoordinator(IOperationStore store, IClock clock, Fu
         {
             ObjectDisposedException.ThrowIf(disposed, this);
             if (active.TryGetValue(operation.EnvironmentId, out OperationHandle? existing)) { return existing; }
-            if (pendingClose || !canWrite() || unresolved.Contains(operation.EnvironmentId)) { throw new InvalidOperationException("New effects are blocked by storage, close, or unresolved recovery."); }
+            if (pendingClose || !canWrite() || (unresolved.Contains(operation.EnvironmentId) && operation.Kind != "stop")) { throw new InvalidOperationException("New effects are blocked by storage, close, or unresolved recovery."); }
             var handle = new OperationHandle(operation);
             active.Add(operation.EnvironmentId, handle);
             handle.Completion = RunAsync(handle, workflow);
@@ -184,14 +184,14 @@ public sealed class OperationCoordinator(IOperationStore store, IClock clock, Fu
     }
     public void ReturnFromClose() { lock (sync) { pendingClose = false; } }
     public IReadOnlyList<OperationHandle> Active { get { lock (sync) { return active.Values.ToArray(); } } }
-    public string? AdmissionBlockReason(Guid environment)
+    public string? AdmissionBlockReason(Guid environment, bool stopping = false)
     {
         lock (sync)
         {
             if (pendingClose || disposed) { return "Приложение ожидает безопасного завершения."; }
             if (!canWrite()) { return "Запись в хранилище недоступна."; }
             if (active.ContainsKey(environment)) { return "Операция окружения уже выполняется."; }
-            return unresolved.Contains(environment) ? "Незавершённый результат требует сверки." : null;
+            return unresolved.Contains(environment) && !stopping ? "Незавершённый результат требует сверки." : null;
         }
     }
     public async ValueTask DisposeAsync()

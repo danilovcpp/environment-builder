@@ -170,6 +170,8 @@ public sealed class ThemeResourcesTests
         public string Progress => "Running · readiness · процент неизвестен";
         public bool IsOperationActive => true;
         public string StartDisabledReason => "Операция уже выполняется";
+        public string StopDisabledReason => "Операция уже выполняется";
+        public string QuiescenceStatus => "Остановка не подтверждена: running";
         public string Error => "";
         public string Measurements => "CPU 125.5% ≈ · memory unavailable · покрытие 1/2";
         public string Aggregate => "CPU ≈125.5% · покрытие 1/2; память — нет данных · покрытие 0/2";
@@ -180,6 +182,7 @@ public sealed class ThemeResourcesTests
         public App.Features.Environments.InspectComponentRow[] Components { get; } = [new(new(Guid.NewGuid(), new string('a', 64), "running", "notConfigured", [], System.Collections.Immutable.ImmutableDictionary<string, Core.Environments.Measurement>.Empty), "Prepared component", "none")];
         public App.Features.Environments.InspectComponentRow? SelectedComponent { get; set; }
         public System.Windows.Input.ICommand StartCommand { get; } = new CommunityToolkit.Mvvm.Input.RelayCommand(() => { }, () => false);
+        public System.Windows.Input.ICommand StopCommand { get; } = new CommunityToolkit.Mvvm.Input.RelayCommand(() => { }, () => false);
         public System.Windows.Input.ICommand CancelCommand { get; } = new CommunityToolkit.Mvvm.Input.RelayCommand(() => { });
         public System.Windows.Input.ICommand RefreshCommand { get; } = new CommunityToolkit.Mvvm.Input.RelayCommand(() => { });
         public System.Windows.Input.ICommand ReturnCommand { get; } = new CommunityToolkit.Mvvm.Input.RelayCommand(() => { });

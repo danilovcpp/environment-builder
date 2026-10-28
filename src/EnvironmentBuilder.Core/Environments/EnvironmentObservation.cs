@@ -12,6 +12,8 @@ public sealed record ComponentObservation(Guid ComponentId, string? ContainerId,
     public string Initialization { get; init; } = "unverified";
     public string Drift { get; init; } = "expected";
     public string? Reason { get; init; }
+    public int? ExitCode { get; init; }
+    public bool? OomKilled { get; init; }
 }
 public sealed record ResourceObservation(OwnedResource Ledger, ResourceEvidence? Actual, EffectObservation Ownership, DateTimeOffset LastCheckedAt);
 public sealed record EnvironmentObservation(Guid EnvironmentId, Guid SessionId, DateTimeOffset CheckedAt, DateTimeOffset? LastSuccessfulAt,

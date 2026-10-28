@@ -95,6 +95,7 @@ public sealed class BaselinePersistenceTests
     }
     private sealed class Session(IsolatedEnvironment environment, Guid generation, IInitializationTransport transport) : IStartSession
     {
+        public Task ValidateDataGenerationAsync(CancellationToken token) => Task.CompletedTask;
         public OperationPlan Plan { get; } = new(Guid.NewGuid(), environment.Id, 1, CanonicalJson.Hash(environment), generation, CanonicalJson.Hash(environment.Baseline), [], [], [], "fixture");
         public PreviewSnapshot Snapshot => throw new NotSupportedException();
         public IInitializationTransport Transport => transport;

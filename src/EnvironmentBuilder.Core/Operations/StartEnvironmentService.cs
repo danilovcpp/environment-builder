@@ -26,6 +26,7 @@ public sealed class StartEnvironmentService(OperationCoordinator coordinator, IS
             var delta = StartPreflight.Delta(reviewed, session.Snapshot);
             if (delta.Length > 0 && !await confirm(delta, session.Plan, execution.CancellationToken).ConfigureAwait(false)) { throw new OperationCanceledException("Input review was declined."); }
             await execution.ConfirmAsync(session.Snapshot.Token).ConfigureAwait(false);
+            await session.ValidateDataGenerationAsync(execution.CancellationToken).ConfigureAwait(false);
             await execution.ReportAsync(null, "images").ConfigureAwait(false);
             await session.PrepareImagesAsync(execution, execution.CancellationToken).ConfigureAwait(false);
             var completed = new Dictionary<Guid, ComponentObservation>();
@@ -47,6 +48,7 @@ public sealed class StartEnvironmentService(OperationCoordinator coordinator, IS
                     }
                 }
                 await execution.ReportAsync(component.Id, "runtime").ConfigureAwait(false);
+                await session.ValidateDataGenerationAsync(execution.CancellationToken).ConfigureAwait(false);
                 ComponentObservation actual = await session.StartComponentAsync(component, execution, execution.CancellationToken).ConfigureAwait(false);
                 string kind = component.DefinitionSnapshot.Readiness.Kind;
                 if (kind != "none")
@@ -54,6 +56,7 @@ public sealed class StartEnvironmentService(OperationCoordinator coordinator, IS
                     await execution.ReportAsync(component.Id, "readiness").ConfigureAwait(false);
                     actual = await session.WaitAsync(component, kind, execution.CancellationToken).ConfigureAwait(false);
                     await execution.ReportAsync(component.Id, "baseline").ConfigureAwait(false);
+                    await session.ValidateDataGenerationAsync(execution.CancellationToken).ConfigureAwait(false);
                     await baseline.ExecuteAsync(environment, component, session, execution.CancellationToken).ConfigureAwait(false);
                 }
                 completed.Add(component.Id, actual with { RuntimeReady = kind != "none", ApplicationReady = ReadinessEvaluator.ApplicationReady(kind, true, true) });

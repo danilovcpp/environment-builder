@@ -55,6 +55,8 @@ public sealed class AppServices : IAsyncDisposable
             services.AddSingleton<RuntimeInputCapture>();
             services.AddSingleton<IStartRuntime, DockerRuntimeAdapter>();
             services.AddSingleton<StartEnvironmentService>();
+            services.AddSingleton<IStopRuntime, DockerStopAdapter>();
+            services.AddSingleton<StopEnvironmentService>();
             services.AddSingleton<IEnvironmentObservationSource, DockerObservationReader>();
             services.AddSingleton<LogMemoryBudget>();
             services.AddSingleton<IInspectionStreamsFactory, DockerInspectionStreams>();

@@ -14,6 +14,7 @@ public interface IStartSession : IAsyncDisposable
     PreviewSnapshot Snapshot { get; }
     OperationPlan Plan { get; }
     IInitializationTransport Transport { get; }
+    Task ValidateDataGenerationAsync(CancellationToken token);
     Task PrepareImagesAsync(OperationExecution execution, CancellationToken token);
     Task<ComponentObservation> StartComponentAsync(EnvironmentComponent component, OperationExecution execution, CancellationToken token);
     Task<ComponentObservation> WaitAsync(EnvironmentComponent component, string condition, CancellationToken token);

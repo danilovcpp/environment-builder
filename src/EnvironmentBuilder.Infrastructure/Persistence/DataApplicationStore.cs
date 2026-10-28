@@ -9,6 +9,13 @@ namespace EnvironmentBuilder.Infrastructure.Persistence;
 
 public sealed class DataApplicationStore(SqliteWorker worker) : IDataApplicationJournal, ISafeInitializationRetry
 {
+    public Task<bool> IsActiveGenerationAsync(Guid environment, Guid? generation, string baseline, CancellationToken token) => worker.ReadAsync(connection =>
+    {
+        using var command = Sql.Command(connection, null, "SELECT EXISTS(SELECT 1 FROM Environments e JOIN DataGenerations g ON e.generationId=g.id WHERE e.id=$environment AND ($generation IS NULL OR g.id=$generation) AND g.baselineHash=$baseline AND g.validity='active')",
+            ("$environment", environment.ToString()), ("$generation", generation?.ToString()), ("$baseline", baseline));
+        return (long)command.ExecuteScalar()! == 1;
+    }, token);
+
     public Task InvalidateAsync(Guid generationId, Guid operationId, string reason, DateTimeOffset at, CancellationToken cancellationToken) =>
         worker.CommitAsync("generation-invalidation", (connection, transaction) =>
         {

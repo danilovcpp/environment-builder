@@ -13,6 +13,7 @@ public sealed class BaselineExecutor(IDataApplicationJournal journal, IClock clo
             foreach (InitializationStep step in application.Initializer.Steps)
             {
                 token.ThrowIfCancellationRequested();
+                await session.ValidateDataGenerationAsync(token).ConfigureAwait(false);
                 var key = new DataApplicationKey(environment.Id, component.Id, session.Plan.DataGenerationId, session.Plan.BaselineHash,
                     CanonicalJson.Hash(application), CanonicalJson.Hash(application.Initializer), step.Id);
                 DataApplicationRecord? previous = await journal.ReadAsync(key, token).ConfigureAwait(false);
@@ -37,6 +38,7 @@ public sealed class BaselineExecutor(IDataApplicationJournal journal, IClock clo
                     catch (Exception error) when (error is not OutOfMemoryException)
                     { response = new(null, false, false, "http-transport-unavailable"); }
                     StepState state = response.OutcomeKnown && response.AssertionsPassed ? StepState.Succeeded : response.OutcomeKnown ? StepState.Failed : StepState.Unknown;
+                    await session.ValidateDataGenerationAsync(CancellationToken.None).ConfigureAwait(false);
                     await journal.SaveAsync(started with
                     {
                         State = state,
