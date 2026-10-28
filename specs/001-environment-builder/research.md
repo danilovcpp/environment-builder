@@ -6,11 +6,11 @@
 
 ## 1. Платформа и dependencies
 
-**Decision**: C# 14 / .NET 10 LTS, SDK 10.0.402, Windows 11 x64 обслуживаемых выпусков 24H2+; WPF-UI 4.3.0, CommunityToolkit.Mvvm 8.4.2, MahApps.Metro.IconPacks.Lucide 6.2.1; DI/Sqlite/ProtectedData 10.0.13. Unit: xunit.v3 4.0.2, VS runner 4.0.1 и Test SDK 18.11.0; UI: FlaUI.UIA3 5.0.0. Demo-only RabbitMQ.Client 7.2.2. Точные NuGet/transitive versions фиксируются при restore; publish для win-x64 self-contained folder, без trimming/single-file на первой поставке.
+**Decision**: C# 14 / .NET 10 LTS, SDK 10.0.402, Windows x64 без ограничения выпуска или номера сборки ОС; WPF-UI 4.3.0, CommunityToolkit.Mvvm 8.4.2, MahApps.Metro.IconPacks.Lucide 6.2.1; DI/Sqlite/ProtectedData 10.0.13. Unit: xunit.v3 4.0.2, VS runner 4.0.1 и Test SDK 18.11.0; UI: FlaUI.UIA3 5.0.0. Demo-only RabbitMQ.Client 7.2.2. Точные NuGet/transitive versions фиксируются при restore; publish для win-x64 self-contained folder, без trimming/single-file на первой поставке.
 
-**Rationale**: .NET 10 — LTS до 2028-11-14; .NET 8/9 близки к окончанию поддержки 2026-11-10. WPF UI и Lucide обязательны по конституции, Toolkit закрывает notifications/async commands, три Microsoft packages нужны для DI, SQLite и DPAPI. Текущая .NET matrix не поддерживает произвольную Windows 11 23H2 Home/Pro: support не выводится из одного номера build.
+**Rationale**: .NET 10 — LTS до 2028-11-14; .NET 8/9 близки к окончанию поддержки 2026-11-10. WPF UI и Lucide обязательны по конституции, Toolkit закрывает notifications/async commands, три Microsoft packages нужны для DI, SQLite и DPAPI. Приложение не добавляет собственный порог версии ОС; доступность runtime определяется фактическими возможностями Docker.
 
-**Alternatives considered**: .NET 8/9; собственный MVVM framework; весь MahApps IconPacks вместо Lucide; GenericHost без hosted services; Windows 10/ARM64 без требования. Не выбраны из-за поддержки, лишней зависимости или объёма.
+**Alternatives considered**: .NET 8/9; собственный MVVM framework; весь MahApps IconPacks вместо Lucide; GenericHost без hosted services; ARM64 без требования. Не выбраны из-за поддержки, лишней зависимости или объёма.
 
 **Sources**: [.NET lifecycle](https://dotnet.microsoft.com/en-us/platform/support/policy/dotnet-core), [Windows matrix](https://learn.microsoft.com/en-us/dotnet/core/install/windows), [WPF-UI](https://www.nuget.org/packages/WPF-UI/4.3.0), [Toolkit](https://www.nuget.org/packages/CommunityToolkit.Mvvm/8.4.2), [Lucide](https://www.nuget.org/packages/MahApps.Metro.IconPacks.Lucide/6.2.1), [DI](https://www.nuget.org/packages/Microsoft.Extensions.DependencyInjection/10.0.13), [xUnit](https://www.nuget.org/packages/xunit.v3/4.0.2), [runner](https://www.nuget.org/packages/xunit.runner.visualstudio/4.0.1), [Test SDK](https://www.nuget.org/packages/Microsoft.NET.Test.Sdk/18.11.0), [FlaUI](https://www.nuget.org/packages/FlaUI.UIA3/5.0.0), [RabbitMQ client](https://www.nuget.org/packages/RabbitMQ.Client/7.2.2).
 
@@ -26,11 +26,11 @@
 
 ## 3. Docker support и adapter
 
-**Decision**: один process adapter с `ProcessStartInfo.ArgumentList`, `UseShellExecute=false`, redirected streams, без shell. CLI для Compose и inspect/list/logs/stats/exact-resource mutations. Зафиксировать выбранный локальный npipe endpoint и Engine ID; очистить routing `DOCKER_*`/`COMPOSE_*`, передавать endpoint/file/project явно. Runtime minimum: Engine 28.0.0/API 1.48, Compose 2.24.6; major 2/5 с feature probe. Qualification minimum и current: Desktop 4.96.2, Engine 29.9.1, Compose 5.6.x. Наблюдённый Compose 5.4.0 не отклоняется только из-за major.
+**Decision**: один process adapter с `ProcessStartInfo.ArgumentList`, `UseShellExecute=false`, redirected streams, без shell. CLI для Compose и inspect/list/logs/stats/exact-resource mutations. Зафиксировать выбранный локальный npipe endpoint и Engine ID; очистить routing `DOCKER_*`/`COMPOSE_*`, передавать endpoint/file/project явно. Runtime minimum: Engine 28.0.0/API 1.48, Compose 2.24.6; major 2/5 с feature probe. Минимальные и другие известные версии покрываются contract fixtures. Наблюдённый Compose 5.4.0 не отклоняется только из-за major.
 
 **Rationale**: Docker CLI присутствует вместе с Desktop, один adapter избегает второго transport/SDK. JSON inspect/list и документированные stats fields образуют тестируемый контракт. Engine <28 имеет документированное ограничение защиты localhost published ports. Feature probe обязателен, даже когда версия выше minimum.
 
-**Alternatives considered**: Docker.DotNet; собственный Engine HTTP client с npipe framing; v2-only check; remote contexts. Не нужны для данного локального scope. Если CLI output contract меняется, диагностика блокирует affected runtime до qualification, а не угадывает формат.
+**Alternatives considered**: Docker.DotNet; собственный Engine HTTP client с npipe framing; v2-only check; remote contexts. Не нужны для данного локального scope. Если CLI output contract меняется, диагностика блокирует affected runtime с объяснением недоступной возможности, а не угадывает формат.
 
 **Sources**: [CLI/env precedence](https://docs.docker.com/reference/cli/docker/), [contexts](https://docs.docker.com/reference/cli/docker/context/inspect/), [Desktop releases](https://docs.docker.com/desktop/release-notes/), [Compose releases](https://github.com/docker/compose/releases), [port publishing](https://docs.docker.com/engine/network/port-publishing/).
 
@@ -132,7 +132,7 @@ Volume ledger дополнительно фиксирует engine-observed Crea
 
 **Rationale**: выполняет прямое пожелание source.md и проверяет независимость менеджера от demo domain. 1 000 окружений,100 000 records,100 measurements,20 Stop/Start,10 clear+10 refresh и час logs — воспроизводимые числовые проверки, ещё не результаты.
 
-**Alternatives considered**: встроенные сервисные имена; только mock Docker; заменить пользовательскую приёмку VM tests. Не доказывают FR-041/SC-013/успешность интерфейса.
+**Alternatives considered**: встроенные сервисные имена; заменить пользовательскую приёмку VM tests. Не выбраны: универсальность проверяется внешними descriptors и contract fixtures, удобство интерфейса — UI и пользовательской приёмкой. Runtime-сценарии тестируются с Docker/HTTP doubles.
 
 **Sources**: [RabbitMQ .NET tutorial](https://www.rabbitmq.com/tutorials/tutorial-one-dotnet), [FlaUI](https://github.com/FlaUI/FlaUI).
 
@@ -149,4 +149,4 @@ Volume ledger дополнительно фиксирует engine-observed Crea
 | secret storage/output safety | §11 |
 | UI/lifetimes/bounds/bench/demo | §12–13 |
 
-Нерешённых проектных clarifications нет. Engine permission denied, неизвестная редакция/характеристики текущей Windows, неподтверждённые benchmark values и будущие exact image digests отражаются как непроверенная среда и qualification work, без подмены фактов предположениями.
+Нерешённых проектных clarifications нет. Engine permission denied, неизвестная редакция/характеристики текущей Windows, неподтверждённые benchmark values и будущие exact image digests отражаются как непроверенная среда и диагностика среды, без подмены фактов предположениями.

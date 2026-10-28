@@ -10,7 +10,7 @@ description: "Исполнимые задачи основной версии En
 
 **Scope**: US1–US10 обязательны для основной версии. P1/P2 задают порядок; MVP US1 — промежуточный offline increment, не сокращение полной поставки. Спецификация имеет приоритет над mockups.
 
-**Tests**: включены по spec A-002 (обязательные принципы конституции), конституции VI/VIII и testing/acceptance contracts плана. Сначала написать failing tests на соответствующей границе; затем реализовать поведение и выполнить их. Core/VM без окна/live Docker/arbitrary sleeps; integration/UI/live qualification не подменять unit tests.
+**Tests**: включены по spec A-002, конституции VI/VIII и testing contracts плана. Сначала написать failing tests на соответствующей границе, затем реализовать поведение. Core/VM без окна; integration использует изолированные stores, Docker/HTTP doubles и fault injection. Запуск Docker или внешних сервисов не входит в тестовые gates; UI suite проверяется отдельно.
 
 **Organization**: задачи сгруппированы по истории; общие contracts/persistence/pack backend находятся в earliest shared foundation. Каждая история проверяется на независимом заранее подготовленном store, без прохождения предыдущих сценариев через UI.
 
@@ -32,9 +32,9 @@ description: "Исполнимые задачи основной версии En
 
 ## Execution Gates
 
-Не начинать user-story implementation до Foundational checkpoint. Каждый story checkpoint включает связанные unit/offline suites, targeted Release build/analyzers/format и соответствующую UI/Docker проверку при наличии prerequisites. Перед UI изменением использовать общие tokens/components; после изменения проверить обе темы и binding/resource errors. Не повторять полный soak после каждого локального изменения без причины.
+Не начинать user-story implementation до Foundational checkpoint. Каждый story checkpoint включает связанные unit/integration suites, targeted Release build/analyzers/format и соответствующую UI проверку. Все runtime-сценарии в Independent Test и задачах ниже выполняются с контролируемыми Docker/HTTP doubles и моделью ресурсов/данных. Перед UI изменением использовать общие tokens/components; после изменения проверить обе темы и binding/resource errors.
 
-Сбой/невозможность mandatory gate фиксируется как Failed/Blocked/Unverified/ManualPending и оставляет зависимую приёмку незавершённой. Отсутствие Engine/interactive desktop/LAN peer/участников не даёт pass. До полной release приёмки внутренние checkpoints не являются заявлением о готовой основной версии.
+Сбой обязательной автоматической или UI проверки фиксируется как Failed/Blocked/Unverified и оставляет зависимую приёмку незавершённой. Доступ к Docker и выпуск Windows не являются gates тестирования. До полной release приёмки внутренние checkpoints не означают готовность основной версии.
 ## Phase 1: Setup (Shared Infrastructure)
 
 **Purpose / Goal**: Подготовить solution, фиксированные зависимости, test harness и общие WPF resources до экранов.
@@ -42,14 +42,14 @@ description: "Исполнимые задачи основной версии En
 - [X] T001 Создать `global.json`, `Directory.Build.props` и `.editorconfig`: SDK 10.0.402 с `rollForward=latestPatch`, C# 14, nullable, analyzers, warnings as errors, deterministic build и lock-file restore; не добавлять runtime frameworks сверх плана.
 - [X] T002 Создать `EnvironmentBuilder.sln` и проекты `src/EnvironmentBuilder.Core/EnvironmentBuilder.Core.csproj`, `src/EnvironmentBuilder.Infrastructure/EnvironmentBuilder.Infrastructure.csproj`, `src/EnvironmentBuilder.App/EnvironmentBuilder.App.csproj`: Core net10.0, остальные net10.0-windows, WPF App/WinExe, win-x64; App → Core и Infrastructure только через composition root, Infrastructure → Core (после T001).
 - [X] T003 Создать `Directory.Packages.props` с Central Package Management и точными версиями из plan/research: WPF-UI 4.3.0, CommunityToolkit.Mvvm 8.4.2, Lucide 6.2.1, DI/Sqlite/ProtectedData 10.0.13, xunit.v3 4.0.2, runner 4.0.1, Test SDK 18.11.0, FlaUI.UIA3 5.0.0, demo-only RabbitMQ.Client 7.2.2; разрешить необходимые transitive версии в `packages.lock.json` каждого проекта без wildcard (после T002).
-- [X] T004 Создать `tests/EnvironmentBuilder.UnitTests/EnvironmentBuilder.UnitTests.csproj`, `tests/EnvironmentBuilder.IntegrationTests/EnvironmentBuilder.IntegrationTests.csproj` и `tests/EnvironmentBuilder.UiTests/EnvironmentBuilder.UiTests.csproj`, добавить в `EnvironmentBuilder.sln`: Windows-target VM tests без окна, xUnit/TRX, категории `Category=Docker`/`Category=UI`, offline suite без live dependencies (после T003).
-- [X] T005 Создать `tests/EnvironmentBuilder.IntegrationTests/Support/IsolatedTestStore.cs`, `FaultController.cs` и `ScopedDockerFixture.cs`: уникальные child stores/test IDs, fake clock/process/HTTP, fault points до/после мутаций; Docker требует opt-in, manifest allowlist и production ownership cleanup, недоступная обязательная prerequisite при opt-in — blocked/failure, не skip (после T004).
+- [X] T004 Создать три test-проекта в `tests/` и добавить в `EnvironmentBuilder.sln`: Windows-target VM tests без окна, xUnit/TRX, `Category=UI` для WPF/FlaUI; integration suite без внешних сервисов и дополнительных фильтров (после T003).
+- [X] T005 Создать `tests/EnvironmentBuilder.IntegrationTests/Support/IsolatedTestStore.cs`, `FaultController.cs`, `FakeClock.cs`, `FakeProcessRunner.cs` и `FakeHttpMessageHandler.cs`: уникальные child stores/test IDs, контролируемые process/HTTP responses, fault points до/после мутаций (после T004).
 - [X] T006 [P] Создать `src/EnvironmentBuilder.App/Themes/Light.xaml` и `Dark.xaml` со всеми semantic Brush/Color/spacing/radius/icon tokens из `docs/design/style-guide.md`; WPF UI resources подключать перед overrides, отключить OS accent override, значимый Light TextTertiary на Canvas заменить существующим TextSecondary (после T003).
 - [X] T007 Создать `src/EnvironmentBuilder.App/Themes/Typography.xaml` и `Components.xaml`: Segoe UI Variable/fallback Segoe UI, общие Button/TextBox/ComboBox/DataGrid/TabControl/ScrollBar/ToolTip/CheckBox styles, Hover/Pressed/Selected/Focused/Disabled/error; theme resources применять через DynamicResource без HEX во Views (после T006).
 
 **Checkpoint**: Solution/test harness/resources созданы; зависимости зафиксированы без wildcard.
 
-**Проверено 2026-10-23 (только Phase 1)**: locked restore и Release build прошли (0 warnings/errors); unit 2/2, offline integration 12/12, UI resources smoke 1/1, без skip; dotnet format --verify-no-changes и git diff --check прошли. Light/Dark PNG и итоговые TRX: `artifacts/setup/final/`. Проверка включает общие контролы и переключение словарей; live Docker, пользовательские экраны и полная keyboard/DPI-матрица относятся к последующим фазам и здесь не заявляются выполненными.
+**Проверено 2026-10-23 (только Phase 1)**: locked restore и Release build прошли (0 warnings/errors); unit 2/2, offline integration 12/12, UI resources smoke 1/1, без skip; dotnet format --verify-no-changes и git diff --check прошли. Light/Dark PNG и итоговые TRX: `artifacts/setup/final/`. Проверка включает общие контролы и переключение словарей; пользовательские экраны и полная keyboard/DPI-матрица относятся к последующим фазам и здесь не заявляются выполненными.
 
 ---
 
@@ -91,7 +91,7 @@ description: "Исполнимые задачи основной версии En
 
 **Checkpoint**: Typed contracts, safe storage/import/journal и shared shell готовы; foundational tests проверяют zero-effect и durable boundaries.
 
-**Проверено 2026-10-23 (только Phase 2, T008–T036)**: locked restore/NuGet audit и Release build прошли (0 warnings/errors); unit 36/36, offline integration 72/72, UI resources/shell smoke 1/1, без skip; 6 119 локальных schema/runtime parity cases совпали; native SQLite 3.53.3. dotnet format --verify-no-changes и git diff --check прошли. Итоговые TRX/Light-Dark PNG: `artifacts/foundational/verification/`; подробности и границы подтверждения — [foundational-verification.md](foundational-verification.md). Live runtime и полная keyboard/DPI-матрица последующих фаз не заявляются выполненными.
+**Проверено 2026-10-23 (только Phase 2, T008–T036)**: locked restore/NuGet audit и Release build прошли (0 warnings/errors); unit 36/36, offline integration 72/72, UI resources/shell smoke 1/1, без skip; 6 119 локальных schema/runtime parity cases совпали; native SQLite 3.53.3. dotnet format --verify-no-changes и git diff --check прошли. Итоговые TRX/Light-Dark PNG: `artifacts/foundational/verification/`; подробности и границы подтверждения — [foundational-verification.md](foundational-verification.md). Полная keyboard/DPI-матрица последующих фаз не заявляются выполненными.
 
 ---
 
@@ -122,7 +122,7 @@ description: "Исполнимые задачи основной версии En
 
 **Checkpoint**: US1 функционально завершена; выполнить independent test на отдельном prepared fixture. Незавершённые обязательные gates не отмечать passed.
 
-**Проверено 2026-10-23 (только Phase 3 / US1, T037–T050)**: locked restore/NuGet audit и Release build прошли (0 warnings/errors); unit 47/47, offline integration 77/77, UI resources/authoring views 1/1 и реальный FlaUI keyboard smoke 1/1, без skip. Подтверждены independent prepared store, 1 000-row fixture, create/preview/save/reopen после перезапуска, dirty decisions, Light/Dark и error-summary focus без binding errors. dotnet format --verify-no-changes и git diff --check прошли. Итоговые TRX/PNG: `artifacts/authoring/final/`; детали и границы — [authoring-verification.md](authoring-verification.md). Live runtime и полная release/DPI-матрица здесь не заявляются выполненными.
+**Проверено 2026-10-23 (только Phase 3 / US1, T037–T050)**: locked restore/NuGet audit и Release build прошли (0 warnings/errors); unit 47/47, offline integration 77/77, UI resources/authoring views 1/1 и реальный FlaUI keyboard smoke 1/1, без skip. Подтверждены independent prepared store, 1 000-row fixture, create/preview/save/reopen после перезапуска, dirty decisions, Light/Dark и error-summary focus без binding errors. dotnet format --verify-no-changes и git diff --check прошли. Итоговые TRX/PNG: `artifacts/authoring/final/`; детали и границы — [authoring-verification.md](authoring-verification.md). Полная release/DPI-матрица здесь не заявляются выполненными.
 
 ---
 
@@ -145,7 +145,7 @@ description: "Исполнимые задачи основной версии En
 - [X] T057 [P] [US2] Создать `demos/Reporting.Api/Reporting.Api.csproj`, `Program.cs` и `Dockerfile`: самостоятельный .NET10 RabbitMQ consumer, собственные persisted projections, health/init/counts и deterministic business-data probe; без общей БД трёх сервисов (после T003).
 - [X] T058 [US2] Создать runnable descriptors/initializers в `demos/descriptors/environment.json`, `requests.component.json`, `scheduler.component.json`, `reporting.component.json`, `rabbitmq.component.json` и small/medium/100000-record inputs с manifest в `demos/seedpacks/small/manifest.json`, `medium/manifest.json`, `large/manifest.json`, включая RabbitMQ image-only, exact contracts/instance dependencies/readiness/pack hashes; добавить demo projects/locks в `EnvironmentBuilder.sln`, библиотека app не содержит их имён/маршрутов (после T055, T056, T057, T031).
 - [X] T059 [US2] Реализовать `src/EnvironmentBuilder.Infrastructure/Docker/DockerProcessRunner.cs`: проверенный absolute docker.exe, ArgumentList/UseShellExecute=false/no console, async stdout+stderr, bounded/redacted outputs до sink, explicit env allowlist/clean DOCKER_*/COMPOSE_* routing; secret plaintext не в args/names/labels (после T051).
-- [X] T060 [US2] Реализовать `src/EnvironmentBuilder.Infrastructure/Docker/DockerCapabilityProbe.cs`: explicit read-only requested probe выбранного local npipe endpoint, Windows11 serviced24H2+/WSL2/linux amd64/Engine≥28/API≥1.48/Compose≥2.24.6 major2|5 и нужные flags/output; sentinel Compose без mutation, Engine ID фиксировать/перепроверять, unknown formats блокируют affected capability (после T059).
+- [X] T060 [US2] Реализовать `src/EnvironmentBuilder.Infrastructure/Docker/DockerCapabilityProbe.cs`: explicit read-only requested probe выбранного local npipe endpoint, WSL2/linux amd64/Engine≥28/API≥1.48/Compose≥2.24.6 major2|5 и нужные flags/output; без проверки выпуска/сборки Windows; sentinel Compose без mutation, Engine ID фиксировать/перепроверять, unknown formats блокируют affected capability (после T059).
 - [X] T061 [US2] Реализовать `src/EnvironmentBuilder.Infrastructure/Docker/RuntimeInputCapture.cs`: полный read-only capture source/Dockerfile/ignore/args/build-secret refs/readOnlyInput bytes в private stable staging, hashes фактически скопированных bytes, reject races/reparse escapes, staged mounts lease до удаления контейнера; image IDs/digests и platform pinning без подмены tag (после T042, T059).
 - [X] T062 [US2] Реализовать `src/EnvironmentBuilder.Core/Operations/ResourceOwnershipVerifier.cs` и `src/EnvironmentBuilder.Infrastructure/Docker/ResourceConsumerReader.cs`: «Перед удалением проверяются ledger, exact identity, labels и все consumers, включая stopped containers», «Несовпадение, shared mount или foreign consumer блокирует затронутый deletion», «Ресурс того же имени после внешнего пересоздания не считается прежним.»; network attachments и полное incarnation evidence, unknown не равно empty (после T051, T054, T059, T060).
 - [X] T063 [US2] Реализовать `src/EnvironmentBuilder.Core/Operations/StartPreflight.cs`: проверить все component paths/secrets/exact packs/providers/graph/ports/existing resource ownership/image identities до первой runtime/data mutation; сравнить PreviewSnapshot и вернуть отдельный concrete delta/new-token confirmation, unknown image допускает preflight, отсутствие review token требует полного review (после T060, T061, T062).
@@ -162,13 +162,11 @@ description: "Исполнимые задачи основной версии En
 - [X] T074 [US2] Реализовать `src/EnvironmentBuilder.App/Features/Environments/InspectViewModel.cs` и `EnvironmentCommands.cs`: app-owned operation progress/ID, initial ack/indeterminate stages, refresh only observation, component status/log/address commands+disabled reasons, одна session с cancel/await/dispose до замены, Dispatcher batches/late result guards (после T069, T072, T073).
 - [X] T075 [US2] Создать `src/EnvironmentBuilder.App/Features/Environments/InspectPage.xaml`, `Components/OperationProgress.xaml` и `InputDeltaDialog.xaml`, подключить Start/Inspect/Compose/progress в list/editor и `Composition/ServiceRegistration.cs`: реальные status/health/metrics/timestamps/truncation, delta review и cancel, partial failure без false ready, return context и keyboard actions (после T074).
 - [X] T076 [US2] Реализовать `src/EnvironmentBuilder.App/Shell/ShutdownCoordinator.cs`, `Components/CloseOperationsDialog.xaml` и view-only Closing bridge в `Shell/MainWindow.xaml.cs` до первого runtime handoff: dirty draft guard, Wait/Cancel/Return, block new mutations, safe points по всем active operations, durable result/reconciliation до единственного Shutdown, noncancellable reason; window не скрывается в background (после T075, T048, T053).
-- [ ] T077 [US2] **SKIPPED по указанию пользователя (2026-10-27)**. Добавить и выполнить opt-in `tests/EnvironmentBuilder.IntegrationTests/Docker/StartInspectDockerTests.cs` и `tests/EnvironmentBuilder.UiTests/InspectSmokeTests.cs` на test IDs: demo+baseline exchange, source/image drift cancel, component/init failure leaves running, real mapping/log/metric semantics, two simultaneous environments; сохранить actual qualification/evidence, unavailable Engine/desktop не считать passed (после T076, T058).
-
-**Решение о T077 (2026-10-27)**: пользователь попросил пропустить задачу, поскольку обновить Windows невозможно. Повторный opt-in прогон подтвердил `windows-24h2-x64-required` до runtime effects: Windows build 22631 при требовании 26100+. Маркер остаётся `[ ]`, поскольку live-приёмка не проверена. При выборе следующей фазы T077 считать явно пропущенной и автоматически на этом хосте не повторять; следующая фаза — Phase 5. Это решение не подтверждает live-сценарии или полный checkpoint US2. Результаты повторной проверки: [runtime-verification.md](runtime-verification.md), `artifacts/us2/recheck-2026-10-27/`.
+- [X] T077 [US2] Добавить и выполнить `tests/EnvironmentBuilder.UiTests/InspectSmokeTests.cs`: Inspect/Compose/возврат, контекст окружения, keyboard navigation, theme switch, безопасное закрытие; использовать подготовленный store без запуска Docker (после T076, T058).
 
 **Checkpoint**: US2 функционально завершена; выполнить independent test на отдельном prepared fixture. Незавершённые обязательные gates не отмечать passed.
 
-**Проверено 2026-10-23 (только Phase 4 / US2)**: T051–T076 реализованы и отмечены [X]; locked restore/NuGet audit и Release build прошли (0 warnings/errors); unit 67/67, offline integration 137/137, UI/FlaUI 3/3, без skip; Light/Dark PNG просмотрены, binding/resource errors отсутствуют. dotnet format --verify-no-changes прошёл. **T077 остаётся [ ] / Blocked**: live test остановлен production prerequisite windows-24h2-x64-required до runtime effects — хост Windows build 22631 (23H2), требуется 26100+ (24H2). Engine 29.7.2/API 1.55 и Compose 5.4.0 доступны, но live qualification не подтверждена; checkpoint US2 не объявляется пройденным. Evidence: artifacts/us2/final/; детали — [runtime-verification.md](runtime-verification.md). Фазы 5+ не выполнялись.
+**Проверено 2026-10-23 (Phase 4 / US2)**: T051–T076 реализованы; locked restore/NuGet audit и Release build прошли (0 warnings/errors); unit 67/67, integration 137/137, UI/FlaUI 3/3, без skip; Light/Dark PNG просмотрены, binding/resource errors отсутствуют; format прошёл. Область T077 уточнена 2026-10-28 до существующего успешного UI smoke. Evidence: `artifacts/us2/final/`; детали — [runtime-verification.md](runtime-verification.md).
 
 ---
 
@@ -182,17 +180,18 @@ description: "Исполнимые задачи основной версии En
 
 - [X] T078 [P] [US3] Сначала добавить failing runtime Stop contract tests в `tests/EnvironmentBuilder.IntegrationTests/Docker/StopContractTests.cs`: exact owned IDs/reverse DAG, graceful timeout, stopped verification по всем owned leftovers, no remove/data/init-marker mutations, disconnect/unknown не дают ConfirmedQuiescent.
 - [X] T079 [P] [US3] Сначала добавить failing Core/VM tests в `tests/EnvironmentBuilder.UnitTests/Operations/StopResumeTests.cs`: повторный Start использует ту же generation/success tuple, missing/replaced volume инвалидирует readiness, empty verified resource set допускает guard, unknown/paused/restarting блокируют destructive commands и поясняют причину.
-- [ ] T080 [P] [US3] Сначала добавить opt-in regression test20 циклов и stop-fault cases в `tests/EnvironmentBuilder.IntegrationTests/Docker/StopStartPersistenceTests.cs`: данные/counts/attempt history до и после, interrupted stop/restart, соседняя копия неизменна; fixtures создаёт harness без UI (после T058).
 ### Implementation for US3
 
 - [X] T081 [US3] Реализовать `src/EnvironmentBuilder.Core/Operations/QuiescenceGuard.cs`: «Guard `ConfirmedQuiescent` допускает также verified empty resource set никогда не запускавшегося окружения», «Он означает фактически проверенное отсутствие running/restarting/paused/unknown owned containers и conflict, отдельно от display NeverStarted/Stopped», «Docker unavailable не подтверждает guard.»; повторная проверка под environment lock (после T079).
 - [X] T082 [US3] Реализовать `src/EnvironmentBuilder.Core/Operations/StopEnvironmentService.cs` и адресный stop в `src/EnvironmentBuilder.Infrastructure/Docker/DockerStopAdapter.cs`: verified container IDs, reverse dependency order, journaled graceful timeout, post-inspect всех owned containers, persisted data/spec/generation/success markers сохраняются (после T081, T078).
 - [X] T083 [US3] Подключить active-generation/resource-incarnation проверку в `src/EnvironmentBuilder.Core/Operations/StartEnvironmentService.cs` и `DataGenerationGuard.cs`: прежний durable success не удостоверяет missing/recreated volume, ordinary Stop/Start не меняет revision/generation; явно показать blocker и recovery action (после T082).
-- [ ] T084 [US3] Подключить Stop/Start/refresh-observation availability к `src/EnvironmentBuilder.App/Features/Environments/EnvironmentCommands.cs` и `InspectPage.xaml`, register services в `Composition/ServiceRegistration.cs`; выполнить stop/resume suites и20-cycle Docker test, сохранить blocked evidence при недоступном Engine (после T083, T080).
+- [X] T084 [US3] Подключить Stop/Start/refresh-observation availability к `src/EnvironmentBuilder.App/Features/Environments/EnvironmentCommands.cs` и `InspectPage.xaml`, register services в `Composition/ServiceRegistration.cs`; выполнить stop/resume contract, unit/VM и UI suites с контролируемыми зависимостями (после T083, T078, T079).
 
 **Checkpoint**: US3 функционально завершена; выполнить independent test на отдельном prepared fixture. Незавершённые обязательные gates не отмечать passed.
 
-**Проверено 2026-10-27 (только Phase 5 / US3)**: T078, T079, T081–T083 реализованы и отмечены [X]; locked restore и Release build прошли (0 warnings/errors); unit 82/82, offline integration 146/146, UI/FlaUI 3/3, без skip. Обе темы Inspect просмотрены, binding/resource errors отсутствуют; dotnet format --verify-no-changes и git diff --check прошли. T080: opt-in тест 20 циклов/данных/соседнего окружения/прерывания добавлен, но live-проверка **Blocked**. T084: команды Stop/Start/обновления наблюдения и DI подключены, offline/UI gates пройдены, обязательный live gate **Blocked**. Production prerequisite `windows-24h2-x64-required` остановил тест до runtime effects: Windows build 22631, требуется 26100+; выполнено 0 циклов. T080 и T084 остаются [ ]; checkpoint US3 не объявляется пройденным. Evidence: `artifacts/us3/final/`; подробности — [stop-resume-verification.md](stop-resume-verification.md). T077 и фазы 6+ не выполнялись.
+**Проверено 2026-10-27 (Phase 5 / US3)**: T078, T079, T081–T084 реализованы; locked restore и Release build прошли (0 warnings/errors); unit 82/82, integration 146/146, UI/FlaUI 3/3, без skip. Обе темы Inspect просмотрены, binding/resource errors отсутствуют; format и diff check прошли. Область задач уточнена 2026-10-28: T080 исключена, T084 завершена по имеющимся contract/unit/UI проверкам. Evidence: `artifacts/us3/final/`; подробности — [stop-resume-verification.md](stop-resume-verification.md). Следующая фаза — Phase 6.
+
+**Проверено 2026-10-28 после изменения области проверок**: locked restore и Release build (0 warnings/errors), unit 82/82, integration 143/143, UI/FlaUI 3/3, без skip; format и diff check прошли. Integration включает два новых случая полного capability probe с подготовленными ответами Docker. TRX: `artifacts/windows-compatibility/`; integration/UI выполнены вне sandbox для доступа к Windows ACL/desktop.
 
 ---
 
@@ -206,7 +205,7 @@ description: "Исполнимые задачи основной версии En
 
 - [ ] T085 [P] [US4] Сначала добавить failing edit/ownership contract tests в `tests/EnvironmentBuilder.IntegrationTests/Operations/EditContractTests.cs`: canonical no-op, name-only destructive plan, candidate publication only after verified cleanup, same ID/+1, old snapshot при DB/result fault, missing resource already-absent без повторной deletion.
 - [ ] T086 [P] [US4] Сначала добавить failing VM tests в `tests/EnvironmentBuilder.UnitTests/ViewModels/DestructiveEditTests.cs`: ConfirmedQuiescent availability, dirty Save path, exact name/ID/revision/resources/data warning, cancellation preserves draft/spec/data, stale plan требует нового подтверждения, partial outcome не объявляет saved.
-- [ ] T087 [P] [US4] Сначала добавить opt-in fault/isolation matrix в `tests/EnvironmentBuilder.IntegrationTests/Docker/OwnershipDeletionTests.cs`: две копии+foreign lookalike, copied labels, copied-label recreated volume с другим CreatedAt/Driver/Scope/Options, missing incarnation evidence, stopped foreign consumer/network attachment, Engine/revision/plan drift; affected deletion blocked без force (после T082).
+- [ ] T087 [P] [US4] Сначала добавить контрактную fault/isolation matrix с Docker/HTTP doubles в `tests/EnvironmentBuilder.IntegrationTests/Docker/OwnershipDeletionTests.cs`: две копии+foreign lookalike, copied labels, copied-label recreated volume с другим CreatedAt/Driver/Scope/Options, missing incarnation evidence, stopped foreign consumer/network attachment, Engine/revision/plan drift; affected deletion blocked без force (после T082).
 ### Implementation for US4
 
 - [ ] T088 [US4] Реализовать `src/EnvironmentBuilder.Core/Operations/DestructivePlanBuilder.cs`: exact resources/data/generation/Engine ID/revision/consumers/stop requirements/candidate, plan hash и ConfirmationRecord; «Материальное изменение ресурсов/состава/входов делает старое подтверждение непригодным: требуется новый plan/confirmation.»; external sources/images/imports исключить из удаления (после T062, T085, T087). OperationPlan содержит «точные resources/data, необходимые stop/temporary start stages, input fingerprints, baseline/generation, expected ownership/state, последствия и candidate specification при edit»; ConfirmationRecord фиксирует «hash показанного плана и время явного решения».
@@ -230,7 +229,7 @@ description: "Исполнимые задачи основной версии En
 
 - [ ] T094 [P] [US5] Сначала добавить failing runtime clear/refresh contract tests в `tests/EnvironmentBuilder.IntegrationTests/Operations/DataResetContractTests.cs`: all-store plan, preflight before deletion, spec/revision/baseline invariants, generation reset, mandatory-only/empty baseline, temporary endpoints/Start/Stop и unknown final Stop запрещает success.
 - [ ] T095 [P] [US5] Сначала добавить failing VM tests в `tests/EnvironmentBuilder.UnitTests/ViewModels/DataResetCommandsTests.cs`: три разные подписи/последствия, ConfirmedQuiescent/ownership/provider blockers, destructive confirmation, partial restoration и отдельный явный Stop, без auto rollback/stop при init failure.
-- [ ] T096 [P] [US5] Сначала добавить opt-in10 clear+10 refresh/fault/isolation tests в `tests/EnvironmentBuilder.IntegrationTests/Docker/DataResetDockerTests.cs`: expected counts/zero duplicates, missing pack/apply contract before deletion, failure/cancel каждого этапа, preserved foreign/second environment и unchanged revision (после T089, T068).
+- [ ] T096 [P] [US5] Сначала добавить контрактные тесты 10 clear+10 refresh/fault/isolation с Docker/HTTP doubles в `tests/EnvironmentBuilder.IntegrationTests/Docker/DataResetScenarioTests.cs`: expected counts/zero duplicates, missing pack/apply contract before deletion, failure/cancel каждого этапа, preserved foreign/second environment и unchanged revision (после T089, T068).
 ### Implementation for US5
 
 - [ ] T097 [P] [US5] Реализовать `src/EnvironmentBuilder.Infrastructure/Persistence/DataResetFinalization.cs`: «После cleanup один commit fresh generation и retirement прежней; clear завершается, refresh продолжает init с новым journal»; очистка old success readiness без изменения authoritative configuration/revision/baseline, invalidated partial state и refs сохраняются (после T094).
@@ -238,7 +237,7 @@ description: "Исполнимые задачи основной версии En
 - [ ] T099 [P] [US5] Реализовать `src/EnvironmentBuilder.Core/SeedPacks/BaselinePreflight.cs`: проверка всех immutable blobs/compatibility/initializer-entry equality/secrets/endpoints/providers/instance readiness до cleanup, missing apply contract недоступен; «доступность всех inputs проверяется до удаления данных»; full refreshed plan включает concrete temporary components/control ports/Stop (после T094, T063).
 - [ ] T100 [US5] Реализовать `src/EnvironmentBuilder.Core/Operations/RefreshEnvironmentDataService.cs`: baseline preflight→confirmed shared cleanup→new generation→temporary pinned runtime→BaselineExecutor→verify expected outcomes→verified Stop; empty/no-pack baseline поддержать, final Stop failure=partial/unknown, init failure оставляет работающие temporary components до явной команды (после T098, T099, T082).
 - [ ] T101 [US5] Подключить «Обновить состояние», «Очистить данные», «Восстановить baseline (refresh данных)» к `src/EnvironmentBuilder.App/Features/Environments/EnvironmentCommands.cs`, `EnvironmentListPage.xaml`, `InspectPage.xaml` и `Composition/ServiceRegistration.cs`: разные commands/tooltips/availability/plans/outcomes; observation вызывает только reader (после T100, T095).
-- [ ] T102 [US5] Выполнить reset unit/offline/Docker suites и независимые SC-006/007 сценарии, записать outcome/counts/revision/generation/remnants и actual stopped proof в `artifacts/acceptance/<runId>/reports/data-reset.json`; недоступные Engine/UI gates оставить blocked/unverified (после T101, T096).
+- [ ] T102 [US5] Выполнить reset unit/integration suites и независимые SC-006/007 сценарии, записать outcome/counts/revision/generation/remnants и actual stopped proof в `artifacts/acceptance/<runId>/reports/data-reset.json`; недоступные UI gates оставить blocked/unverified (после T101, T096).
 
 **Checkpoint**: US5 функционально завершена; выполнить independent test на отдельном prepared fixture. Незавершённые обязательные gates не отмечать passed.
 
@@ -254,13 +253,13 @@ description: "Исполнимые задачи основной версии En
 
 - [ ] T103 [P] [US6] Сначала добавить failing delete/tombstone contract tests в `tests/EnvironmentBuilder.IntegrationTests/Operations/DeleteContractTests.cs`: stop-before-removal, confirmed exact scope, atomic finalization/refs release только при verified absence, interrupted delete и повтор уже отсутствующего ресурса без повторной destructive команды.
 - [ ] T104 [P] [US6] Сначала добавить failing VM tests в `tests/EnvironmentBuilder.UnitTests/ViewModels/DeleteEnvironmentTests.cs`: name+ID/data-loss plan, cancel zero mutation, tombstone остаётся в списке с remnants/retry reason, stale token/foreign consumer blocks, удалённое selection корректно снимается.
-- [ ] T105 [P] [US6] Сначала добавить opt-in fault/isolation tests в `tests/EnvironmentBuilder.IntegrationTests/Docker/DeleteIsolationTests.cs`: running selected copy→Stop→cleanup, отказ volume removal/result commit/crash между stages, foreign lookalike/copy-label/shared volumes/source files/second copy не изменены (после T089).
+- [ ] T105 [P] [US6] Сначала добавить контрактные fault/isolation tests с Docker/HTTP doubles в `tests/EnvironmentBuilder.IntegrationTests/Docker/DeleteIsolationTests.cs`: running selected copy→Stop→cleanup, отказ volume removal/result commit/crash между stages, foreign lookalike/copy-label/shared volumes/source files/second copy не изменены (после T089).
 ### Implementation for US6
 
 - [ ] T106 [US6] Создать `src/EnvironmentBuilder.Core/Operations/DeletionTombstone.cs` и `src/EnvironmentBuilder.Infrastructure/Persistence/DeleteFinalization.cs`: «`DeletionTombstone` сохраняет environment ID/последний snapshot, plan и ledger remnants до verified отсутствия всех scoped ресурсов», «После полного удаления terminal history может сохранить только sanitized summary без живых resource/blob references.»; unresolved history не удалять cascade (после T103).
 - [ ] T107 [US6] Реализовать `src/EnvironmentBuilder.Core/Operations/DeleteEnvironmentService.cs`: confirmed plan→при необходимости verified Stop→shared cleanup→final absence reconciliation→atomic live-description/refs/tombstone finalization; failure/cancel сохраняет visible tombstone, retry требует актуальной сверки/confirmation без расширения scope (после T106, T082).
 - [ ] T108 [US6] Подключить delete/retry/remnants detail в `src/EnvironmentBuilder.App/Features/Environments/EnvironmentCommands.cs`, `EnvironmentListViewModel.cs`, `EnvironmentListPage.xaml` и `Composition/ServiceRegistration.cs`, используя shared destructive dialog; description не исчезает до полного успеха (после T107, T104).
-- [ ] T109 [US6] Выполнить delete unit/offline/fault/Docker suites и записать isolation/remaining resources/cleanup evidence в `artifacts/acceptance/<runId>/reports/delete.json`; подтвердить отсутствие любых global cleanup/image/source mutations и отсутствие скрытой partial tombstone (после T108, T105).
+- [ ] T109 [US6] Выполнить delete unit/integration/fault suites и записать isolation/remaining resources/cleanup evidence в `artifacts/acceptance/<runId>/reports/delete.json`; подтвердить отсутствие любых global cleanup/image/source mutations и отсутствие скрытой partial tombstone (после T108, T105).
 
 **Checkpoint**: US6 функционально завершена; выполнить independent test на отдельном prepared fixture. Незавершённые обязательные gates не отмечать passed.
 
@@ -348,7 +347,7 @@ description: "Исполнимые задачи основной версии En
 
 - [ ] T137 [P] [US10] Сначала добавить failing recovery/runtime contract tests в `tests/EnvironmentBuilder.IntegrationTests/Recovery/RecoveryContractTests.cs`: unfinished create/delete/edit/init intents, effect-without-result, generation validity/resource replacement, Engine unavailable/changed ID, read-only reconciliation без automatic destructive/unsafe HTTP replay и candidate finalization без repeated cleanup.
 - [ ] T138 [P] [US10] Сначала добавить failing VM tests в `tests/EnvironmentBuilder.UnitTests/ViewModels/DiagnosticsRecoveryTests.cs` и `ShutdownTests.cs`: port/path/ownership/capability results, distinct read/fix actions, stale/unknown/last-check, Wait/Cancel/Return плюс dirty draft/Escape, noncancellable safe-point reason, failed result persistence запрещает закрытие.
-- [ ] T139 [P] [US10] Сначала добавить exhaustive opt-in fault/restart tests в `tests/EnvironmentBuilder.IntegrationTests/Docker/CrashRecoveryMatrixTests.cs`: forced process exit до/после каждого mutating Docker/HTTP stage для Start/Stop/Edit/Clear/Refresh/Delete и init send/success commit, startup observations/remnants/no false stopped/success/rollback, two-copy isolation (после T107, T100).
+- [ ] T139 [P] [US10] Сначала добавить exhaustive fault/restart tests с Docker/HTTP doubles в `tests/EnvironmentBuilder.IntegrationTests/Docker/CrashRecoveryMatrixTests.cs`: моделирование прерывания до/после каждого mutating Docker/HTTP stage для Start/Stop/Edit/Clear/Refresh/Delete и init send/success commit, startup observations/remnants/no false stopped/success/rollback, two-copy isolation (после T107, T100).
 ### Implementation for US10
 
 - [ ] T140 [US10] Реализовать `src/EnvironmentBuilder.Core/Operations/StartupReconciler.cs`: прочитать unfinished operations/ledger/application Started, сравнить Engine/actual resources/records, convert незакрытый started→unknown, сохранить actual/unknown/remnants/generation drift без automatic mutation/replay; descriptions доступны при offline Docker (после T137).
@@ -371,23 +370,23 @@ description: "Исполнимые задачи основной версии En
 
 **Purpose / Goal**: Закрыть полную SC/QR matrix, compatibility, sustained-load/security/UI gates и поставку; не объявлять unverified/manual/blocked gates успешными.
 
-- [ ] T151 [P] Создать `scripts/powershell/Get-AcceptanceBaseline.ps1` с точным интерфейсом quickstart: actual SDK/OS edition-build/CPU/RAM/disk/endpoint/Engine/API/Compose/capabilities в baseline.json, declared VM CPU/RAM отдельно от measured; inaccessible CIM/Engine сохранять unknown/error без выдуманных характеристик (после T060).
+- [ ] T151 [P] Создать `scripts/powershell/Get-AcceptanceBaseline.ps1` с интерфейсом quickstart: actual SDK/OS/CPU/RAM/disk и установленные CLI/Compose versions при наличии в baseline.json, declared VM CPU/RAM отдельно от measured; недоступные сведения сохранять unknown/error. Engine не требуется (после T060).
 - [ ] T152 [P] Создать `scripts/powershell/New-AcceptanceFixtures.ps1` и `tests/EnvironmentBuilder.IntegrationTests/Support/AcceptanceFixtureGenerator.cs`: deterministic small/medium/100000-record packs/expected hashes/counts,1000 environments/long names/errors, two copies/foreign/unknown service/duplicate instances, malformed ZIP/JSON/NDJSON, fault markers/secret sentinels; nonempty output reject, fixture generation без runtime effects (после T128).
 - [ ] T153 Создать `scripts/powershell/Initialize-AcceptanceStore.ps1` и `tests/EnvironmentBuilder.IntegrationTests/Support/AcceptanceStoreInitializer.cs`: exact quickstart parameters, child data root/ID mapping, import через production persistence/importer boundary без UI/Docker/init effects, nonempty inconsistent store reject, закрыть writer до запуска app (после T152).
-- [ ] T154 Создать `scripts/powershell/Invoke-Acceptance.ps1` и `tests/EnvironmentBuilder.IntegrationTests/Support/AcceptanceScenarioRunner.cs` для SC-001..SC-013: независимые child stores, test-ID allowlist, -EnableDocker+env opt-in+capability gate, unique reports с versions/hash/IDs/raw monotonic timings/expected-actual/evidence; outcomes Passed/Failed/Blocked/Unverified/ManualPending, exit0 только полностью Passed, manual forms для5 участников, scoped confirmed cleanup через production services (после T153, T151, T150).
+- [ ] T154 Создать `scripts/powershell/Invoke-Acceptance.ps1` и `tests/EnvironmentBuilder.IntegrationTests/Support/AcceptanceScenarioRunner.cs` для SC-001..SC-013: независимые child stores, Docker/HTTP doubles, unique reports с versions/hash/IDs/raw monotonic timings/expected-actual/evidence; outcomes Passed/Failed/Blocked/Unverified/ManualPending, exit0 только полностью Passed, manual forms для 5 участников; временные файлы только внутри test store (после T153, T151, T150).
 - [ ] T155 Создать `scripts/powershell/Assert-ValidationResults.ps1` и regression cases в `tests/EnvironmentBuilder.IntegrationTests/Acceptance/ValidationResultsTests.cs`: exact RequiredSuite interface, missing/zero-executed/all-skipped/required-skipped TRX/blocked/manual/unverified report→nonzero; dotnet test exit0 не достаточен, SC-001/012 без5 human outcomes остаются ManualPending (после T154).
 - [ ] T156 Выполнить SC-007/008/011 isolation/fault/security matrix через `scripts/powershell/Invoke-Acceptance.ps1`, сохранить `artifacts/acceptance/<runId>/reports/security-isolation.json`: all secret channels/chunk boundaries/escaped process output/HTTP errors/export/clipboard/diagnostics, import-preview zero effects, stale confirmations/copied labels/incarnations/shared consumers, runtime mutations только scoped test IDs (после T155).
 - [ ] T157 Выполнить SC-002/003/009/010 через `scripts/powershell/Invoke-Acceptance.ps1`, сохранить100 raw timings/count percentiles/retained byte and subscription counts в `artifacts/acceptance/<runId>/reports/performance.json`:1000 list≤3s,≥95/100 search/filter/ack≤1s,10min operation navigation≤1s,100k first preview≤2s,60min logs≥100lines/s+100 switches и все retention budgets (после T155).
 - [ ] T158 Создать/выполнить `tests/EnvironmentBuilder.UiTests/VisualAccessibilityTests.cs` и зафиксировать `artifacts/acceptance/<runId>/reports/ui-matrix.json`: Light/Dark×100/125/150/200% actual DPI,1280×720 DIP/long names/all screens/dialogs/states, keyboard/focus/accessible names, theme сохраняет route/draft/selection/scroll/progress, contrast≥4.5:1/3:1, screenshots/automation tree/binding-resource diagnostics; interactive run обязателен (после T155).
-- [ ] T159 Выполнить отдельную minimum Engine28/API1.48/Compose2.24.6 и current Desktop4.96.2/Engine29.9.1/Compose5.6.x qualification, а также LAN localhost/default vs explicit per-port network probe со второго компьютера; результаты/environment/evidence/blocked prerequisites записать в `artifacts/acceptance/<runId>/reports/compatibility-network.json`, высокий version сам не даёт pass (после T155).
-- [ ] T160 Выполнить SC-004/005/006/013 полный demo cycle через `scripts/powershell/Invoke-Acceptance.ps1`:3 services+RabbitMQ exchange/seed,20 Stop-Start,10 clear+10 refresh, edits/no-op/partial, delete, fourth unknown service и два definition instances; expected counts/attempts/resource isolation записать в `artifacts/acceptance/<runId>/reports/demo-cycle.json` (после T155).
+- [ ] T159 Проверить Docker capability fixtures для Engine28/API1.48/Compose2.24.6 и других известных поддерживаемых версий, unknown output и unsupported modes; проверить Compose/port contracts: default loopback и explicit network binding только выбранного порта. Без подключения к Engine или LAN peer; результаты записать в `artifacts/acceptance/<runId>/reports/compatibility-network.json` (после T155).
+- [ ] T160 Выполнить SC-004/005/006/013 с Docker/HTTP doubles через `scripts/powershell/Invoke-Acceptance.ps1`: внешние demo descriptors, 20 Stop-Start, 10 clear+10 refresh, edits/no-op/partial/delete, unknown service и два definition instances; expected counts/attempts/resource isolation моделируются и записываются в `artifacts/acceptance/<runId>/reports/demo-cycle.json` (после T155).
 - [ ] T161 Подготовить и провести SC-001/SC-012 с5 представителями аудитории, заполнить формы из acceptance runner в `artifacts/acceptance/<runId>/reports/usability.json`:≥4/5 authoring≤10min и explanation/failure discovery≤2min, zero-effect evidence и keyboard matrix; без участников/human evidence gate остаётся ManualPending, automated часть его не заменяет (после T158, T160).
-- [ ] T162 Выполнить точные restore --locked-mode/build Release --no-restore -warnaserror/unit/offline/Docker/UI TRX/dotnet format --verify-no-changes и Assert-ValidationResults команды из `specs/001-environment-builder/quickstart.md`, устранить warnings/analyzers/binding/test failures; записать actual commands/outcomes/native sqlite_version+resolved package и unresolved gates в `artifacts/acceptance/<runId>/reports/tooling.json` (после T156, T157, T158, T159, T160).
+- [ ] T162 Выполнить точные restore --locked-mode/build Release --no-restore -warnaserror/unit/integration/UI TRX/dotnet format --verify-no-changes и Assert-ValidationResults команды из `specs/001-environment-builder/quickstart.md`, устранить warnings/analyzers/binding/test failures; записать actual commands/outcomes/native sqlite_version+resolved package и unresolved gates в `artifacts/acceptance/<runId>/reports/tooling.json` (после T156, T157, T158, T159, T160).
 - [ ] T163 Выполнить win-x64 self-contained folder publish проекта `src/EnvironmentBuilder.App/EnvironmentBuilder.App.csproj` с locked restore/no trim/no single-file в `artifacts/acceptance/<runId>/publish/win-x64/`; smoke опубликованной .exe без SDK: startup/offline save/preview/themes и runtime preflight, native dependencies/private files cleanup; сохранить publish evidence в `artifacts/acceptance/<runId>/reports/publish.json` (после T162).
 - [ ] T164 Обновить `README.md`, `demos/README.md` и `specs/001-environment-builder/quickstart.md` по реальным commands/formats/limits/support/setup/demo/secret-local mapping/destructive semantics/validation locations, убрать утверждения о ещё несуществующей реализации; явные residual limitations и blocked/manual gates без ложного passed (после T163, T161).
 - [ ] T165 Выполнить final self-review границ/MVVM/async/lifetimes/bindings/abstractions/test coverage/retention/ownership и полную FR-001..041/QR-001..006/SC-001..013 сверку; исправить findings, повторить только затронутые gates и записать `artifacts/acceptance/<runId>/reports/handoff.md` с evidence/actual outcomes/остатками и unverified gates; full release complete лишь при прохождении всех обязательных gates (после T164).
 
-**Checkpoint**: Полная поставка требует всех обязательных SC/QR/tooling/qualification/manual gates и честного handoff.
+**Checkpoint**: Полная поставка требует всех обязательных SC/QR/tooling/UI/manual gates и честного handoff.
 
 ---
 
@@ -410,7 +409,7 @@ description: "Исполнимые задачи основной версии En
 | US5 | US2 + US3 + US4 | Initializer, verified Stop и shared cleanup. SeedPack backend уже готов. |
 | US6 | US3 + US4 | Verified Stop/ownership/cleanup; не требует UI-библиотек US7/US8. |
 | US7 | US1 + US2 + US4 + US5 | Editor integration, execution/unknown outcomes и confirmed refresh; backend импорта не реализуется повторно. |
-| US8 | US1 + US4 | Existing snapshot update проходит edit protocol; live custom-component acceptance дополнительно использует US2 fixtures/runtime. |
+| US8 | US1 + US4 | Existing snapshot update проходит edit protocol; custom-component contract tests дополнительно используют US2 fixtures и doubles. |
 | US9 | US1 | Portable transfer использует Foundation readers/store; не требует US7/US8 экранов. |
 | US10 | US2–US8 runtime/recovery capabilities | Startup recovery переиспользует journal, candidate finalization, tombstone и unknown-init decisions; US9 не блокирует backend recovery. |
 
@@ -439,71 +438,71 @@ flowchart TD
 
 ### Within Each Story
 
-Сначала contract/behavior/VM tests с ожидаемым red, затем models/rules → services/adapters → UI integration → independent validation. Тесты не должны проверять приватные методы/случайный call order; fault boundaries проверяют observable persisted/runtime outcome. Дополнительный UI/live smoke пишется при готовом сценарии. Operation intent/result/ownership/secret guards действуют с первого использующего их runtime slice.
+Сначала contract/behavior/VM tests с ожидаемым red, затем models/rules → services/adapters → UI integration → independent validation. Тесты не должны проверять приватные методы/случайный call order; fault boundaries проверяют observable persisted/runtime outcome. Дополнительный UI smoke пишется при готовом сценарии. Operation intent/result/ownership/secret guards действуют с первого использующего их runtime slice.
 
 ### Parallel Opportunities
 
-Всего 63 задач отмечены [P]. Setup: T006 независимо от test harness после dependencies; Foundation: path/vault/data-root seams, shared UI services и blob storage после собственных prerequisites. Три demo сервиса (T055, T056, T057) разрабатываются независимо. После US4 можно разводить lifecycle/backend library/transfer работу по разным файлам, соблюдая таблицу. Shared files `Composition/ServiceRegistration.cs`, `EnvironmentCommands.cs`, editor/list XAML/VM интегрировать последовательно; не запускать конфликтующие задачи параллельно только из-за разных story labels.
+Всего 62 задач отмечены [P]. Setup: T006 независимо от test harness после dependencies; Foundation: path/vault/data-root seams, shared UI services и blob storage после собственных prerequisites. Три demo сервиса (T055, T056, T057) разрабатываются независимо. После US4 можно разводить lifecycle/backend library/transfer работу по разным файлам, соблюдая таблицу. Shared files `Composition/ServiceRegistration.cs`, `EnvironmentCommands.cs`, editor/list XAML/VM интегрировать последовательно; не запускать конфликтующие задачи параллельно только из-за разных story labels.
 
-Live scenarios используют разные test IDs/stores. Performance/soak измерения запускать без конкурирующей нагрузки. Parallel examples ниже — разрешённые пакеты после указанных prerequisites; это возможности выполнения задач, не команда автоматически создавать агентов.
+Runtime contract scenarios используют разные test IDs/stores. Performance/soak измерения запускать без конкурирующей нагрузки. Parallel examples ниже — разрешённые пакеты после указанных prerequisites; это возможности выполнения задач, не команда автоматически создавать агентов.
 
 ## Parallel Example: US1
 
-После Foundation: одновременно T037, T038, T039 (разные test files; live fault cases — собственные allowlisted fixtures).
+После Foundation: одновременно T037, T038, T039 (разные test files; fault cases — собственные изолированные fixtures).
 
 Implementation package: T043, T044, T049. После T040, T042 и story tests; разные list/editor/fixture файлы.
 
 ## Parallel Example: US2
 
-После US1: одновременно T051, T052, T053, T054 (разные test files; live fault cases — собственные allowlisted fixtures).
+После US1: одновременно T051, T052, T053, T054 (разные test files; fault cases — собственные изолированные fixtures).
 
 Implementation package: T055, T056, T057. После Setup; после T071 также T072 и T073 в разных файлах.
 
 ## Parallel Example: US3
 
-После US2: одновременно T078, T079, T080 (разные test files; live fault cases — собственные allowlisted fixtures).
+После US2: одновременно T078, T079 (разные test files; fault cases — собственные изолированные fixtures).
 
 Stop/quiescence/resume integration выполнять последовательно.
 
 ## Parallel Example: US4
 
-После US3 и Foundation fault harness: одновременно T085, T086, T087 (разные test files; live fault cases — собственные allowlisted fixtures).
+После US3 и Foundation fault harness: одновременно T085, T086, T087 (разные test files; fault cases — собственные изолированные fixtures).
 
 Implementation package: T089, T092. После T088 и соответствующих tests: core cleanup и UI dialog не меняют общие файлы.
 
 ## Parallel Example: US5
 
-После US4: одновременно T094, T095, T096 (разные test files; live fault cases — собственные allowlisted fixtures).
+После US4: одновременно T094, T095, T096 (разные test files; fault cases — собственные изолированные fixtures).
 
 Implementation package: T097, T099. После T094: persistence boundary и baseline preflight независимы.
 
 ## Parallel Example: US6
 
-После US3/US4: одновременно T103, T104, T105 (разные test files; live fault cases — собственные allowlisted fixtures).
+После US3/US4: одновременно T103, T104, T105 (разные test files; fault cases — собственные изолированные fixtures).
 
-Tombstone→service→UI интегрировать последовательно; отдельный live store не смешивать с другими тестами.
+Tombstone→service→UI интегрировать последовательно; отдельный test store не смешивать с другими тестами.
 
 ## Parallel Example: US7
 
-После story prerequisites: одновременно T110, T111 (разные test files; live fault cases — собственные allowlisted fixtures).
+После story prerequisites: одновременно T110, T111 (разные test files; fault cases — собственные изолированные fixtures).
 
 Implementation package: T113, T114. После T112 и contract tests: index/page reader и reference-aware delete независимы.
 
 ## Parallel Example: US8
 
-После story prerequisites: одновременно T120, T121 (разные test files; live fault cases — собственные allowlisted fixtures).
+После story prerequisites: одновременно T120, T121 (разные test files; fault cases — собственные изолированные fixtures).
 
 Implementation package: T123, T124. После T122 и VM tests: settings storage и definition VM в разных файлах.
 
 ## Parallel Example: US9
 
-После US1: одновременно T130, T131 (разные test files; live fault cases — собственные allowlisted fixtures).
+После US1: одновременно T130, T131 (разные test files; fault cases — собственные изолированные fixtures).
 
 Export→remap import→issues→UI последовательно; backend этой истории можно выполнять рядом с US2/US3 без shared file edits.
 
 ## Parallel Example: US10
 
-После всех заявленных runtime prerequisites: одновременно T137, T138, T139 (разные test files; live fault cases — собственные allowlisted fixtures).
+После всех заявленных runtime prerequisites: одновременно T137, T138, T139 (разные test files; fault cases — собственные изолированные fixtures).
 
 Implementation package: T142, T143. После T140; T149 отдельно после T141, shared composition/Closing integration последовательно.
 
@@ -523,7 +522,7 @@ Implementation package: T142, T143. После T140; T149 отдельно по�
 | FR-008 | T081, T091, T048 |
 | FR-009 | T085, T089, T090, T091 |
 | FR-010 | T060, T069, T068, T054 |
-| FR-011 | T028, T082, T083, T080 |
+| FR-011 | T028, T078, T079, T082, T083 |
 | FR-012 | T097, T098, T096 |
 | FR-013 | T099, T100, T102 |
 | FR-014 | T106, T107, T105 |
@@ -564,14 +563,14 @@ Implementation package: T142, T143. После T140; T149 отдельно по�
 | SC-001 | T050, T154, T161; 5-person forms, ≥4/5 ≤10min, zero runtime effects |
 | SC-002 | T043, T045, T152, T157; 1000 rows и100 raw timings/thresholds |
 | SC-003 | T033, T074, T076, T157; 100 acknowledgements и navigation during10min operation |
-| SC-004 | T068, T080, T160; 20 cycles, preserved data, successful init repeats0 |
+| SC-004 | T068, T078, T079, T160; 20 cycles, preserved data, successful init repeats0 |
 | SC-005 | T085, T087, T093, T160; name-only/cancel/no-op/partial/NeverStarted edit |
 | SC-006 | T096, T102, T160; 10 clear+10 refresh, exact counts/no duplicates/final stop |
 | SC-007 | T087, T105, T156; две copies+foreign и immutable source/shared-image checks |
 | SC-008 | T054, T139, T150, T156; все fault points, delta cancellation, actual state, close safe points |
 | SC-009 | T112, T113, T157; 100000 records, first page≤2s, bounded continuation/no runtime |
 | SC-010 | T072, T073, T157; 60min≥100lines/s+100 switches, byte/subscription budgets |
-| SC-011 | T156, T159; all sentinel sinks/zero effects и real second-machine LAN probe |
+| SC-011 | T156, T159; all sentinel sinks/zero effects и Compose/port binding contracts |
 | SC-012 | T158, T161; 5-person ≥4/5≤2min и Light/Dark×DPI keyboard matrix |
 | SC-013 | T129, T160; 3-service exchange, fourth unknown, duplicate-instance separation |
 

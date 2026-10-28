@@ -1,5 +1,4 @@
 using System.Text.Json;
-using EnvironmentBuilder.Core.Operations;
 using EnvironmentBuilder.Infrastructure.Persistence;
 
 namespace EnvironmentBuilder.Infrastructure.Docker;
@@ -13,8 +12,6 @@ public sealed class DockerCapabilityProbe(IDockerProcess docker, AppDataDirector
     public async Task<DockerCapabilities> ProbeAsync(CancellationToken token)
     {
         DockerEndpoint.RequireLocal(docker.Endpoint);
-        if (!OperatingSystem.IsWindowsVersionAtLeast(10, 0, 26100) || System.Runtime.InteropServices.RuntimeInformation.OSArchitecture != System.Runtime.InteropServices.Architecture.X64)
-        { throw new PreflightBlockedException("windows-24h2-x64-required"); }
         JsonElement server = await JsonAsync(["version", "--format", "{{json .Server}}"], token).ConfigureAwait(false);
         JsonElement info = await JsonAsync(["info", "--format", "{{json .}}"], token).ConfigureAwait(false);
         JsonElement compose = await JsonAsync(["compose", "version", "--format", "json"], token).ConfigureAwait(false);

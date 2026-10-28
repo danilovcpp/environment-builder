@@ -41,7 +41,7 @@ Storage/DPAPI tests используют уникальные временные
 dotnet restore EnvironmentBuilder.sln --locked-mode -m:1 -nr:false
 dotnet build EnvironmentBuilder.sln -c Release --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -warnaserror
 dotnet test tests/EnvironmentBuilder.UnitTests/EnvironmentBuilder.UnitTests.csproj -c Release --no-build --no-restore -m:1 -nr:false
-dotnet test tests/EnvironmentBuilder.IntegrationTests/EnvironmentBuilder.IntegrationTests.csproj -c Release --no-build --no-restore -m:1 -nr:false --filter 'Category!=Docker'
+dotnet test tests/EnvironmentBuilder.IntegrationTests/EnvironmentBuilder.IntegrationTests.csproj -c Release --no-build --no-restore -m:1 -nr:false
 dotnet test tests/EnvironmentBuilder.UiTests/EnvironmentBuilder.UiTests.csproj -c Release --no-build --no-restore -m:1 -nr:false --filter 'Category=UI'
 dotnet format EnvironmentBuilder.sln --verify-no-changes --no-restore
 git diff --check
@@ -49,4 +49,4 @@ git diff --check
 
 ## Границы подтверждения
 
-Live Docker/HTTP runtime, пользовательские workflow следующих историй, полная keyboard/DPI-матрица и release qualification не запускались и не объявляются пройденными. UI smoke проверяет скомпилированные resources, маршруты, сохранение VM, collapse/expand панели и binding errors; он не заменяет полную интерактивную приёмку следующих фаз.
+Пользовательские workflow следующих историй и полная keyboard/DPI-матрица не запускались и не объявляются пройденными. UI smoke проверяет скомпилированные resources, маршруты, сохранение VM, collapse/expand панели и binding errors; он не заменяет полную интерактивную приёмку следующих фаз.

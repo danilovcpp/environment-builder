@@ -133,7 +133,6 @@ public sealed partial class InspectViewModel(IEnvironmentObservationSource sourc
     private static string ResultLabel(string? code) => code switch
     {
         null => "",
-        "windows-24h2-x64-required" => " · Требуется Windows 11 x64 24H2 или новее (build 26100+).",
         "runtime-capability-unsupported" => " · Конфигурация Docker не поддерживается; проверьте требования.",
         "required-input-or-runtime-unavailable" => " · Проверьте локальные пути, секреты, пакеты, порты и доступность Docker.",
         "private-runtime-files-cleanup-failed" => " · Не удалось удалить приватные временные файлы. Проверьте доступ к каталогу данных.",

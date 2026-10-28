@@ -82,13 +82,13 @@ public sealed class StartWorkflowTests
     [Fact]
     public async Task A_known_preflight_block_is_a_durable_failure_and_does_not_require_runtime_reconciliation()
     {
-        var fixture = new RuntimeFixture { PreflightBlock = "windows-24h2-x64-required" };
+        var fixture = new RuntimeFixture { PreflightBlock = "docker-unavailable" };
         await using var coordinator = fixture.Coordinator();
         var environment = fixture.Environment();
         var service = new StartEnvironmentService(coordinator, fixture, new(fixture, fixture), fixture);
         var handle = service.Start(environment, null, (_, _, _) => throw new InvalidOperationException("Review must not be reached."));
         await handle.Completion;
-        Assert.Equal(OperationState.Failed, handle.Current.State); Assert.Equal("windows-24h2-x64-required", handle.Current.ResultCode);
+        Assert.Equal(OperationState.Failed, handle.Current.State); Assert.Equal("docker-unavailable", handle.Current.ResultCode);
         Assert.Empty(fixture.Events); Assert.Null(coordinator.AdmissionBlockReason(environment.Id));
     }
 }

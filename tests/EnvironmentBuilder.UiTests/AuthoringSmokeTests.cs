@@ -102,7 +102,6 @@ public sealed class AuthoringSmokeTests
     {
         var info = new ProcessStartInfo(exe) { UseShellExecute = false, WorkingDirectory = AppContext.BaseDirectory };
         info.Environment["ENVIRONMENTBUILDER_DATA_DIR"] = root;
-        info.Environment["ENVIRONMENTBUILDER_DOCKER_TESTS"] = "0";
         var application = FlaUI.Core.Application.Launch(info);
         launched.Add(Process.GetProcessById(application.ProcessId));
         return application;

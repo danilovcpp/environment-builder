@@ -20,9 +20,9 @@
 
 **Storage**: `%LOCALAPPDATA%/EnvironmentBuilder/`: SQLite `state.db` (JSON-описания, библиотека, refs, defaults, journal и resource ledger); immutable SeedPack blobs по SHA-256; приватные временные runtime-файлы; DPAPI CurrentUser для секретов. DB schema version независима от external format version. SQLite работает на одном выделенном persistence worker, поскольку его ADO async APIs исполняются синхронно; короткие transactions, WAL + FULL и проверка исправленной native SQLite.
 
-**Testing**: xUnit v3 4.0.2, xunit.runner.visualstudio 4.0.1, Microsoft.NET.Test.Sdk 18.11.0; Core/VM/adapter tests без окон и live Docker; contract fixtures; real Docker integration на отдельных тестовых ID; fault injection до/после изменяющих этапов; FlaUI.UIA3 5.0.0 и ручная UI проверка. Команды и матрица SC — [quickstart.md](quickstart.md).
+**Testing**: xUnit v3 4.0.2, xunit.runner.visualstudio 4.0.1, Microsoft.NET.Test.Sdk 18.11.0; Core/VM без окон; integration с изолированными stores и Docker/HTTP doubles, contract fixtures и fault injection до/после изменяющих этапов; FlaUI.UIA3 5.0.0 и ручная UI проверка. Запуск Docker и внешних сервисов в тестах не требуется. Команды и матрица SC — [quickstart.md](quickstart.md).
 
-**Target Platform**: поддерживаемая Windows 11 x64 24H2+ с WSL2 и локальным Docker Desktop, Linux containers. Минимум Engine 28.0.0 / API 1.48 и Compose 2.24.6; допускаются Compose major 2 и 5 после capability probe. Квалификационный актуальный стенд: Desktop 4.96.2 / Engine 29.9.1 / Compose 5.6.x. Минимальная и актуальная конфигурации проходят отдельную приёмку: версия выше минимума сама по себе не доказывает совместимость. Remote endpoint, Windows containers и неподдерживаемые комбинации блокируют runtime, но не authoring/preview.
+**Target Platform**: Windows x64 с WSL2 и локальным Docker Desktop, Linux containers. Приложение не ограничивает выпуск или номер сборки Windows. Минимум Engine 28.0.0 / API 1.48 и Compose 2.24.6; допускаются Compose major 2 и 5 после capability probe. Доступность runtime определяется фактическими возможностями Docker. Remote endpoint, Windows containers и неподдерживаемые capabilities блокируют runtime, но не authoring/preview.
 
 **Project Type**: Windows desktop application; отдельный demo из трёх ASP.NET Core сервисов и RabbitMQ.
 
@@ -30,7 +30,7 @@
 
 **Constraints**: offline authoring; redaction до каждого UI/storage sink; импорт/preview не запускают процессы или HTTP; внешние build inputs только для чтения; no prune; exact ownership; no rollback promise. Bounds: logs 10 000 строк / 8 MiB на активное наблюдение и 32 MiB на приложение, одна строка 16 KiB, 300 metric samples/component, preview 100 records / 256 KiB/page, record ≤64 KiB. Детали — [runtime.md](contracts/runtime.md).
 
-**Scale/Scope**: один локальный пользователь, один writer на data directory, 1 000 описаний; испытательный состав до 20 компонентов/окружение и две одновременно работающие demo-копии. Это размеры стенда, а не запрет большего состава. Четыре основных раздела, вложенные editor/Inspect/Compose, две темы. Reference bench: Windows 11 x64, ≥8 logical CPUs, 32 GiB RAM, SSD с ≥30 GiB свободного места, Docker VM 4 CPUs / 8 GiB. Реальные характеристики и версии записываются перед замерами; стенд ещё не квалифицирован.
+**Scale/Scope**: один локальный пользователь, один writer на data directory, 1 000 описаний; испытательный состав до 20 компонентов/окружение и две одновременно работающие demo-копии. Это размеры стенда, а не запрет большего состава. Четыре основных раздела, вложенные editor/Inspect/Compose, две темы. Reference bench для измерений: Windows x64, ≥8 logical CPUs, 32 GiB RAM, SSD с ≥30 GiB свободного места, Docker VM 4 CPUs / 8 GiB. Реальные характеристики и версии записываются перед замерами; характеристики ещё не измерены.
 
 ## Constitution Check
 
@@ -153,7 +153,7 @@ Contracts/strict validation/persistence и fault harness → shell/editor/offlin
 - Изменяемые исходники/tags: preview fingerprint, полный preflight до runtime mutation, immutable build snapshot и pinned image ID; delta требует подтверждения.
 - Внешний инструмент может скопировать labels: ledger + exact identity + все consumers; совпадение имени не разрешает deletion.
 - Большой seed может дать unknown outcome: idempotency contract либо явное решение; journal без request/response bodies.
-- WPF/Compose compatibility и времена требуют реальной qualification. Документы не заменяют screenshots, binding checks и benchmarks.
+- WPF проверяется UI smoke, Compose — contract fixtures и capability probe; времена подтверждаются измерениями.
 
 ## Complexity Tracking
 
@@ -161,6 +161,6 @@ Contracts/strict validation/persistence и fault harness → shell/editor/offlin
 
 ## Planning Validation
 
-Проверить syntax/schema/examples, локальные Markdown links, placeholders, FR/QR/SC coverage и изменённые файлы. Сборка/тесты продукта возможны после реализации. Наблюдённая среда: SDK 10.0.402, runtime 10.0.13, Docker CLI 29.7.2, Compose 5.4.0. Engine недоступен из sandbox (`permission denied` к named pipe), версия сервера неизвестна; CIM/WMI также недоступен. Runtime gates и показатели производительности здесь не объявляются пройденными.
+Проверить syntax/schema/examples, локальные Markdown links, placeholders, FR/QR/SC coverage и изменённые файлы. Сборка/тесты продукта возможны после реализации. Наблюдённая среда: SDK 10.0.402, runtime 10.0.13, Docker CLI 29.7.2, Compose 5.4.0. Engine недоступен из sandbox (`permission denied` к named pipe), версия сервера неизвестна; CIM/WMI также недоступен. Показатели производительности здесь не объявляются измеренными; доступ к Engine не является условием автоматических проверок.
 
 **Выполнено 2026-10-23**: проверены 5 Draft2020-12 schemas, 6 positive examples, 10 negative shape cases, согласованность ID/graph/baseline в двух environment examples и реальные hashes двух pack entries. Все 78 локальных Markdown links разрешились; unresolved template markers и trailing whitespace отсутствуют. `check-prerequisites.ps1 -Json -PathsOnly` разрешил нужный feature directory; `git diff --check` без ошибок. Повторный cross-artifact review исправил unknown-image preflight, missing-pack deferred checks, quiescent guard, volume incarnation evidence, unsupported one-shot condition, request-path syntax и false-green skipped test gates. До и после planning `.specify/extensions.yml` отсутствует, hooks не зарегистрированы. Изменены только новые planning artifacts; spec/source/constitution сохранены. Application build/tests/containers/UI acceptance не запускались: implementation отсутствует.

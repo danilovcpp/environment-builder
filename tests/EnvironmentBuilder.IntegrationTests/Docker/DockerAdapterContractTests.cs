@@ -13,6 +13,27 @@ namespace EnvironmentBuilder.IntegrationTests.Docker;
 
 public sealed class DockerAdapterContractTests
 {
+    [Theory]
+    [InlineData("2.24.6")]
+    [InlineData("5.4.0")]
+    public async Task Capability_probe_accepts_available_Docker_without_a_Windows_build_requirement(string composeVersion)
+    {
+        await using FoundationStore fixture = await FoundationStore.CreateAsync();
+        var docker = new ObservationContractTests.FakeDocker(args => Task.FromResult(args[0] switch
+        {
+            "version" => new DockerResult(0, "{\"Version\":\"28.0.0\",\"ApiVersion\":\"1.48\"}", ""),
+            "info" => new DockerResult(0, "{\"ID\":\"engine\",\"OSType\":\"linux\",\"Architecture\":\"x86_64\",\"OperatingSystem\":\"Docker Desktop\",\"KernelVersion\":\"microsoft-standard-WSL2\"}", ""),
+            "compose" when args[1] == "version" => new DockerResult(0, JsonSerializer.Serialize(new { version = composeVersion }), ""),
+            "compose" when args[1] == "up" => new DockerResult(0, "--no-deps --no-build --pull --detach", ""),
+            "compose" when args.Contains("config") => new DockerResult(0, "{\"services\":{\"sentinel\":{}}}", ""),
+            _ => throw new InvalidOperationException("No Docker response was arranged.")
+        }));
+
+        DockerCapabilities capabilities = await new DockerCapabilityProbe(docker, fixture.Directory).ProbeAsync(TestContext.Current.CancellationToken);
+
+        Assert.Equal(new DockerCapabilities(DockerEndpoint.Default, "engine", "28.0.0", "1.48", composeVersion), capabilities);
+    }
+
     [Fact]
     public async Task Image_launch_uses_the_captured_identity_and_does_not_follow_a_later_tag_change()
     {
