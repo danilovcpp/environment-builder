@@ -1,6 +1,7 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:sys="clr-namespace:System;assembly=System.Runtime">
     <GridLength x:Key="Grid.ExpanderGlyph">20</GridLength>
     <GridLength x:Key="Grid.Sidebar">248</GridLength>
+    <GridLength x:Key="Grid.EnvironmentMetrics">1.6*</GridLength>
     <sys:Boolean x:Key="Layout.Compact">False</sys:Boolean>
     <sys:Int32 x:Key="Layout.RuntimeMetricColumns">6</sys:Int32>
     <sys:Double x:Key="Breakpoint.Compact">1200</sys:Double>

@@ -31,7 +31,7 @@ public sealed class EnvironmentCommands(StartEnvironmentService start, Operation
         return handle;
     }
     public const string ClearLabel = "Очистить данные";
-    public const string RestoreLabel = "Восстановить baseline (refresh данных)";
+    public const string RestoreLabel = "Восстановить данные";
     public const string DeleteLabel = "Удалить окружение";
     public const string DeleteExplanation = "Показывает точный план удаления описания и данных. Работающее окружение сначала будет остановлено. Частичное удаление остаётся видимым для безопасного повтора.";
     public const string ObservationExplanation = "Только перечитывает состояние Docker. Данные, baseline и ревизия сохраняются.";

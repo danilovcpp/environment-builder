@@ -19,7 +19,7 @@ public sealed partial class EnvironmentRowViewModel : ObservableObject
     public string Description => Item.Document?.Description ?? "";
     public long Revision => Item.Revision;
     public string StateKey => Item.ErrorCode is not null ? "unreadable" : Item.HasUnresolvedOperation ? "needsAttention" : "unknown";
-    public string State => Item.ErrorCode is not null ? "Ошибка документа: " + Item.ErrorCode : Item.Deletion is not null ? "Удаление не завершено — остались ресурсы или требуется финализация" : Item.HasUnresolvedOperation ? "Требуется сверка операции" : "Runtime не проверен";
+    public string State => Item.ErrorCode is not null ? "Ошибка документа: " + Item.ErrorCode : Item.Deletion is not null ? "Удаление не завершено — остались ресурсы или требуется финализация" : Item.HasUnresolvedOperation ? "Требуется сверка операции" : "Docker не проверен";
     public string SavedAt => Item.SavedAt?.ToLocalTime().ToString("g", System.Globalization.CultureInfo.CurrentCulture) ?? "Время сохранения неизвестно";
     public string Components => Item.Document is null ? "Состав недоступен" : string.Join(" · ", Item.Document.Components.Select(c => c.DefinitionSnapshot.Name));
     public string Measurement => "Метрики не получены";
@@ -66,6 +66,7 @@ public sealed partial class EnvironmentListViewModel(IEnvironmentStore store) : 
     public bool IsEmpty => !IsLoading && Error.Length == 0 && all.Count == 0;
     public bool NoResults => !IsLoading && Error.Length == 0 && all.Count > 0 && VisibleItems.Count == 0;
     public bool HasError => Error.Length > 0;
+    public bool HasSelection => SelectedItem is not null;
     public bool AllStatus { get => StatusFilter == "all"; set { if (value) { StatusFilter = "all"; } } }
     public bool UnknownStatus { get => StatusFilter == "unknown"; set { if (value) { StatusFilter = "unknown"; } } }
     public bool AttentionStatus { get => StatusFilter == "needsAttention"; set { if (value) { StatusFilter = "needsAttention"; } } }
@@ -118,7 +119,7 @@ public sealed partial class EnvironmentListViewModel(IEnvironmentStore store) : 
     partial void OnSelectedItemChanged(EnvironmentRowViewModel? value)
     {
         if (value is not null) { SelectedId = value.Id; }
-        OnPropertyChanged(nameof(DeleteLabel)); OnPropertyChanged(nameof(DeletionDetails));
+        OnPropertyChanged(nameof(DeleteLabel)); OnPropertyChanged(nameof(DeletionDetails)); OnPropertyChanged(nameof(HasSelection));
     }
     partial void OnIsDeletingChanged(bool value) => OnPropertyChanged(nameof(DeletionDetails));
     partial void OnDeletionNoticeChanged(string value) => OnPropertyChanged(nameof(DeletionDetails));

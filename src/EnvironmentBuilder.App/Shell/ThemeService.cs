@@ -1,11 +1,38 @@
 using System.Windows;
 using Wpf.Ui.Appearance;
+using Microsoft.Win32;
 
 namespace EnvironmentBuilder.App.Shell;
 
-public sealed class ThemeService
+public sealed class ThemeService : IDisposable
 {
+    private string mode = "light";
+    private bool watching;
     public bool IsDark { get; private set; }
+    public void SetMode(string value)
+    {
+        mode = value;
+        Apply(value == "dark" || value == "system" && SystemIsDark());
+    }
+    public void WatchSystemTheme()
+    {
+        if (watching) { return; }
+        SystemEvents.UserPreferenceChanged += SystemThemeChanged;
+        watching = true;
+    }
+    private void SystemThemeChanged(object sender, UserPreferenceChangedEventArgs e)
+    {
+        if (mode == "system") { Application.Current.Dispatcher.InvokeAsync(() => Apply(SystemIsDark())); }
+    }
+    private static bool SystemIsDark()
+    {
+        using var key = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize");
+        return key?.GetValue("AppsUseLightTheme") is int value && value == 0;
+    }
+    public void Dispose()
+    {
+        if (watching) { SystemEvents.UserPreferenceChanged -= SystemThemeChanged; watching = false; }
+    }
     public void Apply(bool dark)
     {
         Application application = Application.Current;

@@ -101,7 +101,7 @@ public sealed partial class EnvironmentEditorViewModel : ObservableObject
                 : dependencyDefinitions;
             Library.Clear(); foreach (var definition in definitions) { Library.Add(new DefinitionChoice(definition)); }
             SelectedDefinition ??= Library.FirstOrDefault();
-            LibraryStatus = Library.Count == 0 ? "Добавьте и сохраните сервисы в настройках — они появятся здесь." : $"Сервисов из настроек: {Library.Count}";
+            LibraryStatus = Library.Count == 0 ? "Добавьте и сохраните приложения в разделе «Сервисы» — они появятся здесь." : $"Сервисов в библиотеке: {Library.Count}";
             localPaths = await mappings.ReadAsync(cancellationToken);
             foreach (var component in Components) { component.LoadLocalFolder(localPaths); }
             NotifyState();

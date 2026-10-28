@@ -6,7 +6,11 @@
     <UseWPF>true</UseWPF>
     <PublishTrimmed>false</PublishTrimmed>
     <PublishSingleFile>false</PublishSingleFile>
+    <ApplicationIcon>Assets/AppIcon.ico</ApplicationIcon>
   </PropertyGroup>
+  <ItemGroup>
+    <Resource Include="Assets/AppIcon.ico" />
+  </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="../EnvironmentBuilder.Core/EnvironmentBuilder.Core.csproj" />
     <ProjectReference Include="../EnvironmentBuilder.Infrastructure/EnvironmentBuilder.Infrastructure.csproj" />

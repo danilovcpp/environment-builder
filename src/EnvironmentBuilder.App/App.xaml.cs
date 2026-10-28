@@ -14,6 +14,7 @@ public partial class App : Application
 {
     private AppServices? services;
     private Task? startup;
+    private ThemeService? themes;
 
     protected override async void OnStartup(StartupEventArgs e)
     {
@@ -21,7 +22,8 @@ public partial class App : Application
         ApplicationThemeManager.Apply(ApplicationTheme.Light, updateAccent: false);
         base.OnStartup(e);
         var navigation = new NavigationService();
-        var themes = new ThemeService();
+        themes = new ThemeService();
+        themes.WatchSystemTheme();
         var shell = new ShellViewModel(navigation, themes);
         var window = new MainWindow(shell);
         MainWindow = window;
@@ -29,6 +31,12 @@ public partial class App : Application
         window.Show();
         startup = InitializeAsync(shell, navigation, themes);
         await startup;
+    }
+
+    protected override void OnExit(ExitEventArgs e)
+    {
+        themes?.Dispose();
+        base.OnExit(e);
     }
 
     private async Task InitializeAsync(ShellViewModel shell, NavigationService navigation, ThemeService themes)

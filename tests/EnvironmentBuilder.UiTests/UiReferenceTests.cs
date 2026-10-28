@@ -51,6 +51,8 @@ internal static class UiReferenceTests
                     {
                         Rect bounds = button.TransformToAncestor(row).TransformBounds(new Rect(button.RenderSize));
                         Assert.True(bounds.Top >= 0 && bounds.Bottom <= row.ActualHeight, "Row actions must fit on one line inside the row.");
+                        Rect windowBounds = button.TransformToAncestor(window).TransformBounds(new Rect(button.RenderSize));
+                        Assert.True(windowBounds.Right <= window.ActualWidth - 12, $"Every row action must remain inside the visible window: button right {windowBounds.Right}, window {window.ActualWidth}, row width {row.ActualWidth}.");
                     });
                     var selected = fixture.Shell.Authoring.List.SelectedItem!;
                     selected.IsExpanded = true; Layout(window); Capture(window, "environments-expanded" + suffix); selected.IsExpanded = false;
@@ -64,11 +66,11 @@ internal static class UiReferenceTests
                     fixture.Themes.Apply(dark);
                     Assert.Equal(12, fixture.Shell.Authoring.List.VisibleItems.Count);
                     fixture.Shell.Authoring.List.Search = "not-found"; Layout(window); Capture(window, "environments-filter-empty" + suffix); fixture.Shell.Authoring.List.Search = "";
-                    foreach (string route in new[] { "seedpacks", "settings", "diagnostics" })
+                    foreach (string route in new[] { "seedpacks", "services", "settings", "diagnostics" })
                     {
                         Assert.True(fixture.Shell.NavigateCommand.ExecuteAsync(route).IsCompletedSuccessfully);
                         Layout(window); Capture(window, route + suffix);
-                        if (route == "settings") { VerifyComponentTabs(window, suffix); }
+                        if (route == "services") { VerifyComponentTabs(window, suffix); }
                         if (route == "seedpacks")
                         {
                             var page = Descendants(window).OfType<SeedPackLibraryPage>().Single();
@@ -82,10 +84,10 @@ internal static class UiReferenceTests
                     var savedPacks = fixture.Shell.SeedPacks;
                     var savedSettings = fixture.Shell.Settings;
                     fixture.Shell.SeedPacks = new SeedPackLibraryViewModel();
-                    fixture.Shell.Settings = new App.Features.Settings.SettingsViewModel(fixture.Themes);
+                    fixture.Shell.Settings = new App.Features.Settings.SettingsViewModel();
                     Assert.True(fixture.Shell.NavigateCommand.ExecuteAsync("seedpacks").IsCompletedSuccessfully);
                     Layout(window); Capture(window, "seedpacks-example" + suffix);
-                    Assert.True(fixture.Shell.NavigateCommand.ExecuteAsync("settings").IsCompletedSuccessfully);
+                    Assert.True(fixture.Shell.NavigateCommand.ExecuteAsync("services").IsCompletedSuccessfully);
                     Layout(window); Capture(window, "settings-example" + suffix);
                     fixture.Shell.SeedPacks = savedPacks;
                     fixture.Shell.Settings = savedSettings;

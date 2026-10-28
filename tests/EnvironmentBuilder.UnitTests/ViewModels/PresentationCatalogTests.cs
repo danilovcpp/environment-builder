@@ -51,7 +51,7 @@ public sealed class PresentationCatalogTests
     public async Task Settings_display_saved_definitions_without_changing_snapshots_or_claiming_future_workflows()
     {
         var io = new AuthoringFakes();
-        var model = new SettingsViewModel(new ThemeService(), io, io);
+        var model = new SettingsViewModel(io, io);
         await model.LoadAsync(TestContext.Current.CancellationToken);
         model.SelectedDefinition = model.Definitions[0];
         Assert.Contains(model.SelectedDefinition.Definition.Id.ToString(), model.Summary);

@@ -13,6 +13,7 @@
         <Setter Property="Width" Value="{DynamicResource Icon.Standard}" />
         <Setter Property="Height" Value="{DynamicResource Icon.Standard}" />
         <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="HorizontalAlignment" Value="Center" />
     </Style>
     <Style x:Key="Focus.Keyboard" TargetType="Control">
         <Setter Property="Template">
@@ -138,6 +139,7 @@
         </Setter>
     </Style>
     <Style x:Key="Button.Secondary" TargetType="Button" BasedOn="{StaticResource Control.Outlined}">
+        <Style.Resources><Style TargetType="TextBlock" BasedOn="{StaticResource Text.ControlLabel}" /></Style.Resources>
         <Setter Property="Background" Value="{DynamicResource Brush.Panel}" />
         <Setter Property="Padding" Value="{DynamicResource Padding.Button}" />
         <Setter Property="MinHeight" Value="{DynamicResource Size.Control}" />

@@ -143,6 +143,7 @@ public sealed class ThemeResourcesTests
             DeleteSmokeTests.Verify();
             SeedPackSmokeTests.Verify();
             SettingsSmokeTests.Verify();
+            ApplicationSettingsTests.Verify();
             Assert.Empty(diagnostics.Errors);
         }
         finally
@@ -424,6 +425,8 @@ public sealed class ThemeResourcesTests
             Resources.MergedDictionaries.Add(new Wpf.Ui.Markup.ControlsDictionary());
             foreach (string name in new[] { "Light", "Tokens", "Typography", "Components", "Surfaces" })
             { Resources.MergedDictionaries.Add(new ResourceDictionary { Source = new Uri($"pack://application:,,,/EnvironmentBuilder.App;component/Themes/{name}.xaml") }); }
+            Resources.MergedDictionaries.Add(new ResourceDictionary { Source = new Uri("pack://application:,,,/EnvironmentBuilder.App;component/Assets/AppIcon.xaml") });
+            Resources["Preference.ShowDescriptions"] = true;
         }
     }
 

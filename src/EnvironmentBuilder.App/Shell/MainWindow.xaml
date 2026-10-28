@@ -1,4 +1,4 @@
-<Window x:Class="EnvironmentBuilder.App.Shell.MainWindow" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:icons="http://metro.mahapps.com/winfx/xaml/iconpacks" xmlns:components="clr-namespace:EnvironmentBuilder.App.Components" xmlns:authoring="clr-namespace:EnvironmentBuilder.App.Features.Environments" xmlns:packs="clr-namespace:EnvironmentBuilder.App.Features.SeedPacks" xmlns:settings="clr-namespace:EnvironmentBuilder.App.Features.Settings" xmlns:diagnostics="clr-namespace:EnvironmentBuilder.App.Features.Diagnostics" Title="Environment Builder" Width="1280" Height="800" MinWidth="960" MinHeight="600" SizeChanged="WindowSizeChanged" WindowStyle="SingleBorderWindow" ResizeMode="CanResize" Background="{DynamicResource Brush.Window}" Foreground="{DynamicResource Brush.TextPrimary}" UseLayoutRounding="True" SnapsToDevicePixels="True">
+<Window x:Class="EnvironmentBuilder.App.Shell.MainWindow" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:icons="http://metro.mahapps.com/winfx/xaml/iconpacks" xmlns:components="clr-namespace:EnvironmentBuilder.App.Components" xmlns:authoring="clr-namespace:EnvironmentBuilder.App.Features.Environments" xmlns:packs="clr-namespace:EnvironmentBuilder.App.Features.SeedPacks" xmlns:settings="clr-namespace:EnvironmentBuilder.App.Features.Settings" xmlns:diagnostics="clr-namespace:EnvironmentBuilder.App.Features.Diagnostics" Title="Environment Builder" Icon="/EnvironmentBuilder.App;component/Assets/AppIcon.ico" Width="1280" Height="800" MinWidth="960" MinHeight="600" SizeChanged="WindowSizeChanged" WindowStyle="SingleBorderWindow" ResizeMode="CanResize" Background="{DynamicResource Brush.Window}" Foreground="{DynamicResource Brush.TextPrimary}" UseLayoutRounding="True" SnapsToDevicePixels="True">
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="VisibleIfTrue" />
         <DataTemplate DataType="{x:Type authoring:EnvironmentListViewModel}">
@@ -30,50 +30,42 @@
                 <DockPanel>
                     <StackPanel DockPanel.Dock="Top" Margin="10,0,0,22">
                         <StackPanel Orientation="Horizontal">
-                            <Border Background="{DynamicResource Brush.Accent}" Width="32" Height="32" CornerRadius="{DynamicResource Radius.Button}" Margin="0,0,10,0">
-                                <icons:PackIconLucide Kind="Package" Width="24" Height="24" Foreground="{DynamicResource Brush.OnAccent}" />
-                            </Border>
-                            <StackPanel>
+                            <Image Source="{StaticResource AppIcon}" Width="34" Height="34" Margin="0,0,10,0" VerticalAlignment="Center" />
+                            <StackPanel VerticalAlignment="Center">
                                 <TextBlock Text="EOffice Dev Tools" FontWeight="SemiBold" FontSize="{DynamicResource FontSize.Brand}" />
                                 <TextBlock Text="Local Environment Manager" Style="{DynamicResource Text.Metadata}" />
                             </StackPanel>
                         </StackPanel>
                     </StackPanel>
-                    <StackPanel DockPanel.Dock="Bottom" Margin="10,16,10,0">
-                        <DockPanel>
-                            <Ellipse DockPanel.Dock="Left" Width="10" Height="10" Fill="{DynamicResource Brush.SuccessForeground}" Margin="0,0,14,0" />
-                            <Button Command="{Binding ToggleThemeCommand}" AutomationProperties.Name="Переключить светлую и тёмную тему" Style="{DynamicResource Button.Ghost}" HorizontalContentAlignment="Left" Padding="0" BorderThickness="0">
-                                <StackPanel>
-                                    <TextBlock Text="Локальный режим" FontSize="{DynamicResource FontSize.Metadata}" />
-                                    <TextBlock Text="v1.2.0" Style="{DynamicResource Text.Metadata}" FontSize="{DynamicResource FontSize.Small}" Margin="0,4,0,0" />
-                                </StackPanel>
-                            </Button>
-                            <icons:PackIconLucide Kind="ChevronRight" Width="14" Height="14" HorizontalAlignment="Right" />
-                        </DockPanel>
+                    <StackPanel DockPanel.Dock="Bottom" Margin="0,16,0,0">
+                        <Button Command="{Binding NavigateCommand}" CommandParameter="settings" Style="{DynamicResource Button.Navigation}" Selector.IsSelected="{Binding ShowSettings}" AutomationProperties.Name="Настройки" AutomationProperties.AutomationId="NavigateSettings">
+                            <StackPanel Orientation="Horizontal"><icons:PackIconLucide Kind="Settings" Margin="0,0,12,0" /><TextBlock Text="Настройки" Style="{DynamicResource Text.ControlLabel}" /></StackPanel>
+                        </Button>
+                        <TextBlock Text="Локальный режим" Style="{DynamicResource Text.Metadata}" Margin="12,10,0,0" />
                     </StackPanel>
                     <StackPanel>
-                        <Button Command="{Binding NavigateCommand}" CommandParameter="environments" Style="{DynamicResource Button.Navigation}" Selector.IsSelected="{Binding ShowEnvironments}" AutomationProperties.Name="Окружения">
+                        <Button Command="{Binding NavigateCommand}" CommandParameter="environments" Style="{DynamicResource Button.Navigation}" Selector.IsSelected="{Binding ShowEnvironments}" AutomationProperties.Name="Окружения" AutomationProperties.AutomationId="NavigateEnvironments">
                             <StackPanel Orientation="Horizontal">
                                 <icons:PackIconLucide Kind="Layers" Margin="0,0,12,0" />
-                                <TextBlock Text="Окружения" />
+                                <TextBlock Text="Окружения" Style="{DynamicResource Text.ControlLabel}" />
                             </StackPanel>
                         </Button>
                         <Button Command="{Binding NavigateCommand}" CommandParameter="seedpacks" Style="{DynamicResource Button.Navigation}" Selector.IsSelected="{Binding ShowSeedPacks}" AutomationProperties.Name="Тестовые данные">
                             <StackPanel Orientation="Horizontal">
                                 <icons:PackIconLucide Kind="Database" Margin="0,0,12,0" />
-                                <TextBlock Text="Тестовые данные" />
+                                <TextBlock Text="Тестовые данные" Style="{DynamicResource Text.ControlLabel}" />
                             </StackPanel>
                         </Button>
-                        <Button Command="{Binding NavigateCommand}" CommandParameter="settings" Style="{DynamicResource Button.Navigation}" Selector.IsSelected="{Binding ShowSettings}" AutomationProperties.Name="Настройки">
+                        <Button Command="{Binding NavigateCommand}" CommandParameter="services" Style="{DynamicResource Button.Navigation}" Selector.IsSelected="{Binding ShowServices}" AutomationProperties.Name="Сервисы" AutomationProperties.AutomationId="NavigateServices">
                             <StackPanel Orientation="Horizontal">
-                                <icons:PackIconLucide Kind="Settings" Margin="0,0,12,0" />
-                                <TextBlock Text="Настройки" />
+                                <icons:PackIconLucide Kind="Boxes" Margin="0,0,12,0" />
+                                <TextBlock Text="Сервисы" Style="{DynamicResource Text.ControlLabel}" />
                             </StackPanel>
                         </Button>
                         <Button Command="{Binding NavigateCommand}" CommandParameter="diagnostics" Style="{DynamicResource Button.Navigation}" Selector.IsSelected="{Binding ShowDiagnostics}" AutomationProperties.Name="Диагностика">
                             <StackPanel Orientation="Horizontal">
                                 <icons:PackIconLucide Kind="Activity" Margin="0,0,12,0" />
-                                <TextBlock Text="Диагностика" />
+                                <TextBlock Text="Диагностика" Style="{DynamicResource Text.ControlLabel}" />
                             </StackPanel>
                         </Button>
                     </StackPanel>
@@ -86,23 +78,17 @@
                             <ContentControl.Resources>
                                 <DataTemplate DataType="{x:Type authoring:EnvironmentListViewModel}">
                                     <components:SpacedWrapPanel>
-                                        <Button Style="{DynamicResource Button.Placeholder}">
-                                            <StackPanel Orientation="Horizontal">
-                                                <icons:PackIconLucide Kind="FileInput" Margin="{DynamicResource Margin.Related}" />
-                                                <TextBlock Text="Импорт" />
-                                            </StackPanel>
-                                        </Button>
-                                        <Button Style="{DynamicResource Button.Placeholder}">
-                                            <StackPanel Orientation="Horizontal">
-                                                <icons:PackIconLucide Kind="Upload" Margin="{DynamicResource Margin.Related}" />
-                                                <TextBlock Text="Экспорт" />
-                                            </StackPanel>
-                                        </Button>
                                         <Button Command="{Binding CreateNewCommand}" Style="{DynamicResource Button.Primary}" AutomationProperties.AutomationId="CreateEnvironment">
                                             <StackPanel Orientation="Horizontal">
                                                 <icons:PackIconLucide Kind="Plus" Margin="{DynamicResource Margin.Related}" />
-                                                <TextBlock Text="Создать окружение" />
+                                                <TextBlock Text="Создать окружение" Style="{DynamicResource Text.ControlLabel}" />
                                             </StackPanel>
+                                        </Button>
+                                        <Button IsEnabled="False" ToolTip="В разработке: импорт описания окружения из файла" ToolTipService.ShowOnDisabled="True" Style="{DynamicResource Button.Secondary}">
+                                            <StackPanel Orientation="Horizontal"><icons:PackIconLucide Kind="FileInput" Margin="{DynamicResource Margin.Related}" /><TextBlock Text="Импорт" /></StackPanel>
+                                        </Button>
+                                        <Button IsEnabled="False" ToolTip="В разработке: экспорт описания окружения в файл" ToolTipService.ShowOnDisabled="True" Style="{DynamicResource Button.Secondary}">
+                                            <StackPanel Orientation="Horizontal"><icons:PackIconLucide Kind="Upload" Margin="{DynamicResource Margin.Related}" /><TextBlock Text="Экспорт" /></StackPanel>
                                         </Button>
                                     </components:SpacedWrapPanel>
                                 </DataTemplate>
@@ -133,45 +119,36 @@
                             <Button Command="{Binding SeedPacks.ImportCommand}" Style="{DynamicResource Button.Primary}">
                                 <StackPanel Orientation="Horizontal">
                                     <icons:PackIconLucide Kind="Upload" Margin="{DynamicResource Margin.Related}" />
-                                    <TextBlock Text="Загрузить пак" />
+                                    <TextBlock Text="Загрузить пак" Style="{DynamicResource Text.ControlLabel}" />
                                 </StackPanel>
                             </Button>
-                            <Button IsEnabled="False" ToolTip="Пакеты создаются вне приложения и импортируются из ZIP" ToolTipService.ShowOnDisabled="True" Style="{DynamicResource Button.Accent}">
-                                <StackPanel Orientation="Horizontal">
-                                    <icons:PackIconLucide Kind="Plus" Margin="{DynamicResource Margin.Related}" />
-                                    <TextBlock Text="Создать пак" />
-                                </StackPanel>
+                            <Button IsEnabled="False" ToolTip="В разработке: создание пакета в приложении. Сейчас можно импортировать внешний ZIP." ToolTipService.ShowOnDisabled="True">
+                                <StackPanel Orientation="Horizontal"><icons:PackIconLucide Kind="Plus" Margin="{DynamicResource Margin.Related}" /><TextBlock Text="Создать пак" /></StackPanel>
                             </Button>
-                            <Button Command="{Binding SeedPacks.RemoveCommand}" Style="{DynamicResource Button.Accent}">
+                            <Button Command="{Binding SeedPacks.RemoveCommand}" Style="{DynamicResource Button.Destructive}" ToolTip="Удалить выбранный пакет из библиотеки" ToolTipService.ShowOnDisabled="True">
                                 <StackPanel Orientation="Horizontal">
                                     <icons:PackIconLucide Kind="Trash2" Margin="{DynamicResource Margin.Related}" />
-                                    <TextBlock Text="Удалить" />
+                                    <TextBlock Text="Удалить" Style="{DynamicResource Text.ControlLabel}" />
                                 </StackPanel>
                             </Button>
                             <Button Command="{Binding SeedPacks.ApplyToEnvironmentCommand}" Style="{DynamicResource Button.Primary}">
                                 <StackPanel Orientation="Horizontal">
                                     <icons:PackIconLucide Kind="Play" Margin="{DynamicResource Margin.Related}" />
-                                    <TextBlock Text="Применить к окружению" />
+                                    <TextBlock Text="Применить к окружению" Style="{DynamicResource Text.ControlLabel}" />
                                 </StackPanel>
                             </Button>
                         </components:SpacedWrapPanel>
-                        <components:SpacedWrapPanel Visibility="{Binding ShowSettings, Converter={StaticResource VisibleIfTrue}}">
-                            <Button Command="{Binding Settings.ResetCommand}" Style="{DynamicResource Button.Accent}">
-                                <StackPanel Orientation="Horizontal">
-                                    <icons:PackIconLucide Kind="RotateCcw" Margin="{DynamicResource Margin.Related}" />
-                                    <TextBlock Text="Сбросить" />
-                                </StackPanel>
-                            </Button>
-                            <Button Command="{Binding Settings.SaveCommand}" Style="{DynamicResource Button.Accent}">
+                        <components:SpacedWrapPanel Visibility="{Binding ShowServices, Converter={StaticResource VisibleIfTrue}}">
+                            <Button Command="{Binding Settings.SaveCommand}" Style="{DynamicResource Button.Primary}">
                                 <StackPanel Orientation="Horizontal">
                                     <icons:PackIconLucide Kind="Save" Margin="{DynamicResource Margin.Related}" />
-                                    <TextBlock Text="Сохранить настройки" />
+                                    <TextBlock Text="Сохранить библиотеку" Style="{DynamicResource Text.ControlLabel}" />
                                 </StackPanel>
                             </Button>
-                            <Button Command="{Binding Settings.AddTargetCommand}" Style="{DynamicResource Button.Primary}">
+                            <Button Command="{Binding Settings.ResetCommand}" Style="{DynamicResource Button.Secondary}" ToolTip="Перечитать сохранённую библиотеку и отменить изменения">
                                 <StackPanel Orientation="Horizontal">
-                                    <icons:PackIconLucide Kind="Plus" Margin="{DynamicResource Margin.Related}" />
-                                    <TextBlock Text="Добавить сервис" />
+                                    <icons:PackIconLucide Kind="RotateCcw" Margin="{DynamicResource Margin.Related}" />
+                                    <TextBlock Text="Отменить изменения" Style="{DynamicResource Text.ControlLabel}" />
                                 </StackPanel>
                             </Button>
                         </components:SpacedWrapPanel>
@@ -194,7 +171,8 @@
                     <Grid>
                         <ContentControl x:Name="EnvironmentContent" Content="{Binding Authoring.Current}" Visibility="{Binding ShowEnvironments, Converter={StaticResource VisibleIfTrue}}" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" />
                         <packs:SeedPackLibraryPage DataContext="{Binding SeedPacks}" Visibility="{Binding DataContext.ShowSeedPacks, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource VisibleIfTrue}}" />
-                        <settings:SettingsPage DataContext="{Binding Settings}" Visibility="{Binding DataContext.ShowSettings, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource VisibleIfTrue}}" />
+                        <settings:SettingsPage DataContext="{Binding Settings}" Visibility="{Binding DataContext.ShowServices, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource VisibleIfTrue}}" />
+                        <settings:ApplicationSettingsPage DataContext="{Binding ApplicationSettings}" Visibility="{Binding DataContext.ShowSettings, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource VisibleIfTrue}}" />
                         <diagnostics:DiagnosticsPage DataContext="{Binding Diagnostics}" Visibility="{Binding DataContext.ShowDiagnostics, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource VisibleIfTrue}}" />
                     </Grid>
                 </DockPanel>

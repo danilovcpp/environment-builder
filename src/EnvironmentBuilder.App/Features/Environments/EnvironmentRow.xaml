@@ -1,4 +1,4 @@
-<UserControl x:Class="EnvironmentBuilder.App.Features.Environments.EnvironmentRow" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:icons="http://metro.mahapps.com/winfx/xaml/iconpacks" xmlns:components="clr-namespace:EnvironmentBuilder.App.Components">
+<UserControl x:Class="EnvironmentBuilder.App.Features.Environments.EnvironmentRow" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:icons="http://metro.mahapps.com/winfx/xaml/iconpacks" xmlns:components="clr-namespace:EnvironmentBuilder.App.Components" Width="{Binding ViewportWidth, RelativeSource={RelativeSource AncestorType=ScrollViewer}}">
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="Visible" />
     </UserControl.Resources>
@@ -6,26 +6,30 @@
         <Grid Height="56" Margin="10,0">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="28" />
-                <ColumnDefinition Width="2*" />
-                <ColumnDefinition Width="1.7*" />
+                <ColumnDefinition Width="2.5*" />
+                <ColumnDefinition Width="1.5*" />
                 <ColumnDefinition Width="1.2*" />
                 <ColumnDefinition Width="1.35*" />
-                <ColumnDefinition Width="1.6*" />
+                <ColumnDefinition Width="{DynamicResource Grid.EnvironmentMetrics}" />
                 <ColumnDefinition Width="156" />
             </Grid.ColumnDefinitions>
             <ToggleButton IsChecked="{Binding IsExpanded}" Width="24" Height="28" Style="{DynamicResource Toggle.Row}" AutomationProperties.Name="Развернуть состав окружения" />
             <DockPanel Grid.Column="1" Margin="8,0,12,0">
-                <Ellipse DockPanel.Dock="Left" Width="12" Height="12" Fill="{DynamicResource Brush.TextDisabled}" Margin="0,0,18,0" />
+                <Ellipse DockPanel.Dock="Left" Width="10" Height="10" Margin="0,0,12,0" VerticalAlignment="Center" ToolTip="{Binding State}">
+                    <Ellipse.Style><Style TargetType="Ellipse"><Setter Property="Fill" Value="{DynamicResource Brush.TextDisabled}" /><Style.Triggers><DataTrigger Binding="{Binding StateKey}" Value="unreadable"><Setter Property="Fill" Value="{DynamicResource Brush.ErrorForeground}" /></DataTrigger><DataTrigger Binding="{Binding StateKey}" Value="needsAttention"><Setter Property="Fill" Value="{DynamicResource Brush.WarningForeground}" /></DataTrigger></Style.Triggers></Style></Ellipse.Style>
+                </Ellipse>
                 <StackPanel VerticalAlignment="Center">
-                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="{DynamicResource FontSize.GroupTitle}" ToolTip="{Binding Name}" />
-                    <TextBlock Text="{Binding Description}" Style="{DynamicResource Text.Metadata}" FontSize="{DynamicResource FontSize.Small}" Margin="0,4,0,0" />
+                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="{DynamicResource FontSize.GroupTitle}" TextTrimming="CharacterEllipsis" ToolTip="{Binding Name}" />
+                    <TextBlock Text="{Binding Description}" Tag="{DynamicResource Preference.ShowDescriptions}" FontSize="{DynamicResource FontSize.Small}" Margin="0,4,0,0" ToolTip="{Binding Description}">
+                        <TextBlock.Style><Style TargetType="TextBlock" BasedOn="{StaticResource Text.Optional}"><Setter Property="TextWrapping" Value="NoWrap" /><Style.Triggers><DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource Self}}" Value="False"><Setter Property="Visibility" Value="Collapsed" /></DataTrigger></Style.Triggers></Style></TextBlock.Style>
+                    </TextBlock>
                 </StackPanel>
             </DockPanel>
-            <ItemsControl Grid.Column="2" ItemsSource="{Binding TargetIcons}" VerticalAlignment="Center">
+            <ItemsControl Grid.Column="2" ItemsSource="{Binding TargetIcons}" Margin="8,0" VerticalAlignment="Center" ClipToBounds="True" ToolTip="{Binding Components}">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
                         <Border BorderBrush="{DynamicResource Brush.Border}" BorderThickness="1" Background="{DynamicResource Brush.Panel}" CornerRadius="{DynamicResource Radius.Small}" Width="30" Height="30" Margin="0,0,6,0" ToolTip="{Binding Name}">
-                            <icons:PackIconLucide Kind="{Binding Icon}" Foreground="{Binding Color}" Width="21" Height="21" />
+                            <icons:PackIconLucide Kind="{Binding Icon}" Foreground="{DynamicResource Brush.AccentText}" Width="20" Height="20" HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Border>
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
@@ -35,11 +39,11 @@
                     </ItemsPanelTemplate>
                 </ItemsControl.ItemsPanel>
             </ItemsControl>
-            <ItemsControl Grid.Column="3" ItemsSource="{Binding InfrastructureIcons}" VerticalAlignment="Center">
+            <ItemsControl Grid.Column="3" ItemsSource="{Binding InfrastructureIcons}" Margin="8,0" VerticalAlignment="Center" ClipToBounds="True" ToolTip="{Binding Components}">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
                         <Border BorderBrush="{DynamicResource Brush.Border}" BorderThickness="1" Background="{DynamicResource Brush.Panel}" CornerRadius="{DynamicResource Radius.Small}" Width="30" Height="30" Margin="0,0,6,0" ToolTip="{Binding Name}">
-                            <icons:PackIconLucide Kind="{Binding Icon}" Foreground="{Binding Color}" Width="21" Height="21" />
+                            <icons:PackIconLucide Kind="{Binding Icon}" Foreground="{DynamicResource Brush.AccentText}" Width="20" Height="20" HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Border>
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
@@ -49,31 +53,14 @@
                     </ItemsPanelTemplate>
                 </ItemsControl.ItemsPanel>
             </ItemsControl>
-            <StackPanel Grid.Column="4" VerticalAlignment="Center">
+            <StackPanel Grid.Column="4" VerticalAlignment="Center" Margin="8,0">
                 <TextBlock Text="{Binding ComponentCount}" FontWeight="SemiBold" FontSize="{DynamicResource FontSize.Metadata}" />
                 <TextBlock Text="{Binding State}" Style="{DynamicResource Text.Metadata}" FontSize="{DynamicResource FontSize.Caption}" Margin="0,5,0,0" ToolTip="{Binding State}" />
             </StackPanel>
-            <StackPanel Grid.Column="5" VerticalAlignment="Center" Margin="8,0,16,0">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="48" />
-                        <ColumnDefinition />
-                        <ColumnDefinition Width="24" />
-                    </Grid.ColumnDefinitions>
-                    <TextBlock Text="CPU" Style="{DynamicResource Text.Metadata}" FontSize="{DynamicResource FontSize.Caption}" />
-                    <Border Grid.Column="1" Height="6" CornerRadius="{DynamicResource Radius.Progress}" Background="{DynamicResource Brush.Divider}" VerticalAlignment="Center" />
-                    <TextBlock Grid.Column="2" Text="—" Style="{DynamicResource Text.Metadata}" FontSize="{DynamicResource FontSize.Caption}" HorizontalAlignment="Right" />
-                </Grid>
-                <Grid Margin="0,6,0,0">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="48" />
-                        <ColumnDefinition />
-                        <ColumnDefinition Width="24" />
-                    </Grid.ColumnDefinitions>
-                    <TextBlock Text="Память" Style="{DynamicResource Text.Metadata}" FontSize="{DynamicResource FontSize.Caption}" />
-                    <Border Grid.Column="1" Height="6" CornerRadius="{DynamicResource Radius.Progress}" Background="{DynamicResource Brush.Divider}" VerticalAlignment="Center" />
-                    <TextBlock Grid.Column="2" Text="—" Style="{DynamicResource Text.Metadata}" FontSize="{DynamicResource FontSize.Caption}" HorizontalAlignment="Right" />
-                </Grid>
+            <StackPanel Grid.Column="5" VerticalAlignment="Center" Margin="8,0" ClipToBounds="True" Tag="{DynamicResource Layout.Compact}" ToolTip="В разработке: сбор метрик CPU и памяти. Пока данные не получены.">
+                <StackPanel.Style><Style TargetType="StackPanel"><Style.Triggers><DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource Self}}" Value="True"><Setter Property="Visibility" Value="Collapsed" /></DataTrigger></Style.Triggers></Style></StackPanel.Style>
+                <TextBlock Text="CPU — · Память —" Style="{DynamicResource Text.Metadata}" FontSize="{DynamicResource FontSize.Small}" />
+                <TextBlock Text="Нет данных" Style="{DynamicResource Text.Metadata}" FontSize="{DynamicResource FontSize.Caption}" Margin="0,5,0,0" />
             </StackPanel>
             <components:SpacedWrapPanel Grid.Column="6" VerticalAlignment="Center">
                 <Button Style="{DynamicResource Button.OutlineIcon}" Command="{Binding DataContext.StartItemCommand, RelativeSource={RelativeSource AncestorType=ListBox}}" CommandParameter="{Binding}" IsEnabled="{Binding CanOpen}" ToolTip="Запустить окружение" AutomationProperties.Name="Запустить окружение">

@@ -3,7 +3,7 @@
         <Border DockPanel.Dock="Top" Style="{DynamicResource Panel.Card}" Padding="{DynamicResource Padding.Panel}" Margin="{DynamicResource Margin.Field}">
             <StackPanel>
                 <TextBlock Text="Библиотека сервисов" Style="{DynamicResource Text.SectionTitle}" />
-                <TextBlock Text="Добавьте свои приложения и инфраструктуру. Включённые сервисы появятся при создании окружения после сохранения настроек." TextWrapping="Wrap" Style="{DynamicResource Text.Metadata}" Margin="0,6,0,0" />
+                <TextBlock Text="Добавьте свои приложения и инфраструктуру. Включённые сервисы появятся при создании окружения после сохранения библиотеки." TextWrapping="Wrap" Style="{DynamicResource Text.Metadata}" Margin="0,6,0,0" />
             </StackPanel>
         </Border>
         <StackPanel DockPanel.Dock="Bottom" Margin="0,12,0,0">

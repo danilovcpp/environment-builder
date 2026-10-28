@@ -12,13 +12,12 @@ namespace EnvironmentBuilder.App.Shell;
 public sealed partial class ShellViewModel : ObservableObject
 {
     private readonly NavigationService navigation;
-    private readonly ThemeService themes;
     private INotifyPropertyChanged? contextModel;
     public ShellViewModel(NavigationService navigation, ThemeService themes)
     {
         this.navigation = navigation;
-        this.themes = themes;
-        settings = new SettingsViewModel(themes);
+        ApplicationSettings = new ApplicationSettingsViewModel(themes);
+        settings = new SettingsViewModel();
         SeedPacks.PropertyChanged += ContextChanged;
         Settings.PropertyChanged += ContextChanged;
         navigation.PropertyChanged += (_, e) =>
@@ -34,6 +33,7 @@ public sealed partial class ShellViewModel : ObservableObject
     [ObservableProperty] private AuthoringSession? authoring;
     [ObservableProperty] private SeedPackLibraryViewModel seedPacks = new();
     [ObservableProperty] private SettingsViewModel settings;
+    public ApplicationSettingsViewModel ApplicationSettings { get; }
     public DiagnosticsViewModel Diagnostics { get; } = new();
     [ObservableProperty] private string title = "Окружения";
     [ObservableProperty] private string description = "Все созданные окружения. Запуск, остановка и управление изолированными средами на основе Docker.";
@@ -43,18 +43,19 @@ public sealed partial class ShellViewModel : ObservableObject
     [ObservableProperty] private bool isLoading = true;
     [ObservableProperty] private bool showEnvironments = true;
     [ObservableProperty] private bool showSettings;
+    [ObservableProperty] private bool showServices;
     [ObservableProperty] private bool showDiagnostics;
     [ObservableProperty] private bool showSeedPacks;
     [ObservableProperty] private string recoveryStatus = "Состояние runtime не проверено";
 
-    public string PageIcon => navigation.Current.Route switch { "seedpacks" => "Database", "settings" => "Settings", "diagnostics" => "Activity", "preview" => "Code", "inspect" => "Activity", _ => "Box" };
-    public string ContextTitle => navigation.Current.Route switch { "seedpacks" => "Сводка выбранного пака", "settings" => "Параметры компонента", "diagnostics" => "Состояние приложения", _ => "Сводка окружения" };
-    public object? ContextDetail => navigation.Current.Route switch { "seedpacks" => SeedPacks, "settings" => Settings, "editor" => Authoring?.Current, _ => null };
+    public string PageIcon => navigation.Current.Route switch { "seedpacks" => "Database", "services" => "Boxes", "settings" => "Settings", "diagnostics" => "Activity", "preview" => "Code", "inspect" => "Activity", _ => "Box" };
+    public string ContextTitle => navigation.Current.Route switch { "seedpacks" => "Сводка выбранного пака", "services" => "Параметры компонента", "diagnostics" => "Состояние приложения", _ => "Сводка окружения" };
+    public object? ContextDetail => navigation.Current.Route switch { "seedpacks" => SeedPacks, "services" => Settings, "editor" => Authoring?.Current, _ => null };
     public bool HasContext => ShowSeedPacks || ShowDiagnostics || ShowEnvironments && Authoring?.Current is EnvironmentEditorViewModel or ComposePreviewViewModel;
     public string ContextSupportingText => navigation.Current.Route switch
     {
         "seedpacks" => "Текстовое preview\n\n" + SeedPacks.WorkflowReason,
-        "settings" => "Изменение настроек\n\n" + Settings.WorkflowReason,
+        "services" => "Библиотека сервисов\n\n" + Settings.WorkflowReason,
         "diagnostics" => Diagnostics.WorkflowReason,
         _ => Authoring?.Current is EnvironmentEditorViewModel editor ? $"Проверка конфигурации\n\nОшибок структуры: {editor.Errors.Count}\nЗамечаний доступности: {editor.ReadinessIssues.Count}\n\n{editor.SaveDisabledReason}"
             : "Наблюдение перечитывает состояние. Очистка удаляет данные. Восстановление baseline включает временный запуск и проверенную остановку; требуется подтверждение точного плана."
@@ -62,7 +63,7 @@ public sealed partial class ShellViewModel : ObservableObject
     public string ContextSummary => navigation.Current.Route switch
     {
         "seedpacks" => SeedPacks.Summary,
-        "settings" => Settings.Summary,
+        "services" => Settings.Summary,
         "diagnostics" => Status + "\n\n" + RecoveryStatus,
         _ => Authoring?.Current switch
         {
@@ -102,12 +103,14 @@ public sealed partial class ShellViewModel : ObservableObject
         {
             DataDirectory = directory;
             Settings.DataDirectory = directory;
+            ApplicationSettings.Initialize(directory);
             RecoveryStatus = unresolved == 0 ? "Состояние Docker не проверено" : $"Незавершённых операций: {unresolved}. Требуется сверка.";
             IsLoading = false;
             Status = "Хранилище доступно · Docker не проверен";
             Diagnostics.StorageStatus = "Хранилище доступно. Одновременная запись из другого экземпляра приложения запрещена.";
             NotifyContext();
         }, cancellationToken).ConfigureAwait(false);
+        await dispatcher.ApplyAsync(() => NavigateCommand.Execute(ApplicationSettings.StartPage), cancellationToken).ConfigureAwait(false);
     }
 
     public void ReportStorageError(string code)
@@ -125,16 +128,17 @@ public sealed partial class ShellViewModel : ObservableObject
         navigation.Navigate(new NavigationAddress(route));
         ShowEnvironments = route == "environments";
         ShowSettings = route == "settings";
+        ShowServices = route == "services";
         ShowDiagnostics = route == "diagnostics";
         ShowSeedPacks = route == "seedpacks";
         (Title, Description) = route switch
         {
             "seedpacks" => ("Тестовые данные", "Управление themed data-seed паками для демонстрационных и тестовых окружений."),
-            "settings" => ("Настройки", "Источники образов, build-настройки и параметры поддерживаемых сервисов."),
+            "services" => ("Сервисы", "Библиотека приложений и инфраструктуры для ваших окружений"),
+            "settings" => ("Настройки", "Внешний вид, запуск и параметры приложения"),
             "diagnostics" => ("Диагностика", "Состояние хранилища и незавершённые операции"),
             _ => ("Окружения", "Сохранённые описания локальных окружений")
         };
         NotifyContext();
     }
-    [RelayCommand] private void ToggleTheme() => themes.Apply(!themes.IsDark);
 }

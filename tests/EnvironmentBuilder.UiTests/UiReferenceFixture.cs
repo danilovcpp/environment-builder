@@ -44,7 +44,7 @@ internal sealed class UiReferenceFixture
             Authoring = Store.Session(Navigation),
             IsLoading = false,
             SeedPacks = new SeedPackLibraryViewModel(_ => Task.FromResult<IReadOnlyList<SeedPack>>(packs)),
-            Settings = new SettingsViewModel(Themes, Store, Store),
+            Settings = new SettingsViewModel(Store, Store),
             Status = "Хранилище доступно · Docker не проверен",
             DataDirectory = "Изолированное тестовое хранилище"
         };

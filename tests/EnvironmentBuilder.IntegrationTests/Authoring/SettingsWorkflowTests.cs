@@ -17,7 +17,7 @@ public sealed class SettingsWorkflowTests
         await using var fixture = await FoundationStore.CreateAsync();
         var library = new AuthoringLibrary(new ComponentLibraryStore(fixture.Worker, fixture.Reader), fixture.Reader);
         var mappings = new LocalPathMappings(fixture.Worker, fixture.Clock);
-        var settings = new SettingsViewModel(new ThemeService(), library, mappings);
+        var settings = new SettingsViewModel(library, mappings);
         await settings.LoadAsync(TestContext.Current.CancellationToken);
         settings.AddTargetCommand.Execute(null);
         var target = settings.SelectedDefinition!;
@@ -33,7 +33,7 @@ public sealed class SettingsWorkflowTests
         Assert.Empty(settings.Error);
 
         var reopenedLibrary = new AuthoringLibrary(new ComponentLibraryStore(fixture.Worker, fixture.Reader), fixture.Reader);
-        var reopened = new SettingsViewModel(new ThemeService(), reopenedLibrary, mappings);
+        var reopened = new SettingsViewModel(reopenedLibrary, mappings);
         await reopened.LoadAsync(TestContext.Current.CancellationToken);
         Assert.Equal(3, reopened.Definitions.Count);
         Assert.False(reopened.Definitions.Single(d => d.Name == "Disabled").Enabled);
@@ -68,7 +68,7 @@ public sealed class SettingsWorkflowTests
         var mappings = new LocalPathMappings(fixture.Worker, fixture.Clock);
         string first = fixture.Directory.Child("first-source"), second = fixture.Directory.Child("second-source");
         Directory.CreateDirectory(first); Directory.CreateDirectory(second);
-        var settings = new SettingsViewModel(new ThemeService(), library, mappings);
+        var settings = new SettingsViewModel(library, mappings);
         await settings.LoadAsync(TestContext.Current.CancellationToken);
         settings.AddTargetCommand.Execute(null);
         var service = settings.SelectedDefinition!;
@@ -94,7 +94,7 @@ public sealed class SettingsWorkflowTests
     {
         await using var fixture = await FoundationStore.CreateAsync();
         var library = new AuthoringLibrary(new ComponentLibraryStore(fixture.Worker, fixture.Reader), fixture.Reader);
-        var settings = new SettingsViewModel(new ThemeService(), library);
+        var settings = new SettingsViewModel(library);
         settings.AddTargetCommand.Execute(null);
         settings.SelectedDefinition!.Editor.ImageReference = "nginx:stable-alpine";
         settings.AddInfrastructureCommand.Execute(null);

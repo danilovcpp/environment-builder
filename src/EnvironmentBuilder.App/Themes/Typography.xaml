@@ -20,6 +20,9 @@
     </Style>
     <!-- Implicit text inherits foreground from its control, including primary/disabled states. -->
     <Style TargetType="TextBlock" BasedOn="{StaticResource Text.Default}" />
+    <Style x:Key="Text.ControlLabel" TargetType="TextBlock" BasedOn="{StaticResource Text.Default}">
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
     <Style x:Key="Text.Body" TargetType="TextBlock" BasedOn="{StaticResource Text.Default}">
         <Setter Property="Foreground" Value="{DynamicResource Brush.TextPrimary}" />
     </Style>

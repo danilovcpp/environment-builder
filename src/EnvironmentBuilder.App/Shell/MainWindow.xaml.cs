@@ -18,6 +18,7 @@ public partial class MainWindow : Window
         bool compact = ActualWidth < (double)FindResource("Breakpoint.Compact");
         Resources["Layout.Compact"] = compact;
         Resources["Layout.RuntimeMetricColumns"] = compact ? 3 : 6;
+        Resources["Grid.EnvironmentMetrics"] = compact ? new GridLength(0) : new GridLength(1.6, GridUnitType.Star);
         if (PageContext is null || compact == compactLayout) { return; }
         if (compact)
         {

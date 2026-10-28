@@ -92,7 +92,7 @@ public sealed class AppServices : IAsyncDisposable
             services.AddSingleton<Features.SeedPacks.ISeedPackInteractions, SeedPackInteractions>();
             services.AddSingleton(p => new Features.SeedPacks.SeedPackLibraryViewModel(p.GetRequiredService<SeedPackStore>().ListMetadataAsync,
                 p.GetRequiredService<ISeedPackImporter>(), p.GetRequiredService<ISeedPackCatalog>(), p.GetRequiredService<ISeedPreviewReader>(), p.GetRequiredService<Features.SeedPacks.ISeedPackInteractions>()));
-            services.AddSingleton(p => new Features.Settings.SettingsViewModel(themes, p.GetRequiredService<IComponentLibrary>(), p.GetRequiredService<ILocalPathMappings>(), p.GetRequiredService<IAuthoringInteractions>()));
+            services.AddSingleton(p => new Features.Settings.SettingsViewModel(p.GetRequiredService<IComponentLibrary>(), p.GetRequiredService<ILocalPathMappings>(), p.GetRequiredService<IAuthoringInteractions>()));
             services.AddSingleton<ISecretVault, DpapiSecretVault>();
             services.AddSingleton<LocalPathResolver>();
             services.AddSingleton<IInputResolver, InputResolver>();

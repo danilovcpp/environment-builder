@@ -35,15 +35,14 @@ public sealed class AuthoringSmokeTests
             {
                 Window window = app.GetMainWindow(automation, TimeSpan.FromSeconds(15)) ?? throw new InvalidOperationException("Interactive main window unavailable.");
                 window.Focus();
+                Press(Find(window, "NavigateSettings"));
+                Find(window, "ApplicationTheme").Focus(); Keyboard.Type(VirtualKeyShort.END); Keyboard.Type(VirtualKeyShort.TAB);
+                Press(Find(window, "NavigateEnvironments"));
                 Press(Find(window, "CreateEnvironment"));
                 TextBox name = Find(window, "EnvironmentName").AsTextBox();
                 name.Focus(); Keyboard.Type("Keyboard environment");
                 Press(Find(window, "ChooseTargetService"));
                 Wait(() => Find(window, "SaveEnvironment").IsEnabled, "save enabled after adding a valid component");
-                AutomationElement theme = window.FindFirstDescendant(cf => cf.ByName("Переключить светлую и тёмную тему")) ?? throw new InvalidOperationException("Theme command missing.");
-                Press(theme);
-                Assert.Equal("Keyboard environment", Find(window, "EnvironmentName").AsTextBox().Text);
-                Press(theme);
                 Press(Find(window, "ShowCompose"));
                 Wait(() => Find(window, "ComposeContent").AsTextBox().Text.Contains("127.0.0.1", StringComparison.Ordinal), "Compose content");
                 Press(Find(window, "BackFromPreview"));
@@ -68,12 +67,16 @@ public sealed class AuthoringSmokeTests
                 Wait(() => window.ModalWindows.Length == 1, "dirty Discard dialog");
                 Press(Find(window.ModalWindows.Single(), "DirtyDiscard"));
                 Find(window, "EnvironmentRows");
+                Press(Find(window, "NavigateSettings"));
+                Find(window, "ApplicationStartPage").Focus(); Keyboard.Type(VirtualKeyShort.HOME); Keyboard.Type(VirtualKeyShort.DOWN); Keyboard.Type(VirtualKeyShort.DOWN); Keyboard.Type(VirtualKeyShort.TAB);
                 window.Close();
                 Wait(() => app.HasExited, "Application must close after durable storage shutdown.");
             }
             using (var app = Launch(exe, root))
             {
                 Window window = app.GetMainWindow(automation, TimeSpan.FromSeconds(15)) ?? throw new InvalidOperationException("Interactive main window unavailable.");
+                Wait(() => Find(window, "NavigateServices").Properties.ItemStatus.Value == "Выбрано", "Saved start page is restored after process restart.");
+                Press(Find(window, "NavigateEnvironments"));
                 Press(Find(window, "OpenEnvironment"));
                 Assert.Equal("Keyboard environment", Find(window, "EnvironmentName").AsTextBox().Text);
                 Press(Find(window, "ShowCompose"));

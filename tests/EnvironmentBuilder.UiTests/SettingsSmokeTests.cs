@@ -14,14 +14,14 @@ internal static class SettingsSmokeTests
     {
         var fixture = new AuthoringUiFixture();
         var themes = new ThemeService(); var navigation = new NavigationService();
-        var settings = new SettingsViewModel(themes, fixture, fixture, fixture);
+        var settings = new SettingsViewModel(fixture, fixture, fixture);
         Assert.True(settings.LoadAsync(CancellationToken.None).IsCompletedSuccessfully);
         var shell = new ShellViewModel(navigation, themes) { IsLoading = false, Settings = settings, Authoring = fixture.Session(navigation) };
         var window = new MainWindow(shell) { Width = 1280, Height = 720, ShowInTaskbar = false, ShowActivated = false };
         window.Show();
         try
         {
-            Assert.True(shell.NavigateCommand.ExecuteAsync("settings").IsCompletedSuccessfully);
+            Assert.True(shell.NavigateCommand.ExecuteAsync("services").IsCompletedSuccessfully);
             settings.AddTargetCommand.Execute(null);
             UiReferenceTests.Layout(window);
             var name = Descendants(window).OfType<TextBox>().Single(text => AutomationProperties.GetAutomationId(text) == "ServiceDefinitionName" && text.IsVisible);

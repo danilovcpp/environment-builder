@@ -45,7 +45,7 @@ public sealed partial class DefinitionRow : ObservableObject
     public void Accept(ComponentDefinition saved) { Definition = saved; IsNew = false; OnPropertyChanged(nameof(Version)); OnPropertyChanged(nameof(Source)); }
 }
 
-public sealed partial class SettingsViewModel(ThemeService themes, IComponentLibrary? library = null, ILocalPathMappings? mappings = null, IAuthoringInteractions? interactions = null) : ObservableObject
+public sealed partial class SettingsViewModel(IComponentLibrary? library = null, ILocalPathMappings? mappings = null, IAuthoringInteractions? interactions = null) : ObservableObject
 {
     private readonly List<DefinitionRow> all = [];
     public ObservableCollection<DefinitionRow> Definitions { get; } = [];
@@ -58,14 +58,13 @@ public sealed partial class SettingsViewModel(ThemeService themes, IComponentLib
     [ObservableProperty, NotifyCanExecuteChangedFor(nameof(SaveCommand), nameof(ResetCommand), nameof(AddTargetCommand), nameof(AddInfrastructureCommand))] private bool isBusy;
     public bool CanConfigure => !IsBusy && library is IComponentLibrarySettings;
     public string ServiceCount => $"Сервисов: {all.Count} · доступны при создании: {all.Count(d => d.Enabled)}";
-    public string Summary => SelectedDefinition?.Details ?? "Добавьте целевой сервис или инфраструктуру и сохраните настройки.";
+    public string Summary => SelectedDefinition?.Details ?? "Добавьте целевой сервис или инфраструктуру и сохраните библиотеку.";
     public string WorkflowReason => library is IComponentLibrarySettings
         ? "Сохранённые и включённые сервисы доступны при создании окружения. Параметры конкретной среды задаются в её редакторе."
         : "Изменения недоступны: библиотека открыта только для просмотра.";
     partial void OnSelectedDefinitionChanged(DefinitionRow? value) => OnPropertyChanged(nameof(Summary));
     partial void OnSearchChanged(string value) => Filter();
     partial void OnIsBusyChanged(bool value) => OnPropertyChanged(nameof(CanConfigure));
-    [RelayCommand] private void ToggleTheme() => themes.Apply(!themes.IsDark);
     [RelayCommand(CanExecute = nameof(CanConfigure))] private void AddTarget() => Add("target");
     [RelayCommand(CanExecute = nameof(CanConfigure))] private void AddInfrastructure() => Add("infrastructure");
     private void Add(string type)
@@ -76,7 +75,7 @@ public sealed partial class SettingsViewModel(ThemeService themes, IComponentLib
             [], [], [], new Readiness("running", 60), [], null);
         var row = new DefinitionRow(definition, mappings: mappings, interactions: interactions) { IsNew = true };
         Watch(row); all.Add(row); Search = ""; Filter(); SelectedDefinition = row;
-        Status = "Задайте имя, источник и параметры, затем сохраните настройки.";
+        Status = "Задайте имя, источник и параметры, затем сохраните библиотеку.";
     }
     private void Watch(DefinitionRow row)
     {
@@ -117,10 +116,10 @@ public sealed partial class SettingsViewModel(ThemeService themes, IComponentLib
                 await writable.SaveAsync(candidate.Definition, candidate.Row.Enabled, token);
                 candidate.Row.Accept(candidate.Definition);
             }
-            Status = "Настройки сохранены. Сервисы доступны в новом окружении.";
+            Status = "Библиотека сохранена. Сервисы доступны в новом окружении.";
             OnPropertyChanged(nameof(ServiceCount));
         }
-        catch (OperationCanceledException) { Status = "Сохранение отменено. Изменения остаются в настройках."; }
+        catch (OperationCanceledException) { Status = "Сохранение отменено. Изменения остаются в редакторе библиотеки."; }
         catch (DocumentException failure) { SelectedDefinition = saving; Error = $"{saving?.Name}: проверьте поле {failure.FieldPath} ({failure.Code})."; }
         catch (Exception failure) when (failure is not OutOfMemoryException) { SelectedDefinition = saving; Error = "Не удалось сохранить сервис. Проверьте папку исходников, настройки и доступ к хранилищу."; }
         finally { IsBusy = false; }
@@ -145,7 +144,7 @@ public sealed partial class SettingsViewModel(ThemeService themes, IComponentLib
                 row.Editor.LoadLocalFolder(paths); Watch(row); all.Add(row);
             }
             Filter(); SelectedDefinition = Definitions.FirstOrDefault(d => d.Definition.Id == selected) ?? Definitions.FirstOrDefault();
-            Status = all.Count == 0 ? "Библиотека пуста. Добавьте целевые сервисы и инфраструктуру." : "Библиотека загружена. Изменения применяются после сохранения настроек.";
+            Status = all.Count == 0 ? "Библиотека пуста. Добавьте целевые сервисы и инфраструктуру." : "Библиотека загружена. Изменения применяются после сохранения библиотеки.";
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { Status = "Чтение отменено."; }
         catch (Exception failure) when (failure is not OutOfMemoryException) { Error = "Не удалось прочитать библиотеку или локальные пути. Проверьте хранилище."; }
