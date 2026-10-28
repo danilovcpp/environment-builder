@@ -9,6 +9,7 @@ public partial class MainWindow : Window
     private bool approved;
     public MainWindow(ShellViewModel viewModel) { InitializeComponent(); DataContext = viewModel; Closing += OnClosing; }
     public Func<Task<bool>>? RequestClose { get; set; }
+    private void WindowSizeChanged(object sender, SizeChangedEventArgs e) => Resources["Size.ContextPanel"] = ActualWidth >= 1500 ? 384d : 320d;
     private async void OnClosing(object? sender, CancelEventArgs e)
     {
         if (approved || RequestClose is null) { return; }

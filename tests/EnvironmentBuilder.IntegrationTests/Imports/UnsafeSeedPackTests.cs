@@ -10,6 +10,23 @@ namespace EnvironmentBuilder.IntegrationTests.Imports;
 public sealed class UnsafeSeedPackTests
 {
     [Fact]
+    public async Task Library_metadata_read_is_read_only_and_does_not_open_missing_payloads()
+    {
+        await using FoundationStore fixture = await FoundationStore.CreateAsync();
+        using var blobs = new ContentBlobStore(fixture.Directory, fixture.Worker);
+        var store = new SeedPackStore(fixture.Worker, blobs, fixture.Reader, fixture.Clock);
+        var importer = new SeedPackImporter(fixture.Reader, blobs, store);
+        SeedPackReference reference = await importer.ImportAsync(CreateZip(fixture), TestContext.Current.CancellationToken);
+        var first = Assert.Single(await store.ListMetadataAsync(TestContext.Current.CancellationToken));
+        Assert.Equal(reference.Id, first.Id); Assert.Equal(reference.ContentHash, first.ContentHash);
+        File.Delete(fixture.Directory.Child("blobs", first.Sections[0].Sha256));
+        var second = Assert.Single(await store.ListMetadataAsync(TestContext.Current.CancellationToken));
+        Assert.Equal(first.ContentHash, second.ContentHash);
+        Assert.Equal(1, await fixture.CountAsync("SeedPacks"));
+        Assert.Equal(0, await fixture.CountAsync("Operations"));
+    }
+
+    [Fact]
     public async Task Import_verifies_payloads_is_idempotent_and_references_block_deletion()
     {
         await using FoundationStore fixture = await FoundationStore.CreateAsync();

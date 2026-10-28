@@ -1,7 +1,7 @@
 <UserControl x:Class="EnvironmentBuilder.App.Components.StatusBar"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Name="Root">
-    <Border Background="{DynamicResource Brush.StatusBar}" BorderBrush="{DynamicResource Brush.Border}" BorderThickness="0,1,0,0" Padding="16,8">
-        <TextBlock Text="{Binding Text, ElementName=Root}" Foreground="{DynamicResource Brush.TextSecondary}" TextWrapping="Wrap" AutomationProperties.LiveSetting="Polite" />
+    <Border Background="{DynamicResource Brush.StatusBar}" BorderBrush="{DynamicResource Brush.Divider}" BorderThickness="0,1,0,0" Padding="16,4" Height="{DynamicResource Size.StatusBar}">
+        <DockPanel><TextBlock DockPanel.Dock="Right" Text="Локальный режим" Style="{DynamicResource Text.Metadata}" Margin="16,0,0,0"/><TextBlock Text="{Binding Text, ElementName=Root}" Foreground="{DynamicResource Brush.TextSecondary}" VerticalAlignment="Center" AutomationProperties.LiveSetting="Polite" ToolTip="{Binding Text, ElementName=Root}" /></DockPanel>
     </Border>
 </UserControl>

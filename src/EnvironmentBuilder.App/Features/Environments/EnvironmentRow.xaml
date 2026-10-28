@@ -1,16 +1,26 @@
 <UserControl x:Class="EnvironmentBuilder.App.Features.Environments.EnvironmentRow"
- xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
- <Border Background="{DynamicResource Brush.Panel}" BorderBrush="{DynamicResource Brush.Border}" BorderThickness="1" CornerRadius="{DynamicResource Radius.Panel}" Padding="16">
-  <StackPanel>
-   <DockPanel><Button DockPanel.Dock="Right" Content="Открыть описание" Command="{Binding DataContext.OpenItemCommand, RelativeSource={RelativeSource AncestorType=ListBox}}" CommandParameter="{Binding}" IsEnabled="{Binding CanOpen}" ToolTip="{Binding DisabledReason}" AutomationProperties.AutomationId="OpenEnvironment" Margin="12,0,0,0"/>
-    <StackPanel><TextBlock Text="{Binding Name}" Style="{DynamicResource Text.GroupTitle}" ToolTip="{Binding Name}"/><TextBlock Text="{Binding State}" Style="{DynamicResource Text.Metadata}" Margin="0,4,0,0"/></StackPanel>
-   </DockPanel>
-   <Button Content="Исследовать / запуск" Command="{Binding DataContext.InspectItemCommand, RelativeSource={RelativeSource AncestorType=ListBox}}" CommandParameter="{Binding}" IsEnabled="{Binding CanOpen}" ToolTip="{Binding DisabledReason}" HorizontalAlignment="Left" Margin="0,8,0,0" AutomationProperties.AutomationId="InspectEnvironment"/>
-   <WrapPanel Margin="0,8,0,0"><Button Content="Запустить" Command="{Binding DataContext.StartItemCommand, RelativeSource={RelativeSource AncestorType=ListBox}}" CommandParameter="{Binding}" IsEnabled="{Binding CanOpen}" Margin="0,0,8,0"/><Button Content="Compose" Command="{Binding DataContext.ComposeItemCommand, RelativeSource={RelativeSource AncestorType=ListBox}}" CommandParameter="{Binding}" IsEnabled="{Binding CanOpen}"/></WrapPanel>
-   <TextBlock Text="{Binding Description}" TextWrapping="Wrap" Foreground="{DynamicResource Brush.TextSecondary}" Margin="0,8,0,0"/>
-   <Expander Header="Состав и сведения" IsExpanded="{Binding IsExpanded}" Margin="0,8,0,0" AutomationProperties.Name="Развернуть состав окружения">
-    <StackPanel Margin="0,8,0,0"><TextBlock Text="{Binding Components}" TextWrapping="Wrap"/><TextBlock Text="{Binding Id}" TextWrapping="Wrap" Style="{DynamicResource Text.Metadata}"/><TextBlock Text="{Binding Revision, StringFormat=Ревизия {0}}"/><TextBlock Text="{Binding SavedAt}"/><TextBlock Text="{Binding Measurement}"/><TextBlock Text="{Binding DisabledReason}" TextWrapping="Wrap"/></StackPanel>
-   </Expander>
-  </StackPanel>
- </Border>
+ xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:icons="http://metro.mahapps.com/winfx/xaml/iconpacks">
+ <UserControl.Resources><BooleanToVisibilityConverter x:Key="Visible"/></UserControl.Resources>
+ <StackPanel>
+  <Grid Height="{DynamicResource Size.Row}" Margin="8,0"><Grid.ColumnDefinitions><ColumnDefinition Width="28"/><ColumnDefinition Width="2*"/><ColumnDefinition Width="0.7*"/><ColumnDefinition Width="1.3*"/><ColumnDefinition Width="140"/></Grid.ColumnDefinitions>
+   <ToggleButton IsChecked="{Binding IsExpanded}" Width="24" Height="28" Style="{DynamicResource Toggle.Row}" AutomationProperties.Name="Развернуть состав окружения"/>
+   <TextBlock Grid.Column="1" Text="{Binding Name}" FontWeight="SemiBold" VerticalAlignment="Center" ToolTip="{Binding Name}" Margin="0,0,12,0"/>
+   <TextBlock Grid.Column="2" Text="{Binding ComponentCount}" VerticalAlignment="Center" Style="{DynamicResource Text.Metadata}"/>
+   <Border Grid.Column="3" Style="{DynamicResource Badge.EnvironmentStatus}" VerticalAlignment="Center" Margin="0,0,8,0"><TextBlock Text="{Binding State}" FontSize="{DynamicResource FontSize.Badge}" ToolTip="{Binding State}"/></Border>
+   <StackPanel Grid.Column="4" Orientation="Horizontal" VerticalAlignment="Center">
+    <Button Style="{DynamicResource Button.Icon}" Command="{Binding DataContext.StartItemCommand, RelativeSource={RelativeSource AncestorType=ListBox}}" CommandParameter="{Binding}" IsEnabled="{Binding CanOpen}" ToolTip="Запустить · сначала preflight и проверка входов" AutomationProperties.Name="Запустить окружение"><icons:PackIconLucide Kind="Play"/></Button>
+    <Button Style="{DynamicResource Button.Icon}" Command="{Binding DataContext.InspectItemCommand, RelativeSource={RelativeSource AncestorType=ListBox}}" CommandParameter="{Binding}" IsEnabled="{Binding CanOpen}" ToolTip="Исследовать состояние и операции" AutomationProperties.Name="Исследовать окружение" AutomationProperties.AutomationId="InspectEnvironment"><icons:PackIconLucide Kind="Activity"/></Button>
+    <Button Style="{DynamicResource Button.Icon}" Command="{Binding DataContext.OpenItemCommand, RelativeSource={RelativeSource AncestorType=ListBox}}" CommandParameter="{Binding}" IsEnabled="{Binding CanOpen}" ToolTip="Открыть описание" AutomationProperties.Name="Открыть описание" AutomationProperties.AutomationId="OpenEnvironment"><icons:PackIconLucide Kind="FileText"/></Button>
+    <Button Style="{DynamicResource Button.Icon}" Command="{Binding DataContext.ComposeItemCommand, RelativeSource={RelativeSource AncestorType=ListBox}}" CommandParameter="{Binding}" IsEnabled="{Binding CanOpen}" ToolTip="Compose preview" AutomationProperties.Name="Compose preview"><icons:PackIconLucide Kind="Code"/></Button>
+   </StackPanel>
+  </Grid>
+  <Border Margin="12,0,12,12" Style="{DynamicResource Panel.Card}" Padding="12" Visibility="{Binding IsExpanded, Converter={StaticResource Visible}}">
+   <StackPanel><TextBlock Text="{Binding Description}" Style="{DynamicResource Text.Optional}" Margin="0,0,0,8"/>
+    <DataGrid ItemsSource="{Binding ComponentRows}" AutoGenerateColumns="False" IsReadOnly="True" MaxHeight="340"><DataGrid.Columns>
+     <DataGridTextColumn Header="Компонент" Binding="{Binding Name}" Width="*"/><DataGridTextColumn Header="Тип" Binding="{Binding Type}" Width="130"/><DataGridTextColumn Header="Источник" Binding="{Binding Source}" Width="*"/><DataGridTextColumn Header="Порты" Binding="{Binding Ports}" Width="120"/><DataGridTextColumn Header="Статус" Binding="{Binding Status}" Width="110"/>
+    </DataGrid.Columns></DataGrid>
+    <TextBlock Text="{Binding Measurement}" Style="{DynamicResource Text.Metadata}" Margin="0,8,0,0"/><TextBlock Text="{Binding Id}" Style="{DynamicResource Text.Metadata}" Focusable="True"/><TextBlock Text="{Binding Revision, StringFormat=Ревизия {0}}" Style="{DynamicResource Text.Metadata}"/><TextBlock Text="{Binding SavedAt}" Style="{DynamicResource Text.Metadata}"/><TextBlock Text="{Binding DisabledReason}" Style="{DynamicResource Text.Optional}"/>
+   </StackPanel>
+  </Border>
+ </StackPanel>
 </UserControl>

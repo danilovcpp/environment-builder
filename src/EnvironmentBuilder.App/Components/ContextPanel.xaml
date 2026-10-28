@@ -3,13 +3,20 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Name="Root">
     <UserControl.Style>
         <Style TargetType="UserControl">
-            <Setter Property="Width" Value="240" />
+            <Setter Property="Width" Value="{DynamicResource Size.ContextPanel}" />
             <Style.Triggers><DataTrigger Binding="{Binding IsExpanded, ElementName=Root}" Value="False"><Setter Property="Width" Value="48" /></DataTrigger></Style.Triggers>
         </Style>
     </UserControl.Style>
-    <Border Background="{DynamicResource Brush.ContextPanel}" Padding="16" BorderBrush="{DynamicResource Brush.Border}" BorderThickness="1,0,0,0">
-        <Expander Header="Контекст" IsExpanded="{Binding IsExpanded, ElementName=Root, Mode=TwoWay}" VerticalAlignment="Top" AutomationProperties.Name="Свернуть или развернуть контекст">
-            <ScrollViewer VerticalScrollBarVisibility="Auto"><TextBlock Text="{Binding Text, ElementName=Root}" TextWrapping="Wrap" Foreground="{DynamicResource Brush.TextSecondary}" Margin="0,12,0,0" /></ScrollViewer>
-        </Expander>
+    <Border Background="{DynamicResource Brush.ContextPanel}" Padding="8" BorderBrush="{DynamicResource Brush.Border}" BorderThickness="1,0,0,0">
+        <DockPanel>
+            <ToggleButton DockPanel.Dock="Top" IsChecked="{Binding IsExpanded, ElementName=Root, Mode=TwoWay}" Content="{Binding Heading, ElementName=Root}" Style="{DynamicResource Toggle.Context}" AutomationProperties.Name="Свернуть или развернуть контекст" AutomationProperties.AutomationId="ToggleContext"/>
+            <ScrollViewer VerticalScrollBarVisibility="Auto" Margin="0,8,0,0">
+                <ScrollViewer.Style><Style TargetType="ScrollViewer"><Style.Triggers><DataTrigger Binding="{Binding IsExpanded, ElementName=Root}" Value="False"><Setter Property="Visibility" Value="Collapsed"/></DataTrigger></Style.Triggers></Style></ScrollViewer.Style>
+                <StackPanel VerticalAlignment="Top">
+                    <Border Style="{DynamicResource Panel.Card}" Padding="16"><TextBlock Text="{Binding Text, ElementName=Root}" TextWrapping="Wrap" Foreground="{DynamicResource Brush.TextSecondary}" Focusable="True" AutomationProperties.AutomationId="ContextSummary"/></Border>
+                    <Border Style="{DynamicResource Panel.Card}" Padding="16" Margin="0,12,0,0"><TextBlock Text="{Binding SupportingText, ElementName=Root}" Style="{DynamicResource Text.Optional}" Focusable="True"/></Border>
+                </StackPanel>
+            </ScrollViewer>
+        </DockPanel>
     </Border>
 </UserControl>

@@ -4,30 +4,41 @@
  <UserControl.Resources><BooleanToVisibilityConverter x:Key="Visible"/></UserControl.Resources>
  <DockPanel>
   <StackPanel DockPanel.Dock="Top">
-   <WrapPanel Margin="0,0,0,8"><Button Content="К списку" Command="{Binding GoBackCommand}" Margin="0,0,8,8" AutomationProperties.AutomationId="BackToList"/><Button Content="Compose preview" Command="{Binding ShowPreviewCommand}" Margin="0,0,8,8" AutomationProperties.AutomationId="ShowCompose"/><Button Content="Сохранить" Command="{Binding SaveCommand}" Style="{DynamicResource Button.Primary}" Margin="0,0,0,8" AutomationProperties.AutomationId="SaveEnvironment"/></WrapPanel>
-   <Button Content="Исследовать / запуск" Command="{Binding InspectSavedCommand}" HorizontalAlignment="Left" Margin="0,0,0,8" ToolTip="Запуск доступен после сохранения описания." ToolTipService.ShowOnDisabled="True" AutomationProperties.AutomationId="EditorInspect"/>
+   <Button Content="Исследовать / запуск" Command="{Binding InspectSavedCommand}" Visibility="{Binding IsReadOnly, Converter={StaticResource Visible}}" HorizontalAlignment="Left" Margin="0,0,0,8" ToolTip="Запуск доступен после сохранения описания." ToolTipService.ShowOnDisabled="True" AutomationProperties.AutomationId="EditorInspect"/>
    <Button Content="Изменить окружение" Command="{Binding BeginEditCommand}" Visibility="{Binding IsReadOnly, Converter={StaticResource Visible}}" HorizontalAlignment="Left" Margin="0,0,0,8" ToolTip="Редактирование требует проверенной остановки; сохранение удалит прежние данные после подтверждения." ToolTipService.ShowOnDisabled="True" AutomationProperties.AutomationId="BeginEditEnvironment"/>
    <Button Content="Отменить сохранение" Command="{Binding SaveCancelCommand}" Visibility="{Binding SaveCommand.IsRunning, Converter={StaticResource Visible}}" HorizontalAlignment="Left" Margin="0,0,0,8" ToolTip="Новые этапы будут отменены после текущего безопасного шага. Уже удалённые данные не восстанавливаются." ToolTipService.ShowOnDisabled="True" AutomationProperties.AutomationId="CancelEditSave"/>
-   <TextBlock Text="{Binding SaveDisabledReason}" Foreground="{DynamicResource Brush.TextSecondary}" TextWrapping="Wrap" Focusable="True" AutomationProperties.AutomationId="SaveDisabledReason"/>
-   <TextBlock Text="{Binding ActionError}" Foreground="{DynamicResource Brush.ErrorForeground}" TextWrapping="Wrap"/>
+   <TextBlock Style="{DynamicResource Text.Optional}" Text="{Binding SaveDisabledReason}" Foreground="{DynamicResource Brush.TextSecondary}" TextWrapping="Wrap" Focusable="True" AutomationProperties.AutomationId="SaveDisabledReason"/>
+   <TextBlock Style="{DynamicResource Text.Optional}" Text="{Binding ActionError}" Foreground="{DynamicResource Brush.ErrorForeground}" TextWrapping="Wrap"/>
    <ProgressBar IsIndeterminate="True" Height="3" Visibility="{Binding IsBusy, Converter={StaticResource Visible}}" Margin="0,4" AutomationProperties.Name="Выполняется действие"/>
    <ItemsControl ItemsSource="{Binding Errors}" Margin="0,4,0,8"><ItemsControl.ItemTemplate><DataTemplate><Button HorizontalContentAlignment="Left" Style="{DynamicResource Button.Ghost}" Command="{Binding DataContext.FocusErrorCommand, RelativeSource={RelativeSource AncestorType=local:EnvironmentEditorPage}}" CommandParameter="{Binding}"><TextBlock TextWrapping="Wrap" Foreground="{DynamicResource Brush.ErrorForeground}"><Run Text="{Binding FieldPath}"/><Run Text=" · "/><Run Text="{Binding Message}"/></TextBlock></Button></DataTemplate></ItemsControl.ItemTemplate></ItemsControl>
   </StackPanel>
   <ScrollViewer x:Name="EditorScroll" IsEnabled="{Binding CanInteract}" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" ScrollChanged="RememberScroll">
-   <StackPanel>
-    <Border Background="{DynamicResource Brush.Panel}" Padding="16" CornerRadius="{DynamicResource Radius.Panel}" Margin="0,0,0,16"><StackPanel>
-     <TextBlock Text="{Binding Title}" Style="{DynamicResource Text.SectionTitle}"/><TextBox Text="{Binding Id, Mode=OneWay}" IsReadOnly="True" AutomationProperties.Name="ID окружения" BorderThickness="0"/>
-     <Label Content="Имя окружения" Target="{Binding ElementName=NameInput}"/><TextBox x:Name="NameInput" Tag="name" Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" IsReadOnly="{Binding IsReadOnly}" MaxLength="256" AutomationProperties.AutomationId="EnvironmentName"/>
-     <Label Content="Описание" Target="{Binding ElementName=DescriptionInput}"/><TextBox x:Name="DescriptionInput" Tag="description" Text="{Binding Description, UpdateSourceTrigger=PropertyChanged}" IsReadOnly="{Binding IsReadOnly}" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="56" MaxLength="4096" AutomationProperties.Name="Описание окружения"/>
+   <StackPanel Width="{Binding ViewportWidth, ElementName=EditorScroll}">
+    <Border Style="{DynamicResource Panel.Card}" Margin="0,0,0,12"><StackPanel>
+     <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+      <StackPanel Margin="0,0,8,0"><Label Content="Имя окружения" Target="{Binding ElementName=NameInput}"/><TextBox x:Name="NameInput" Tag="name" Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" IsReadOnly="{Binding IsReadOnly}" MaxLength="256" AutomationProperties.AutomationId="EnvironmentName"/></StackPanel>
+      <StackPanel Grid.Column="1"><Label Content="Неизменяемый ID"/><TextBox Text="{Binding Id, Mode=OneWay}" IsReadOnly="True" AutomationProperties.Name="ID окружения"/></StackPanel>
+     </Grid>
+     <TextBlock Text="{Binding ConfigurationSummary}" Style="{DynamicResource Text.Metadata}" Margin="0,8,0,8"/>
+     <Expander Header="Описание"><TextBox x:Name="DescriptionInput" Tag="description" Text="{Binding Description, UpdateSourceTrigger=PropertyChanged}" IsReadOnly="{Binding IsReadOnly}" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="56" MaxLength="4096" AutomationProperties.Name="Описание окружения" Margin="0,8,0,0"/></Expander>
     </StackPanel></Border>
     <StackPanel IsEnabled="{Binding CanEdit}">
      <TextBlock Text="Компоненты" Style="{DynamicResource Text.SectionTitle}" Margin="0,0,0,8"/>
      <TextBlock Text="{Binding LibraryStatus}" TextWrapping="Wrap" Style="{DynamicResource Text.Metadata}"/>
      <WrapPanel Margin="0,8,0,12"><ComboBox ItemsSource="{Binding Library}" SelectedItem="{Binding SelectedDefinition}" DisplayMemberPath="Label" Width="330" Margin="0,0,8,8" AutomationProperties.AutomationId="ComponentLibrary"/><Button Content="Добавить компонент" Command="{Binding AddComponentCommand}" Margin="0,0,8,8" AutomationProperties.AutomationId="AddComponent"/><Button Content="Импорт описания…" Command="{Binding ImportComponentCommand}" Margin="0,0,0,8"/></WrapPanel>
     </StackPanel>
+    <Grid Margin="0,0,0,12" IsEnabled="{Binding CanEdit}"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+     <Border Style="{DynamicResource Panel.Card}" Padding="12" Margin="0,0,6,0"><StackPanel><TextBlock Text="Приложения и проекты" Style="{DynamicResource Text.GroupTitle}" Margin="0,0,0,8"/>
+      <ItemsControl ItemsSource="{Binding TargetDefinitions}"><ItemsControl.ItemTemplate><DataTemplate><DockPanel Height="38"><Button DockPanel.Dock="Right" Content="Добавить" Command="{Binding DataContext.AddDefinitionCommand, RelativeSource={RelativeSource AncestorType=local:EnvironmentEditorPage}}" CommandParameter="{Binding}"/><TextBlock Text="{Binding Definition.Name}" VerticalAlignment="Center" ToolTip="{Binding Label}"/></DockPanel></DataTemplate></ItemsControl.ItemTemplate></ItemsControl>
+     </StackPanel></Border>
+     <Border Grid.Column="1" Style="{DynamicResource Panel.Card}" Padding="12" Margin="6,0,0,0"><StackPanel><TextBlock Text="Инфраструктура" Style="{DynamicResource Text.GroupTitle}" Margin="0,0,0,8"/>
+      <ItemsControl ItemsSource="{Binding InfrastructureDefinitions}"><ItemsControl.ItemTemplate><DataTemplate><DockPanel Height="38"><Button DockPanel.Dock="Right" Content="Добавить" Command="{Binding DataContext.AddDefinitionCommand, RelativeSource={RelativeSource AncestorType=local:EnvironmentEditorPage}}" CommandParameter="{Binding}"/><TextBlock Text="{Binding Definition.Name}" VerticalAlignment="Center" ToolTip="{Binding Label}"/></DockPanel></DataTemplate></ItemsControl.ItemTemplate></ItemsControl>
+     </StackPanel></Border>
+    </Grid>
+    <TextBlock Text="Выбранный состав · настройки экземпляров" Style="{DynamicResource Text.SectionTitle}" Margin="0,0,0,8"/>
     <ItemsControl ItemsSource="{Binding Components}" Tag="components"><ItemsControl.ItemTemplate><DataTemplate><local:ComponentEditor/></DataTemplate></ItemsControl.ItemTemplate></ItemsControl>
     <StackPanel IsEnabled="{Binding CanEdit}">
-     <Expander Header="Зависимости экземпляров" IsExpanded="True" Margin="0,8,0,16" Tag="dependencies"><StackPanel Margin="0,8">
+     <Expander Header="Зависимости экземпляров" IsExpanded="False" Margin="0,8,0,16" Tag="dependencies"><StackPanel Margin="0,8">
       <TextBlock Text="Обязательная связь содержит причину включения. При нескольких подходящих экземплярах выберите нужный явно." TextWrapping="Wrap" Style="{DynamicResource Text.Metadata}"/>
       <ItemsControl ItemsSource="{Binding UnresolvedDependencies}"><ItemsControl.ItemTemplate><DataTemplate><TextBlock Text="{Binding Requirement.Reason}" Foreground="{DynamicResource Brush.ErrorForeground}" TextWrapping="Wrap" Margin="0,4"/></DataTemplate></ItemsControl.ItemTemplate></ItemsControl>
       <WrapPanel Margin="0,8"><ComboBox ItemsSource="{Binding UnresolvedDependencies}" SelectedItem="{Binding SelectedRequirement}" DisplayMemberPath="Requirement.Id" Width="180" AutomationProperties.Name="Неразрешённое требование"/><ComboBox ItemsSource="{Binding ComponentChoices}" SelectedItem="{Binding SelectedRequiredInstance}" DisplayMemberPath="Label" Width="240" Margin="8,0" AutomationProperties.Name="Выбор экземпляра зависимости"/><Button Content="Назначить" Command="{Binding BindRequirementCommand}"/></WrapPanel>
@@ -40,7 +51,7 @@
        </WrapPanel><TextBox Text="{Binding Reason, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Причина зависимости" Margin="0,4"/>
       </StackPanel></DataTemplate></ItemsControl.ItemTemplate></ItemsControl>
      </StackPanel></Expander>
-     <Expander Header="Baseline и начальная инициализация" IsExpanded="True" Margin="0,0,0,16" Tag="baseline"><StackPanel Margin="0,8">
+     <Expander Header="Baseline и начальная инициализация" IsExpanded="False" Margin="0,0,0,16" Tag="baseline"><StackPanel Margin="0,8">
       <TextBlock Text="Применения выполняются по порядку. Для пакета укажите точные ID, version и contentHash; initializer остаётся сохранённым snapshot." TextWrapping="Wrap" Style="{DynamicResource Text.Metadata}"/>
       <WrapPanel Margin="0,8"><ComboBox ItemsSource="{Binding ComponentChoices}" SelectedItem="{Binding BaselineTarget}" DisplayMemberPath="Label" Width="300" Margin="0,0,8,0" AutomationProperties.Name="Целевой экземпляр baseline"/><Button Content="Добавить initializer…" Command="{Binding AddBaselineCommand}"/></WrapPanel>
       <ItemsControl ItemsSource="{Binding Baseline}"><ItemsControl.ItemTemplate><DataTemplate><Border BorderBrush="{DynamicResource Brush.Border}" BorderThickness="1" Padding="12" Margin="0,8"><StackPanel>

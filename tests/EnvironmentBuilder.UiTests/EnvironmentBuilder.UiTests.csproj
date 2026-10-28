@@ -3,6 +3,7 @@
     <UseWPF>true</UseWPF>
   </PropertyGroup>
   <ItemGroup>
+    <None Include="../../demos/fixtures/ui-reference/*" Link="UiReferenceFixtures/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     <ProjectReference Include="../../src/EnvironmentBuilder.App/EnvironmentBuilder.App.csproj" />
     <PackageReference Include="FlaUI.UIA3" />
   </ItemGroup>

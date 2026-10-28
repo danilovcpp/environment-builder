@@ -1,46 +1,56 @@
 <Window x:Class="EnvironmentBuilder.App.Shell.MainWindow"
-        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:icons="http://metro.mahapps.com/winfx/xaml/iconpacks"
-        xmlns:components="clr-namespace:EnvironmentBuilder.App.Components"
-        xmlns:authoring="clr-namespace:EnvironmentBuilder.App.Features.Environments"
-        Title="Environment Builder" Width="1280" Height="800" MinWidth="960" MinHeight="600"
-        Background="{DynamicResource Brush.Window}" Foreground="{DynamicResource Brush.TextPrimary}">
-    <Window.Resources><BooleanToVisibilityConverter x:Key="VisibleIfTrue" />
-        <DataTemplate DataType="{x:Type authoring:EnvironmentListViewModel}"><authoring:EnvironmentListPage/></DataTemplate>
-        <DataTemplate DataType="{x:Type authoring:EnvironmentEditorViewModel}"><authoring:EnvironmentEditorPage/></DataTemplate>
-        <DataTemplate DataType="{x:Type authoring:ComposePreviewViewModel}"><authoring:ComposePreviewPage/></DataTemplate>
-        <DataTemplate DataType="{x:Type authoring:InspectViewModel}"><authoring:InspectPage/></DataTemplate>
-    </Window.Resources>
+ xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+ xmlns:icons="http://metro.mahapps.com/winfx/xaml/iconpacks" xmlns:components="clr-namespace:EnvironmentBuilder.App.Components"
+ xmlns:authoring="clr-namespace:EnvironmentBuilder.App.Features.Environments" xmlns:packs="clr-namespace:EnvironmentBuilder.App.Features.SeedPacks"
+ xmlns:settings="clr-namespace:EnvironmentBuilder.App.Features.Settings" xmlns:diagnostics="clr-namespace:EnvironmentBuilder.App.Features.Diagnostics"
+ Title="Environment Builder" Width="1280" Height="800" MinWidth="960" MinHeight="600" SizeChanged="WindowSizeChanged"
+ Background="{DynamicResource Brush.Window}" Foreground="{DynamicResource Brush.TextPrimary}">
+ <Window.Resources><BooleanToVisibilityConverter x:Key="VisibleIfTrue"/>
+  <DataTemplate DataType="{x:Type authoring:EnvironmentListViewModel}"><authoring:EnvironmentListPage/></DataTemplate>
+  <DataTemplate DataType="{x:Type authoring:EnvironmentEditorViewModel}"><authoring:EnvironmentEditorPage/></DataTemplate>
+  <DataTemplate DataType="{x:Type authoring:ComposePreviewViewModel}"><authoring:ComposePreviewPage/></DataTemplate>
+  <DataTemplate DataType="{x:Type authoring:InspectViewModel}"><authoring:InspectPage/></DataTemplate>
+ </Window.Resources>
+ <Grid>
+  <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+  <Grid.ColumnDefinitions><ColumnDefinition Width="{DynamicResource Grid.Sidebar}"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+  <Border Grid.RowSpan="2" Background="{DynamicResource Brush.Sidebar}" BorderBrush="{DynamicResource Brush.Border}" BorderThickness="0,0,1,0" Padding="10,16">
+   <DockPanel>
+    <StackPanel DockPanel.Dock="Top" Margin="10,0,0,26"><StackPanel Orientation="Horizontal"><icons:PackIconLucide Kind="Box" Width="30" Height="30" Foreground="{DynamicResource Brush.AccentText}" Margin="0,0,10,0"/><StackPanel><TextBlock Text="Environment Builder" FontWeight="SemiBold" FontSize="16"/><TextBlock Text="Local Environment Manager" Style="{DynamicResource Text.Metadata}"/></StackPanel></StackPanel></StackPanel>
+    <StackPanel DockPanel.Dock="Bottom" Margin="10,16,10,0"><TextBlock Text="Локальное хранилище" Style="{DynamicResource Text.Metadata}"/><Button Command="{Binding ToggleThemeCommand}" Content="Сменить тему" AutomationProperties.Name="Переключить светлую и тёмную тему" Style="{DynamicResource Button.Ghost}" HorizontalAlignment="Left" Margin="0,8,0,0"/></StackPanel>
+    <StackPanel>
+     <Button Command="{Binding NavigateCommand}" CommandParameter="environments" Style="{DynamicResource Button.Navigation}" Selector.IsSelected="{Binding ShowEnvironments}" AutomationProperties.Name="Окружения"><StackPanel Orientation="Horizontal"><icons:PackIconLucide Kind="Layers" Margin="0,0,12,0"/><TextBlock Text="Окружения"/></StackPanel></Button>
+     <Button Command="{Binding NavigateCommand}" CommandParameter="seedpacks" Style="{DynamicResource Button.Navigation}" Selector.IsSelected="{Binding ShowSeedPacks}" AutomationProperties.Name="Тестовые данные"><StackPanel Orientation="Horizontal"><icons:PackIconLucide Kind="Database" Margin="0,0,12,0"/><TextBlock Text="Тестовые данные"/></StackPanel></Button>
+     <Button Command="{Binding NavigateCommand}" CommandParameter="settings" Style="{DynamicResource Button.Navigation}" Selector.IsSelected="{Binding ShowSettings}" AutomationProperties.Name="Настройки"><StackPanel Orientation="Horizontal"><icons:PackIconLucide Kind="Settings" Margin="0,0,12,0"/><TextBlock Text="Настройки"/></StackPanel></Button>
+     <Button Command="{Binding NavigateCommand}" CommandParameter="diagnostics" Style="{DynamicResource Button.Navigation}" Selector.IsSelected="{Binding ShowDiagnostics}" AutomationProperties.Name="Диагностика"><StackPanel Orientation="Horizontal"><icons:PackIconLucide Kind="Activity" Margin="0,0,12,0"/><TextBlock Text="Диагностика"/></StackPanel></Button>
+    </StackPanel>
+   </DockPanel>
+  </Border>
+  <components:PageHeader Grid.Column="1" Grid.ColumnSpan="2" Title="{Binding Title}" Description="{Binding Description}" Icon="{Binding PageIcon}">
+   <components:PageHeader.Actions>
+    <ContentControl Tag="HeaderActions" Content="{Binding Authoring.Current}" Visibility="{Binding ShowEnvironments, Converter={StaticResource VisibleIfTrue}}">
+     <ContentControl.Resources>
+      <DataTemplate DataType="{x:Type authoring:EnvironmentListViewModel}"><Button Command="{Binding CreateNewCommand}" Style="{DynamicResource Button.Primary}" AutomationProperties.AutomationId="CreateEnvironment"><StackPanel Orientation="Horizontal"><icons:PackIconLucide Kind="Plus" Margin="0,0,8,0"/><TextBlock Text="Создать окружение"/></StackPanel></Button></DataTemplate>
+      <DataTemplate DataType="{x:Type authoring:EnvironmentEditorViewModel}"><WrapPanel><Button Content="К списку" Command="{Binding GoBackCommand}" Margin="0,0,8,0" AutomationProperties.AutomationId="BackToList"/><Button Content="Compose preview" Command="{Binding ShowPreviewCommand}" Margin="0,0,8,0" AutomationProperties.AutomationId="ShowCompose"/><Button Content="Сохранить" Command="{Binding SaveCommand}" Style="{DynamicResource Button.Primary}" AutomationProperties.AutomationId="SaveEnvironment"/></WrapPanel></DataTemplate>
+      <DataTemplate DataType="{x:Type authoring:ComposePreviewViewModel}"><WrapPanel><Button Content="Назад" Command="{Binding GoBackCommand}" Margin="0,0,8,0" AutomationProperties.AutomationId="BackFromPreview"/><Button Content="Копировать preview" Command="{Binding CopyCommand}"/></WrapPanel></DataTemplate>
+      <DataTemplate DataType="{x:Type authoring:InspectViewModel}"><WrapPanel><Button Content="Назад" Command="{Binding ReturnCommand}" AutomationProperties.AutomationId="InspectBack" Margin="0,0,8,0"/><Button Content="Compose" Command="{Binding ShowComposeCommand}" AutomationProperties.AutomationId="InspectCompose" Margin="0,0,8,0"/><Button Content="Запустить" Command="{Binding StartCommand}" ToolTip="{Binding StartDisabledReason}" ToolTipService.ShowOnDisabled="True" AutomationProperties.AutomationId="StartEnvironment" Margin="0,0,8,0"/><Button Content="Остановить" Command="{Binding StopCommand}" ToolTip="{Binding StopDisabledReason}" ToolTipService.ShowOnDisabled="True" AutomationProperties.AutomationId="StopEnvironment" Style="{DynamicResource Button.Primary}"/></WrapPanel></DataTemplate>
+     </ContentControl.Resources>
+    </ContentControl>
+   </components:PageHeader.Actions>
+  </components:PageHeader>
+  <Grid Grid.Row="1" Grid.Column="1" Background="{DynamicResource Brush.Canvas}">
+   <DockPanel Margin="16,12,16,16">
+    <TextBlock DockPanel.Dock="Top" Text="{Binding StorageError}" Style="{DynamicResource Text.Optional}" Foreground="{DynamicResource Brush.ErrorForeground}"/>
+    <TextBlock DockPanel.Dock="Top" Text="Чтение локального хранилища…" Visibility="{Binding IsLoading, Converter={StaticResource VisibleIfTrue}}"/>
     <Grid>
-        <Grid.RowDefinitions><RowDefinition Height="*" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
-        <Grid.ColumnDefinitions><ColumnDefinition Width="208" /><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
-        <Border Background="{DynamicResource Brush.Sidebar}" Padding="16">
-            <DockPanel>
-                <TextBlock DockPanel.Dock="Top" Text="Environment Builder" FontWeight="SemiBold" Margin="0,0,0,24" />
-                <Button DockPanel.Dock="Bottom" Command="{Binding ToggleThemeCommand}" Content="Сменить тему" AutomationProperties.Name="Переключить светлую и тёмную тему" />
-                <StackPanel>
-                    <Button Command="{Binding NavigateCommand}" CommandParameter="environments" Style="{DynamicResource Button.Navigation}" Selector.IsSelected="{Binding ShowEnvironments}" Margin="0,0,0,8" AutomationProperties.Name="Окружения"><StackPanel Orientation="Horizontal"><icons:PackIconLucide Kind="Box" Margin="0,0,8,0" /><TextBlock Text="Окружения" /></StackPanel></Button>
-                    <Button Command="{Binding NavigateCommand}" CommandParameter="seedpacks" Style="{DynamicResource Button.Navigation}" Selector.IsSelected="{Binding ShowSeedPacks}" Margin="0,0,0,8" AutomationProperties.Name="Тестовые данные"><StackPanel Orientation="Horizontal"><icons:PackIconLucide Kind="Database" Margin="0,0,8,0" /><TextBlock Text="Тестовые данные" /></StackPanel></Button>
-                    <Button Command="{Binding NavigateCommand}" CommandParameter="settings" Style="{DynamicResource Button.Navigation}" Selector.IsSelected="{Binding ShowSettings}" Margin="0,0,0,8" AutomationProperties.Name="Настройки"><StackPanel Orientation="Horizontal"><icons:PackIconLucide Kind="Settings" Margin="0,0,8,0" /><TextBlock Text="Настройки" /></StackPanel></Button>
-                    <Button Command="{Binding NavigateCommand}" CommandParameter="diagnostics" Style="{DynamicResource Button.Navigation}" Selector.IsSelected="{Binding ShowDiagnostics}" AutomationProperties.Name="Диагностика"><StackPanel Orientation="Horizontal"><icons:PackIconLucide Kind="Activity" Margin="0,0,8,0" /><TextBlock Text="Диагностика" /></StackPanel></Button>
-                </StackPanel>
-            </DockPanel>
-        </Border>
-        <Grid Grid.Column="1" Background="{DynamicResource Brush.Canvas}">
-            <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="*" /></Grid.RowDefinitions>
-            <components:PageHeader Title="{Binding Title}" Description="{Binding Description}" />
-            <TextBlock Grid.Row="1" Text="{Binding StorageError}" Foreground="{DynamicResource Brush.ErrorForeground}" Margin="24,8" TextWrapping="Wrap" />
-            <Grid Grid.Row="2" Margin="24,8,24,24">
-                <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="*" /></Grid.RowDefinitions>
-                <StackPanel Visibility="{Binding IsLoading, Converter={StaticResource VisibleIfTrue}}"><TextBlock Text="Чтение локального хранилища…" /></StackPanel>
-                <ContentControl Grid.Row="1" Content="{Binding Authoring.Current}" Visibility="{Binding ShowEnvironments, Converter={StaticResource VisibleIfTrue}}" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"/>
-                <TextBlock Grid.Row="1" Visibility="{Binding ShowSeedPacks, Converter={StaticResource VisibleIfTrue}}" Text="Пакеты начальных данных" Foreground="{DynamicResource Brush.TextSecondary}" />
-                <StackPanel Grid.Row="1" Visibility="{Binding ShowSettings, Converter={StaticResource VisibleIfTrue}}"><TextBlock Text="Каталог данных" FontWeight="SemiBold" /><TextBlock Text="{Binding DataDirectory}" TextWrapping="Wrap" Margin="0,8,0,16" /><Button Command="{Binding ToggleThemeCommand}" Content="Сменить тему" HorizontalAlignment="Left" /></StackPanel>
-                <StackPanel Grid.Row="1" Visibility="{Binding ShowDiagnostics, Converter={StaticResource VisibleIfTrue}}"><TextBlock Text="{Binding Status}" TextWrapping="Wrap" /><TextBlock Text="{Binding RecoveryStatus}" TextWrapping="Wrap" Margin="0,12,0,0" /></StackPanel>
-            </Grid>
-        </Grid>
-        <components:ContextPanel Grid.Column="2" Text="{Binding RecoveryStatus}" />
-        <components:StatusBar Grid.Row="1" Grid.ColumnSpan="3" Text="{Binding Status}" />
+     <ContentControl x:Name="EnvironmentContent" Content="{Binding Authoring.Current}" Visibility="{Binding ShowEnvironments, Converter={StaticResource VisibleIfTrue}}" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"/>
+     <packs:SeedPackLibraryPage DataContext="{Binding SeedPacks}" Visibility="{Binding DataContext.ShowSeedPacks, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource VisibleIfTrue}}"/>
+     <settings:SettingsPage DataContext="{Binding Settings}" Visibility="{Binding DataContext.ShowSettings, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource VisibleIfTrue}}"/>
+     <diagnostics:DiagnosticsPage DataContext="{Binding Diagnostics}" Visibility="{Binding DataContext.ShowDiagnostics, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource VisibleIfTrue}}"/>
     </Grid>
+   </DockPanel>
+  </Grid>
+  <components:ContextPanel Grid.Row="1" Grid.Column="2" Heading="{Binding ContextTitle}" Text="{Binding ContextSummary}" SupportingText="{Binding ContextSupportingText}"/>
+  <components:StatusBar Grid.Row="2" Grid.ColumnSpan="3" Text="{Binding Status}"/>
+ </Grid>
 </Window>

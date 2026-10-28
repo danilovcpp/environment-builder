@@ -39,7 +39,7 @@ public sealed class ThemeResourcesTests
     private static void VerifyResources()
     {
         using var diagnostics = new BindingDiagnostics();
-        var app = new App.App();
+        var app = new ResourceApplication();
         app.InitializeComponent();
         try
         {
@@ -132,6 +132,7 @@ public sealed class ThemeResourcesTests
 
             Assert.Empty(diagnostics.Errors);
             window.Close();
+            UiReferenceTests.Verify();
             VerifyShell(diagnostics);
             VerifyAuthoring(diagnostics);
             VerifyInspect(diagnostics);
@@ -244,6 +245,7 @@ public sealed class ThemeResourcesTests
         var close = new App.Components.CloseOperationsDialog { Owner = window, DataContext = "Активных операций: 1", ShowActivated = false };
         close.Show(); close.UpdateLayout(); close.Dispatcher.Invoke(() => { }, DispatcherPriority.ContextIdle); close.Close();
         Assert.Empty(diagnostics.Errors); window.Close();
+        UiReferenceTests.VerifyInspect(fixture);
     }
 
     private sealed class InspectVisualFixture
@@ -285,8 +287,9 @@ public sealed class ThemeResourcesTests
         var session = fixture.Session(navigation);
         var shell = new App.Shell.ShellViewModel(navigation, themes) { Authoring = session, IsLoading = false };
         shell.Status = "Хранилище доступно · Docker не проверен";
-        var window = new App.Shell.MainWindow(shell) { Width = 1280, Height = 720, Left = -10000, Top = 0, ShowActivated = false, ShowInTaskbar = false };
+        var window = new App.Shell.MainWindow(shell) { Width = 1280, Height = 720, Left = 40, Top = 40, ShowActivated = true, ShowInTaskbar = false };
         window.Show();
+        window.Activate();
         Assert.True(session.List.CreateNewCommand.ExecuteAsync(null).IsCompletedSuccessfully);
         var editor = Assert.IsType<App.Features.Environments.EnvironmentEditorViewModel>(session.Current);
         editor.Name = "Offline authoring · сохранение без Docker";
@@ -299,7 +302,8 @@ public sealed class ThemeResourcesTests
         editor.FocusErrorCommand.Execute(Assert.Single(editor.Errors));
         window.UpdateLayout(); window.Dispatcher.Invoke(() => { }, DispatcherPriority.ContextIdle);
         Assert.Contains(Descendants(window).OfType<TabItem>(), item => item.Header as string == "Параметры" && item.IsSelected);
-        Assert.Contains(Descendants(window).OfType<DataGrid>(), grid => grid.Tag as string == "parameters" && grid.IsKeyboardFocusWithin);
+        Assert.True(Descendants(window).OfType<DataGrid>().Any(grid => grid.Tag as string == "parameters" && grid.IsKeyboardFocusWithin),
+            "Focused: " + System.Windows.Input.Keyboard.FocusedElement + "; " + string.Join(" | ", Descendants(window).OfType<DataGrid>().Select(grid => $"{grid.Tag}: visible={grid.IsVisible}, enabled={grid.IsEnabled}, focusable={grid.Focusable}")));
         editor.Components[0].Parameters[0].Text = "1000";
         foreach (bool dark in new[] { false, true })
         {
@@ -357,7 +361,7 @@ public sealed class ThemeResourcesTests
             Assert.Equal(48, context.ActualWidth);
             context.IsExpanded = true;
             window.UpdateLayout();
-            Assert.Equal(240, context.ActualWidth);
+            Assert.Equal(320, context.ActualWidth);
             SavePreview((FrameworkElement)window.Content, dark ? "shell-dark" : "shell-light");
         }
         Assert.Empty(diagnostics.Errors);
@@ -386,15 +390,29 @@ public sealed class ThemeResourcesTests
         }
 
         Directory.CreateDirectory(outputDirectory);
-        var bitmap = new RenderTargetBitmap((int)root.ActualWidth, (int)root.ActualHeight, 96, 96, PixelFormats.Pbgra32);
+        DpiScale dpi = VisualTreeHelper.GetDpi(root);
+        var bitmap = new RenderTargetBitmap((int)(root.ActualWidth * dpi.DpiScaleX), (int)(root.ActualHeight * dpi.DpiScaleY), dpi.PixelsPerInchX, dpi.PixelsPerInchY, PixelFormats.Pbgra32);
         bitmap.Render(root);
         var encoder = new PngBitmapEncoder();
         encoder.Frames.Add(BitmapFrame.Create(bitmap));
         using FileStream stream = File.Create(Path.Combine(outputDirectory, $"resources-{theme.ToLowerInvariant()}.png"));
         encoder.Save(stream);
+        File.AppendAllText(Path.Combine(outputDirectory, "resource-dpi.txt"), $"{theme}: {root.ActualWidth}x{root.ActualHeight} DIP; {dpi.PixelsPerInchX}x{dpi.PixelsPerInchY} DPI{Environment.NewLine}");
     }
 
     private sealed record FixtureRow(string Name, string Status);
+    private sealed class ResourceApplication : Application
+    {
+        public void InitializeComponent()
+        {
+            ShutdownMode = ShutdownMode.OnExplicitShutdown;
+            // Load the production dictionaries without executing App.OnStartup against a user's data.
+            Resources.MergedDictionaries.Add(new Wpf.Ui.Markup.ThemesDictionary { Theme = ApplicationTheme.Light });
+            Resources.MergedDictionaries.Add(new Wpf.Ui.Markup.ControlsDictionary());
+            foreach (string name in new[] { "Light", "Typography", "Components" })
+            { Resources.MergedDictionaries.Add(new ResourceDictionary { Source = new Uri($"pack://application:,,,/EnvironmentBuilder.App;component/Themes/{name}.xaml") }); }
+        }
+    }
 
     private sealed class BindingDiagnostics : TraceListener
     {

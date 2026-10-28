@@ -53,6 +53,9 @@ public sealed partial class EnvironmentEditorViewModel : ObservableObject
     public EditorRows<DependencyEditor> Dependencies { get; } = [];
     public EditorRows<BaselineEditor> Baseline { get; } = [];
     public ObservableCollection<DefinitionChoice> Library { get; } = [];
+    public IEnumerable<DefinitionChoice> TargetDefinitions => Library.Where(d => d.Definition.ComponentType == "target");
+    public IEnumerable<DefinitionChoice> InfrastructureDefinitions => Library.Where(d => d.Definition.ComponentType == "infrastructure");
+    public string ConfigurationSummary => $"{Components.Count(c => c.Definition.ComponentType == "target")} приложений · {Components.Count(c => c.Definition.ComponentType == "infrastructure")} инфраструктурных · {Dependencies.Count} связей · {Baseline.Count} baseline";
     public ObservableCollection<ValidationMessage> Errors { get; } = [];
     public ObservableCollection<ReadinessIssue> ReadinessIssues { get; } = [];
     public ObservableCollection<ComponentChoice> ComponentChoices { get; } = [];
@@ -85,6 +88,7 @@ public sealed partial class EnvironmentEditorViewModel : ObservableObject
             Library.Clear(); foreach (var definition in definitions) { Library.Add(new DefinitionChoice(definition)); }
             SelectedDefinition ??= Library.FirstOrDefault();
             LibraryStatus = Library.Count == 0 ? "Библиотека пуста. Импортируйте JSON-описание компонента." : $"Описаний в библиотеке: {Library.Count}";
+            OnPropertyChanged(nameof(TargetDefinitions)); OnPropertyChanged(nameof(InfrastructureDefinitions));
         }
         catch (Exception error) when (error is not OperationCanceledException and not OutOfMemoryException) { LibraryStatus = "Не удалось прочитать библиотеку. Проверьте документы в хранилище."; }
     }
@@ -146,11 +150,19 @@ public sealed partial class EnvironmentEditorViewModel : ObservableObject
     }
     private void NotifyState()
     {
+        OnPropertyChanged(nameof(ConfigurationSummary));
         OnPropertyChanged(nameof(IsDirty)); OnPropertyChanged(nameof(CanSave)); OnPropertyChanged(nameof(CanPreview)); OnPropertyChanged(nameof(CanEdit)); OnPropertyChanged(nameof(CanInteract)); OnPropertyChanged(nameof(SaveDisabledReason));
         SaveCommand.NotifyCanExecuteChanged(); ShowPreviewCommand.NotifyCanExecuteChanged(); InspectSavedCommand.NotifyCanExecuteChanged();
         OnPropertyChanged(nameof(CanBeginEdit)); OnPropertyChanged(nameof(CanInspect)); BeginEditCommand.NotifyCanExecuteChanged();
     }
     partial void OnIsBusyChanged(bool value) => NotifyState();
+
+    [RelayCommand]
+    private void AddDefinition(DefinitionChoice definition)
+    {
+        SelectedDefinition = definition;
+        AddComponentCommand.Execute(null);
+    }
 
     [RelayCommand(CanExecute = nameof(CanBeginEdit))]
     private async Task BeginEditAsync(CancellationToken token)

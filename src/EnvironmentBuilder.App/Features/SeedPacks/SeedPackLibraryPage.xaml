@@ -1,0 +1,27 @@
+<UserControl x:Class="EnvironmentBuilder.App.Features.SeedPacks.SeedPackLibraryPage"
+ xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:icons="http://metro.mahapps.com/winfx/xaml/iconpacks">
+ <UserControl.Resources><BooleanToVisibilityConverter x:Key="Visible"/></UserControl.Resources>
+ <DockPanel>
+  <StackPanel DockPanel.Dock="Top">
+   <Grid Margin="0,0,0,12"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="150"/></Grid.ColumnDefinitions><TextBox Text="{Binding Search, UpdateSourceTrigger=PropertyChanged}" Style="{DynamicResource Input.Search}" Tag="Поиск…" AutomationProperties.Name="Поиск пакетов" ToolTip="Поиск по названию и назначению"/><ComboBox Grid.Column="1" ItemsSource="{Binding Themes}" SelectedItem="{Binding Theme}" Margin="12,0,0,0" AutomationProperties.Name="Тема пакета"/></Grid>
+   <UniformGrid Columns="2" Margin="0,0,0,12"><Border Style="{DynamicResource Panel.Card}" Margin="0,0,6,0"><StackPanel Orientation="Horizontal"><icons:PackIconLucide Kind="Layers" Foreground="{DynamicResource Brush.AccentText}" Width="28" Height="28" Margin="0,0,12,0"/><StackPanel><TextBlock Text="{Binding Count}" Style="{DynamicResource Text.Kpi}"/><TextBlock Text="Пакетов в библиотеке" Style="{DynamicResource Text.Metadata}"/></StackPanel></StackPanel></Border><Border Style="{DynamicResource Panel.Card}" Margin="6,0,0,0"><StackPanel><TextBlock Text="{Binding Size}" Style="{DynamicResource Text.Kpi}"/><TextBlock Text="Размер по manifest" Style="{DynamicResource Text.Metadata}"/></StackPanel></Border></UniformGrid>
+   <WrapPanel Margin="0,0,0,8" ToolTip="{Binding WorkflowReason}" ToolTipService.ShowOnDisabled="True"><Button Content="Загрузить пак" IsEnabled="False" Margin="0,0,8,4"/><Button Content="Удалить" IsEnabled="False" Margin="0,0,8,4"/><Button Content="Применить к окружению" IsEnabled="False" Margin="0,0,0,4"/></WrapPanel>
+   <TextBlock Text="{Binding Error}" Style="{DynamicResource Text.Optional}" Foreground="{DynamicResource Brush.ErrorForeground}"/>
+   <TextBlock Text="Чтение библиотеки…" Visibility="{Binding IsLoading, Converter={StaticResource Visible}}"/>
+  </StackPanel>
+  <Grid><Grid.RowDefinitions><RowDefinition Height="1.6*" MinHeight="130"/><RowDefinition Height="12"/><RowDefinition Height="*" MinHeight="180"/></Grid.RowDefinitions>
+   <Border Style="{DynamicResource Panel.Card}" Padding="0"><DockPanel><TextBlock DockPanel.Dock="Top" Text="Доступные data-seed пакеты" Style="{DynamicResource Text.SectionTitle}" Margin="12"/>
+    <Grid><DataGrid ItemsSource="{Binding Items}" SelectedItem="{Binding SelectedPack}" AutoGenerateColumns="False" IsReadOnly="True" ScrollViewer.HorizontalScrollBarVisibility="Disabled" AutomationProperties.AutomationId="SeedPackRows"><DataGrid.Columns><DataGridTextColumn Header="Название пака" Binding="{Binding Title}" Width="*"/><DataGridTextColumn Header="Тема" Binding="{Binding Theme}" Width="90"/><DataGridTextColumn Header="Записей" Binding="{Binding Records}" Width="85"/><DataGridTextColumn Header="Версия" Binding="{Binding Version}" Width="85"/></DataGrid.Columns></DataGrid>
+     <Border Style="{DynamicResource Panel.Card}" VerticalAlignment="Center" HorizontalAlignment="Center" Visibility="{Binding IsEmpty, Converter={StaticResource Visible}}"><StackPanel><TextBlock Text="Пакетов пока нет" Style="{DynamicResource Text.GroupTitle}"/><TextBlock Text="Библиотека принимает внешние неизменяемые SeedPacks." TextWrapping="Wrap" Margin="0,8,0,0"/></StackPanel></Border>
+     <TextBlock Text="Пакеты не найдены" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{Binding NoResults, Converter={StaticResource Visible}}"/>
+    </Grid>
+   </DockPanel></Border>
+   <Border Grid.Row="2" Style="{DynamicResource Panel.Card}" Padding="0"><TabControl>
+    <TabItem Header="Структура пака"><DockPanel Margin="12"><TextBlock DockPanel.Dock="Top" Text="Объявленные секции · метаданные" Style="{DynamicResource Text.GroupTitle}" Margin="0,0,0,8"/>
+     <DataGrid ItemsSource="{Binding SelectedPack.Manifest.Sections}" AutoGenerateColumns="False" IsReadOnly="True" ScrollViewer.HorizontalScrollBarVisibility="Disabled"><DataGrid.Columns><DataGridTextColumn Header="Секция" Binding="{Binding Title}" Width="*"/><DataGridTextColumn Header="Записей" Binding="{Binding RecordCount}" Width="90"/><DataGridTextColumn Header="Bytes" Binding="{Binding Bytes}" Width="90"/></DataGrid.Columns></DataGrid>
+    </DockPanel></TabItem>
+    <TabItem Header="Текстовое preview"><StackPanel Margin="16"><TextBlock Text="Preview ещё не подключён" Style="{DynamicResource Text.GroupTitle}"/><TextBlock Text="{Binding WorkflowReason}" TextWrapping="Wrap" Margin="0,8,0,0"/></StackPanel></TabItem>
+   </TabControl></Border>
+  </Grid>
+ </DockPanel>
+</UserControl>

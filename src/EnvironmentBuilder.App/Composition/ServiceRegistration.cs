@@ -80,6 +80,8 @@ public sealed class AppServices : IAsyncDisposable
             services.AddSingleton<SeedPackStore>();
             services.AddSingleton<ISeedPackStore>(p => p.GetRequiredService<SeedPackStore>());
             services.AddSingleton<SeedPackImporter>();
+            services.AddSingleton(p => new Features.SeedPacks.SeedPackLibraryViewModel(p.GetRequiredService<SeedPackStore>().ListMetadataAsync));
+            services.AddSingleton(p => new Features.Settings.SettingsViewModel(themes, p.GetRequiredService<IComponentLibrary>(), p.GetRequiredService<ILocalPathMappings>()));
             services.AddSingleton<ISecretVault, DpapiSecretVault>();
             services.AddSingleton<LocalPathResolver>();
             services.AddSingleton<IInputResolver, InputResolver>();

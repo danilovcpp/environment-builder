@@ -1,0 +1,7 @@
+{
+  "isolation": "test-only; never loaded by the application",
+  "states": ["populated", "empty", "loading", "error", "unknown", "offline", "partial", "long-name"],
+  "screens": ["environments", "editor", "inspect", "preview", "seedpacks", "settings", "diagnostics"],
+  "longName": "Окружение с очень длинным именем · проверка доступности команд, обрезки текста и контекстной сводки · независимая копия",
+  "effects": "AuthoringUiFixture in-memory store; Docker and HTTP are never invoked"
+}

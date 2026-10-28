@@ -3,34 +3,29 @@
  xmlns:components="clr-namespace:EnvironmentBuilder.App.Components" xmlns:local="clr-namespace:EnvironmentBuilder.App.Features.Environments" Background="{DynamicResource Brush.Canvas}" Foreground="{DynamicResource Brush.TextPrimary}">
  <DockPanel>
   <StackPanel DockPanel.Dock="Top">
-   <TextBlock Text="{Binding Name}" Style="{DynamicResource Text.SectionTitle}"/>
-   <WrapPanel Margin="0,12"><Button Content="Назад" Command="{Binding ReturnCommand}" AutomationProperties.AutomationId="InspectBack" Margin="0,0,8,0"/>
-    <Button Content="Запустить" Command="{Binding StartCommand}" ToolTip="{Binding StartDisabledReason}" ToolTipService.ShowOnDisabled="True" AutomationProperties.AutomationId="StartEnvironment" Margin="0,0,8,0"/>
-    <Button Content="Остановить" Command="{Binding StopCommand}" ToolTip="{Binding StopDisabledReason}" ToolTipService.ShowOnDisabled="True" AutomationProperties.AutomationId="StopEnvironment" Margin="0,0,8,0"/>
-    <Button Content="Отменить дальнейшие этапы" Command="{Binding CancelCommand}" AutomationProperties.AutomationId="CancelOperation" Margin="0,0,8,0"/>
-    <Button Content="{x:Static local:EnvironmentCommands.ObservationLabel}" ToolTip="{x:Static local:EnvironmentCommands.ObservationExplanation}" Command="{Binding RefreshCommand}" AutomationProperties.AutomationId="RefreshObservation" Margin="0,0,8,0"/>
-    <Button Content="Compose" Command="{Binding ShowComposeCommand}" AutomationProperties.AutomationId="InspectCompose"/>
+   <TextBlock Text="{Binding Name}" Style="{DynamicResource Text.SectionTitle}" ToolTip="{Binding Name}" Margin="0,0,0,4"/>
+   <TextBlock Text="{Binding Status}" Style="{DynamicResource Text.Metadata}" TextWrapping="Wrap"/>
+   <WrapPanel Margin="0,8,0,8"><Button Content="{x:Static local:EnvironmentCommands.ObservationLabel}" ToolTip="{x:Static local:EnvironmentCommands.ObservationExplanation}" Command="{Binding RefreshCommand}" AutomationProperties.AutomationId="RefreshObservation" Margin="0,0,8,4"/>
+    <Button Content="{x:Static local:EnvironmentCommands.ClearLabel}" Command="{Binding ClearDataCommand}" ToolTip="{Binding DataResetDisabledReason}" ToolTipService.ShowOnDisabled="True" AutomationProperties.AutomationId="ClearEnvironmentData" Margin="0,0,8,4"/>
+    <Button Content="{x:Static local:EnvironmentCommands.RestoreLabel}" Command="{Binding RestoreBaselineCommand}" ToolTip="{Binding RestoreDisabledReason}" ToolTipService.ShowOnDisabled="True" AutomationProperties.AutomationId="RestoreEnvironmentBaseline" Margin="0,0,8,4"/>
+    <Button Content="Отменить этапы" Command="{Binding CancelCommand}" AutomationProperties.AutomationId="CancelOperation" Margin="0,0,0,4"/>
    </WrapPanel>
-   <WrapPanel Margin="0,0,0,8">
-    <Button Content="{x:Static local:EnvironmentCommands.ClearLabel}" Command="{Binding ClearDataCommand}" Style="{DynamicResource Button.Destructive}" ToolTip="{x:Static local:EnvironmentCommands.ClearExplanation}" ToolTipService.ShowOnDisabled="True" AutomationProperties.AutomationId="ClearEnvironmentData" Margin="0,0,8,0"/>
-    <Button Content="{x:Static local:EnvironmentCommands.RestoreLabel}" Command="{Binding RestoreBaselineCommand}" Style="{DynamicResource Button.Destructive}" ToolTip="{x:Static local:EnvironmentCommands.RestoreExplanation}" ToolTipService.ShowOnDisabled="True" AutomationProperties.AutomationId="RestoreEnvironmentBaseline"/>
-   </WrapPanel>
-   <TextBlock Text="{Binding DataResetDisabledReason}" TextWrapping="Wrap" Margin="0,0,0,8"/>
-   <TextBlock Text="{Binding RestoreDisabledReason}" TextWrapping="Wrap" Margin="0,0,0,8"/>
-   <components:OperationProgress/>
-   <TextBlock Text="{Binding Status}" TextWrapping="Wrap" Margin="0,8"/>
-   <TextBlock Text="{Binding QuiescenceStatus}" TextWrapping="Wrap" Margin="0,0,0,8"/>
-   <TextBlock Text="{Binding Error}" Foreground="{DynamicResource Brush.ErrorForeground}" TextWrapping="Wrap"/>
+   <Expander Header="Остановка и доступность операций" Margin="0,0,0,8"><StackPanel Margin="0,8"><TextBlock Text="{Binding QuiescenceStatus}" Style="{DynamicResource Text.Optional}"/><TextBlock Text="{Binding DataResetDisabledReason}" Style="{DynamicResource Text.Optional}"/><TextBlock Text="{Binding RestoreDisabledReason}" Style="{DynamicResource Text.Optional}"/><TextBlock Text="{x:Static local:EnvironmentCommands.RestoreExplanation}" TextWrapping="Wrap" Style="{DynamicResource Text.Metadata}"/></StackPanel></Expander>
+   <components:OperationProgress Margin="0,0,0,8"/>
+   <TextBlock Text="{Binding Error}" Style="{DynamicResource Text.Optional}" Foreground="{DynamicResource Brush.ErrorForeground}"/>
   </StackPanel>
-  <Grid><Grid.RowDefinitions><RowDefinition Height="*" MinHeight="80"/><RowDefinition Height="Auto"/><RowDefinition Height="*" MinHeight="80"/></Grid.RowDefinitions>
-   <DataGrid ItemsSource="{Binding Components}" SelectedItem="{Binding SelectedComponent}" AutoGenerateColumns="False" IsReadOnly="True" AutomationProperties.AutomationId="InspectComponents">
-    <DataGrid.RowStyle><Style TargetType="DataGridRow"><Setter Property="ToolTip" Value="{Binding Details}"/></Style></DataGrid.RowStyle>
-    <DataGrid.Columns><DataGridTextColumn Header="Компонент" Binding="{Binding Name}" Width="*"/><DataGridTextColumn Header="Docker" Binding="{Binding Status}" Width="100"/><DataGridTextColumn Header="Health" Binding="{Binding Health}" Width="120"/><DataGridTextColumn Header="Готовность" Binding="{Binding RuntimeReady}" Width="160"/><DataGridTextColumn Header="Готов к работе" Binding="{Binding ApplicationReady}" Width="160"/><DataGridTextColumn Header="Расхождение" Binding="{Binding Drift}" Width="150"/></DataGrid.Columns>
-   </DataGrid>
-   <StackPanel Grid.Row="1" Margin="0,12"><TextBlock Text="{Binding Aggregate}" TextWrapping="Wrap"/><TextBlock Text="{Binding Measurements}" TextWrapping="Wrap" Margin="0,8,0,0"/><TextBlock Text="{Binding Endpoints}" TextWrapping="Wrap" Margin="0,8"/>
-    <CheckBox Content="Приостановить чтение логов" IsChecked="{Binding LogsPaused}"/><TextBlock Text="{Binding LogStatus}" Style="{DynamicResource Text.Metadata}"/>
-   </StackPanel>
-   <TextBox Grid.Row="2" Text="{Binding Logs, Mode=OneWay}" IsReadOnly="True" AcceptsReturn="True" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" FontFamily="Consolas" AutomationProperties.AutomationId="InspectLogs"/>
+  <Grid><Grid.RowDefinitions><RowDefinition Height="*" MinHeight="100"/><RowDefinition Height="12"/><RowDefinition Height="*" MinHeight="100"/></Grid.RowDefinitions>
+   <Border Style="{DynamicResource Panel.Card}" Padding="0"><DockPanel><TextBlock DockPanel.Dock="Top" Text="Сервисы и инфраструктура" Style="{DynamicResource Text.GroupTitle}" Margin="12,8"/>
+    <DataGrid ItemsSource="{Binding Components}" SelectedItem="{Binding SelectedComponent}" AutoGenerateColumns="False" IsReadOnly="True" AutomationProperties.AutomationId="InspectComponents">
+     <DataGrid.RowStyle><Style TargetType="DataGridRow" BasedOn="{StaticResource {x:Type DataGridRow}}"><Setter Property="ToolTip" Value="{Binding Details}"/></Style></DataGrid.RowStyle>
+     <DataGrid.Columns><DataGridTextColumn Header="Компонент" Binding="{Binding Name}" Width="*"/><DataGridTextColumn Header="Docker" Binding="{Binding Status}" Width="90"/><DataGridTextColumn Header="Health" Binding="{Binding Health}" Width="100"/><DataGridTextColumn Header="Готовность" Binding="{Binding RuntimeReady}" Width="130"/><DataGridTextColumn Header="Готов к работе" Binding="{Binding ApplicationReady}" Width="130"/><DataGridTextColumn Header="Расхождение" Binding="{Binding Drift}" Width="120"/></DataGrid.Columns>
+    </DataGrid>
+   </DockPanel></Border>
+   <Border Grid.Row="2" Style="{DynamicResource Panel.Card}" Padding="0"><TabControl>
+    <TabItem Header="Логи"><DockPanel Margin="12,8"><StackPanel DockPanel.Dock="Top" Margin="0,0,0,8"><CheckBox Content="Приостановить чтение" IsChecked="{Binding LogsPaused}"/><TextBlock Text="{Binding LogStatus}" Style="{DynamicResource Text.Metadata}" Margin="0,4,0,0"/></StackPanel><TextBox Text="{Binding Logs, Mode=OneWay}" IsReadOnly="True" AcceptsReturn="True" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" FontFamily="Consolas" AutomationProperties.AutomationId="InspectLogs"/></DockPanel></TabItem>
+    <TabItem Header="Метрики"><ScrollViewer VerticalScrollBarVisibility="Auto"><StackPanel Margin="12"><TextBlock Text="{Binding Aggregate}" TextWrapping="Wrap" Style="{DynamicResource Text.GroupTitle}"/><TextBlock Text="{Binding Measurements}" TextWrapping="Wrap" Margin="0,12,0,0"/></StackPanel></ScrollViewer></TabItem>
+    <TabItem Header="Адреса"><ScrollViewer VerticalScrollBarVisibility="Auto"><TextBlock Text="{Binding Endpoints}" TextWrapping="Wrap" Margin="12" Focusable="True"/></ScrollViewer></TabItem>
+   </TabControl></Border>
   </Grid>
  </DockPanel>
 </UserControl>

@@ -119,8 +119,8 @@
     <CornerRadius x:Key="Radius.Small">4</CornerRadius>
     <CornerRadius x:Key="Radius.Button">8</CornerRadius>
     <CornerRadius x:Key="Radius.Input">8</CornerRadius>
-    <CornerRadius x:Key="Radius.Panel">9</CornerRadius>
-    <CornerRadius x:Key="Radius.Badge">999</CornerRadius>
+    <CornerRadius x:Key="Radius.Panel">8</CornerRadius>
+    <CornerRadius x:Key="Radius.Badge">11</CornerRadius>
     <sys:Double x:Key="Icon.Small">16</sys:Double>
     <sys:Double x:Key="Icon.Standard">18</sys:Double>
     <sys:Double x:Key="Icon.Large">20</sys:Double>
@@ -131,7 +131,7 @@
     <sys:Double x:Key="Size.Scrollbar">12</sys:Double>
     <sys:Double x:Key="Size.Checkbox">18</sys:Double>
     <sys:Double x:Key="Size.Sidebar">240</sys:Double>
-    <sys:Double x:Key="Size.ContextPanel">384</sys:Double>
+    <sys:Double x:Key="Size.ContextPanel">320</sys:Double>
     <sys:Double x:Key="Size.Topbar">72</sys:Double>
     <sys:Double x:Key="Size.StatusBar">30</sys:Double>
 </ResourceDictionary>

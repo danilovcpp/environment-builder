@@ -37,6 +37,8 @@ public partial class App : Application
         {
             services = await AppServices.CreateAsync(shell, navigation, themes);
             shell.Authoring = services.Provider.GetRequiredService<AuthoringSession>();
+            shell.SeedPacks = services.Provider.GetRequiredService<Features.SeedPacks.SeedPackLibraryViewModel>();
+            shell.Settings = services.Provider.GetRequiredService<Features.Settings.SettingsViewModel>();
             IReadOnlyList<Operation> unresolved = await services.Provider.GetRequiredService<IOperationStore>().ReadUnresolvedAsync(CancellationToken.None);
             await shell.LoadAsync(services.Provider.GetRequiredService<UiDispatcher>(),
                 services.Provider.GetRequiredService<AppDataDirectory>().Root, unresolved.Count, CancellationToken.None);

@@ -148,3 +148,33 @@ Runtime-сценарии ниже проверяются с контролиру
 Ожидаемая поставка: успешные restore/build/tests/format, опубликованная win-x64 папка, schema/fixture reports, Docker capability/port contract fixtures, SC reports, crash/security/isolation evidence, UI screenshots/keyboard/DPI/contrast и результаты 5-person приёмки. Performance report хранит сырые 100 измерений и percentile/count, а не только среднее.
 
 После теста runner закрывает изолированные stores и удаляет только их временные файлы. Отсутствующий interactive desktop, участники или непрошедшие performance thresholds перечисляются в handoff. Доступ к Engine и версия Windows не являются gates автоматической проверки.
+
+## 9. Проверка Phase 7a — 2026-10-28
+
+В этом запуске пользователь уточнил: «не надо проверять при других масштабах».
+Применяется текущий фактический DPI 144 (150%); дополнительные масштабы из
+раздела 7 для Phase 7a не требуются. Системный масштаб не менялся. Это уточнение
+не объявляет выполненной будущую полную release-матрицу T158.
+
+Подготовлены `demos/fixtures/ui-reference/states.json`, `UiReferenceFixture.cs` и
+`UiReferenceTests.cs`. Матрица референсов выполняется на STA внутри
+`ThemeResourcesTests`, потому что WPF разрешает один Application на test process.
+Host загружает production dictionaries без App.OnStartup; production startup,
+keyboard create/save/dirty/Inspect/Compose/close проверяются отдельными FlaUI tests.
+
+```powershell
+$env:ENVIRONMENTBUILDER_UI_ARTIFACTS = Join-Path $repoPath 'artifacts\ui-refinement\20261028\after'
+dotnet test (Join-Path $repoPath 'tests\EnvironmentBuilder.UiTests\EnvironmentBuilder.UiTests.csproj') --configuration Release --no-build --no-restore --logger 'trx;LogFileName=ui.trx' --results-directory (Join-Path $repoPath 'artifacts\ui-refinement\20261028')
+```
+
+Запускать с интерактивным desktop и доступом к SendInput/UIA. Persistence tests
+требуют Windows ACL/DPAPI; sandbox-отказ до исполнения поведения не считается
+дефектом продукта или пройденной проверкой. Финальные results: unit 100/100,
+offline integration 218/218, UI/FlaUI 3/3, без skip. Release build — 0 warnings/errors.
+Проверки не требуют запущенного Docker или HTTP services.
+
+Evidence: `artifacts/ui-refinement/20261028/`: `before/`, `after/`, `comparison.html`,
+`reference-review.md`, `verification.md`, TRX, build output и actual DPI.
+Карта референсов и допустимых адаптаций: [ui-reference.md](../../docs/design/ui-reference.md).
+SeedPacks import/apply/paged preview, изменение defaults и recovery actions остаются
+US7/T118, US8/T127 и US10/T148; T103/Phase 8 в этом запуске не выполнялась.

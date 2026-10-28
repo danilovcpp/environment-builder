@@ -11,6 +11,19 @@ namespace EnvironmentBuilder.Infrastructure.Persistence;
 
 public sealed class SeedPackStore(SqliteWorker worker, ContentBlobStore blobs, StrictDocumentReader reader, IClock clock) : ISeedPackStore
 {
+    // Metadata-only presentation read; opening the library never acquires payloads or runs an initializer.
+    public async Task<IReadOnlyList<SeedPack>> ListMetadataAsync(CancellationToken cancellationToken)
+    {
+        string[] documents = await worker.ReadAsync(connection =>
+        {
+            using SqliteCommand command = Sql.Command(connection, null, "SELECT json FROM SeedPacks ORDER BY packId,version");
+            using SqliteDataReader rows = command.ExecuteReader();
+            var result = new List<string>();
+            while (rows.Read()) { result.Add(rows.GetString(0)); }
+            return result.ToArray();
+        }, cancellationToken).ConfigureAwait(false);
+        return documents.Select(json => reader.Read<SeedPack>(Encoding.UTF8.GetBytes(json), "seedpack")).ToArray();
+    }
     internal Task CommitAsync(SeedPack manifest, IReadOnlyList<ImportedPackEntry> entries, CancellationToken cancellationToken) => worker.CommitAsync("pack", (connection, transaction) =>
     {
         EnvironmentValidator.ValidatePack(manifest);

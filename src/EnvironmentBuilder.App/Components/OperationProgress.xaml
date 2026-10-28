@@ -1,10 +1,9 @@
 <UserControl x:Class="EnvironmentBuilder.App.Components.OperationProgress"
  xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
- <Border Padding="12" Background="{DynamicResource Brush.PanelMuted}" BorderBrush="{DynamicResource Brush.Border}" BorderThickness="1" CornerRadius="{DynamicResource Radius.Panel}">
-  <StackPanel><TextBlock Text="{Binding OperationId}" Style="{DynamicResource Text.Metadata}" AutomationProperties.AutomationId="OperationId"/>
+ <Border Padding="12,8" Background="{DynamicResource Brush.PanelMuted}" BorderBrush="{DynamicResource Brush.Border}" BorderThickness="1" CornerRadius="{DynamicResource Radius.Panel}" ToolTip="Отмена прекращает следующие этапы. Уже отправленные действия ожидают проверки и записи результата; работающие компоненты сохраняются.">
+  <StackPanel><TextBlock Text="{Binding OperationId}" Style="{DynamicResource Text.Optional}" AutomationProperties.AutomationId="OperationId"/>
    <TextBlock Text="{Binding Progress}" TextWrapping="Wrap" AutomationProperties.AutomationId="OperationProgress"/>
    <ProgressBar IsIndeterminate="{Binding IsOperationActive}" Height="4" Margin="0,8,0,0"><ProgressBar.Style><Style TargetType="ProgressBar"><Setter Property="Visibility" Value="Collapsed"/><Style.Triggers><DataTrigger Binding="{Binding IsOperationActive}" Value="True"><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers></Style></ProgressBar.Style></ProgressBar>
-   <TextBlock Text="Отмена прекращает следующие этапы. Уже отправленные действия ожидают проверки и записи результата; работающие компоненты сохраняются." TextWrapping="Wrap" Foreground="{DynamicResource Brush.TextSecondary}" Margin="0,8,0,0"/>
   </StackPanel>
  </Border>
 </UserControl>
